@@ -32,7 +32,7 @@ const DeliveryDetails = ({ sx, formik, drawer = false }) => {
           {() => (
             <React.Fragment>
               {formik.values.deliveries.length > 0 &&
-                formik.values.deliveries.map((delivery, index) => {
+                formik.values.deliveries.map((invoiceDelivery, index) => {
                   const particular = `deliveries[${index}].particular`;
                   const touchedParticular = getIn(formik.touched, particular);
                   const errorParticular = getIn(formik.errors, particular);
@@ -46,7 +46,7 @@ const DeliveryDetails = ({ sx, formik, drawer = false }) => {
                             container
                             spacing={1}
                             className="row"
-                            key={delivery.id}
+                            key={invoiceDelivery.delivery._id}
                             justifyContent={"space-between"}
                             sx={{ mb: 2 }}
                           >
@@ -260,12 +260,6 @@ const DeliveryDetails = ({ sx, formik, drawer = false }) => {
                                 xs={12}
                                 className="col"
                               >
-                                {console.log(
-                                  "formik.values.deliveries[index].particular"
-                                )}
-                                {console.log(
-                                  formik.values.deliveries[index].particular
-                                )}
                                 <TextField
                                   helperText={
                                     touchedParticular && errorParticular

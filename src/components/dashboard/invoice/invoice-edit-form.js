@@ -25,7 +25,6 @@ import DeliveryDetails from "./delivery-details";
 import { invoiceFormats } from "../invoice/InvoicePDFs";
 import { useDispatch } from "../../../store";
 import { invoiceApi } from "../../../api/invoice-api";
-import { deliveryApi } from "../../../api/delivery-api";
 import TaxForm from "./tax-form";
 
 export const InvoiceEditForm = ({
@@ -40,6 +39,9 @@ export const InvoiceEditForm = ({
   const [invoiceFormat, setInvoiceFormat] = React.useState(
     invoice.invoiceFormat
   );
+
+  console.log(invoice);
+
   const formik = useFormik({
     initialValues: {
       invoiceFormat: invoiceFormat,
@@ -54,51 +56,24 @@ export const InvoiceEditForm = ({
     // validationSchema: Yup.object().shape(validationShape),
     onSubmit: async (values, helpers) => {
       try {
-        deliveries.map(async (delivery) => {
-          if (!values.deliveries.find((e) => e._id === delivery._id)) {
-            let updatedDelivery = {
-              _id: delivery._id,
-              invoice: null,
-              particular: null,
-              invoiceCharges: null,
-              _version: delivery._version,
-            };
-            console.log(
-              await deliveryApi.updateDelivery(updatedDelivery, dispatch)
-            );
-          }
-        });
-
         let editedInvoice = {
           _id: invoice._id,
-          organisation: values.organisation._id,
+          organisation: values.organisation,
           invoiceNo: values.invoiceNo || "",
           invoiceDate: values.invoiceDate.format(),
           invoiceFormat: values.invoiceFormat,
-          customer: values.customer._id,
-          billingAddress: values.billingAddress._id,
+          customer: values.customer,
+          billingAddress: values.billingAddress,
           deliveries: values.deliveries,
           taxes: values.taxes,
           account: account._id,
           _version: invoice._version,
         };
+
         console.log(editedInvoice);
 
         await invoiceApi.updateInvoice(editedInvoice, dispatch);
 
-        // editedInvoice.deliveries = values.deliveries.map(async (delivery) => {
-        //   let updatedDelivery = {
-        //     _id: delivery._id,
-        //     invoice: invoice._id,
-        //     particular: delivery.particular,
-        //     invoiceCharges: delivery.extraCharges || [],
-        //     _version: delivery._version,
-        //   };
-
-        //   console.log(
-        //     await deliveryApi.updateDelivery(updatedDelivery, dispatch)
-        //   );
-        // });
         onCancel();
 
         gridApi.refreshInfiniteCache();

@@ -72,6 +72,7 @@ export const InvoiceCreateForm = ({ invoice = {} }) => {
       customer: invoice.customer || null,
       billingAddress: invoice.billingAddress || null,
       deliveries: invoice.deliveries || [],
+      taxes: invoice.taxes ? invoice.taxes : [],
     },
     validationSchema: Yup.object().shape(validationShape),
     onSubmit: async (values, helpers) => {
@@ -108,7 +109,7 @@ export const InvoiceCreateForm = ({ invoice = {} }) => {
         // });
 
         toast.success("Invoice created!");
-        router.push("/dashboard/invoices");
+        // router.push("/dashboard/invoices");
       } catch (err) {
         console.error(err);
         toast.error("Something went wrong!");

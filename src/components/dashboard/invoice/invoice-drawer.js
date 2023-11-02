@@ -222,11 +222,22 @@ const InvoicePreview = (props) => {
 export const InvoiceForm = (props) => {
   const { invoice, onCancel, gridApi } = props;
 
+  let deliveries = invoice.deliveries.map((invoiceDelivery) => {
+    return {
+      ...invoiceDelivery.order,
+      delivery: invoiceDelivery.order.deliveries.find(
+        (e) => e._id === invoiceDelivery.delivery
+      ),
+      invoiceCharges: invoiceDelivery.invoiceCharges,
+      particular: invoiceDelivery.particular,
+    };
+  });
+
   return (
     <InvoiceEditForm
       onCancel={onCancel}
       invoice={invoice}
-      deliveries={invoice.deliveries}
+      deliveries={deliveries}
       gridApi={gridApi}
     />
   );

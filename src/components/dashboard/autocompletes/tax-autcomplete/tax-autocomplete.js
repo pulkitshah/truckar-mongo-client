@@ -16,11 +16,11 @@ const TaxAutocomplete = ({
   tax,
   ...rest
 }) => {
-  const { user } = useAuth();
+  const { account } = useAuth();
   const [open, setOpen] = useState(false);
 
   const [inputValue, setInputValue] = React.useState("");
-  const [taxes, setTaxes] = useState(user.taxOptions);
+  const [taxes, setTaxes] = useState(account.taxOptions);
   const [value, setValue] = React.useState(
     values.taxes[index][type] ? values.taxes[index][type] : null
   );

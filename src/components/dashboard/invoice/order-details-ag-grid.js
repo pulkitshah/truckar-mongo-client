@@ -22,7 +22,11 @@ const OrderDetailsGrid = ({ formik }) => {
         values: [formik.values.customer._id],
       };
 
-      let { data, count = 0 } = await deliveryApi.getDeliveriesByCustomer(
+      let {
+        data,
+        count = 0,
+        error,
+      } = await deliveryApi.getDeliveriesByCustomer(
         JSON.stringify({
           account: account._id,
           customer: formik.values.customer._id,
@@ -32,7 +36,7 @@ const OrderDetailsGrid = ({ formik }) => {
         })
       );
       console.log(data);
-      if (data) {
+      if (!error) {
         dataRef.current = [...dataRef.current, ...data];
         // supply rows for requested block to grid
         params.success({

@@ -30,6 +30,15 @@ const AddressAutocomplete = ({
   });
 
   const loading = open && addresses.length === 0;
+  console.log(addresses);
+  addresses.map((a, index) => {
+    if (a.party) {
+      return a.party._id === partyId;
+    } else {
+      console.log(a);
+      console.log(index);
+    }
+  });
 
   const getAddressesByAccount = useCallback(async () => {
     try {
