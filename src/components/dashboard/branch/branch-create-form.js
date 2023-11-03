@@ -1,5 +1,5 @@
 import { forwardRef, useImperativeHandle } from "react";
-import { useRouter } from "next/router";
+import { accountouter } from "next/router";
 import toast from "react-hot-toast";
 import * as Yup from "yup";
 import { useFormik } from "formik";
@@ -16,11 +16,11 @@ import GoogleMaps from "../branch/google-places-autocomplete";
 import { useAuth } from "../../../hooks/use-auth";
 import { useDispatch } from "../../../store";
 import { branchApi } from "../../../api/branch-api";
-import { userApi } from "../../../api/user-api";
+import { accountApi } from "../../../api/account-api";
 
 export const BranchCreateForm = forwardRef(({ handleNext, ...props }, ref) => {
-  const { user, initialize } = useAuth();
-  const router = useRouter();
+  const { account, initialize } = useAuth();
+  const router = accountouter();
   const dispatch = useDispatch();
 
   useImperativeHandle(ref, () => ({
@@ -48,13 +48,13 @@ export const BranchCreateForm = forwardRef(({ handleNext, ...props }, ref) => {
           branchName: values.branchName,
           city: JSON.stringify(values.city),
           branchType: values.branchType,
-          user: user.id,
+          account: account.id,
         };
         await branchApi.createBranch(newBranch, dispatch);
-        await userApi.updateUser({
+        await accountApi.updateAccount({
           onBoardingRequired: false,
-          id: user.id,
-          _version: user._version,
+          id: account.id,
+          _version: account._version,
         });
 
         await initialize();

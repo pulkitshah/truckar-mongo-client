@@ -120,7 +120,7 @@ const BranchForm = (props) => {
           branchName: values.branchName,
           city: JSON.stringify(values.city),
           branchType: values.branchType,
-          user: branch.user,
+          account: branch.account,
           _version: branch._version,
         };
         await branchApi.updateBranch(updatedBranch, dispatch);
