@@ -1,14 +1,4 @@
 import axios from "../utils/axios";
-import { API } from "aws-amplify";
-import {
-  getLr,
-  lrsByUser,
-  lrByDeliveryId,
-  lrsByOrganisation,
-} from "../graphql/queries";
-import { createLr, updateLr } from "../graphql/mutations";
-import moment from "moment";
-import { slice } from "../slices/lrs";
 
 class LrApi {
   async getLrsByAccount(params) {
@@ -163,79 +153,9 @@ class LrApi {
 
   /// ALL APIS ABOVE THIS LINE ARE CONVERTED TO EXPRESS
 
-  async getLrsByUser(user, token) {
-    try {
-      let variables = {
-        user: user.id.toString(),
-        sortDirection: "DESC",
-      };
+  async getLrsByUser(user, token) {}
 
-      if (token) {
-        variables.nextToken = token;
-      }
-
-      //////////////////////// GraphQL API ////////////////////////
-
-      const response = await API.graphql({
-        query: lrsByUser,
-        variables: variables,
-      });
-      const lrs = response.data.lrsByUser.items;
-      const nextLrToken = response.data.lrsByUser.nextToken;
-      //////////////////////// GraphQL API ////////////////////////
-
-      //////////////////////// DataStore API ////////////////////////
-
-      // const lrs = await DataStore.query(Lr, (c) =>
-      //   c.user("eq", user.id)
-      // );
-
-      //////////////////////// DataStore API ////////////////////////
-
-      // console.log(lrs);
-
-      // Dispatch - Reducer
-
-      // dispatch(slice.actions.getLrs(lrs));
-
-      return { lrs, nextLrToken };
-    } catch (error) {
-      console.log(error);
-    }
-  }
-
-  async getlrByDeliveryId(id) {
-    try {
-      //////////////////////// GraphQL API ////////////////////////
-      const response = await API.graphql({
-        query: lrByDeliveryId,
-        variables: {
-          deliveryId: id.toString(),
-        },
-      });
-
-      const lr = response.data.lrByDeliveryId.items[0];
-      //////////////////////// GraphQL API ////////////////////////
-
-      //////////////////////// DataStore API ////////////////////////
-
-      // const lrs = await DataStore.query(Lr, (c) =>
-      //   c.user("eq", user.id)
-      // );
-
-      //////////////////////// DataStore API ////////////////////////
-
-      // console.log(lr);
-
-      // Dispatch - Reducer
-
-      // dispatch(slice.actions.getLrs(lrs));
-
-      return lr;
-    } catch (error) {
-      console.log(error);
-    }
-  }
+  async getlrByDeliveryId(id) {}
 }
 
 export const lrApi = new LrApi();
