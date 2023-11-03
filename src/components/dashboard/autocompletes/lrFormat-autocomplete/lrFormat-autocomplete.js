@@ -1,48 +1,9 @@
 import React, { useState } from "react";
 import PropTypes from "prop-types";
-import { toast } from "react-hot-toast";
-import { Button, Grid, TextField } from "@mui/material";
-import { useAuth } from "../../../../hooks/use-auth";
-import { userApi } from "../../../../api/user-api";
-import { useDispatch } from "../../../../store";
+import { Grid, TextField } from "@mui/material";
 import { lrFormats } from "../../../grids/lr-formats";
 
 const LrFormatAutocomplete = ({ formik }) => {
-  const { user } = useAuth();
-  const dispatch = useDispatch();
-
-  const handleSetDefault = async (lrFormatFileName) => {
-    let newLrSettings = [];
-    try {
-      user.lrSettings.map((lrSetting) => {
-        if (lrSetting.lrFormatFileName === lrFormatFileName) {
-          lrSetting.isDefault = true;
-        } else {
-          lrSetting.isDefault = false;
-        }
-        console.log(lrSetting);
-
-        newLrSettings.push(lrSetting);
-      });
-
-      await userApi.updateUser(
-        {
-          id: user.id,
-          lrSettings: JSON.stringify(newLrSettings),
-          _version: user._version,
-        },
-        dispatch
-      );
-      console.log(user);
-
-      toast.success("LR Format Settings updated!");
-      // router.push("/dashboard/orders");
-    } catch (err) {
-      console.error(err);
-      toast.error("Something went wrong!");
-    }
-  };
-
   return (
     <>
       <Grid container spacing={3} justifyContent="space-between">

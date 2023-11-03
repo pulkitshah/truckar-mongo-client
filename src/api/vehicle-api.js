@@ -1,10 +1,5 @@
 import axios from "../utils/axios";
-import { API } from "aws-amplify";
-import { vehiclesByUser } from "../graphql/queries";
-import { createVehicle, updateVehicle } from "../graphql/mutations";
-import { Vehicle } from "../models";
-import { DataStore, Predicates } from "@aws-amplify/datastore";
-import moment from "moment";
+
 import { slice } from "../slices/vehicles";
 
 const now = new Date();
@@ -108,40 +103,6 @@ class VehicleApi {
             "Vehicles not fetched, please try again or contact customer support.",
         };
       }
-    }
-  }
-
-  /// API Modified
-
-  async getVehiclesByUser(user, dispatch) {
-    try {
-      //////////////////////// GraphQL API ////////////////////////
-
-      const response = await API.graphql({
-        query: vehiclesByUser,
-        variables: { user: user._id.toString() },
-      });
-      const vehicles = response.data.vehiclesByUser.items;
-
-      //////////////////////// GraphQL API ////////////////////////
-
-      //////////////////////// DataStore API ////////////////////////
-
-      // const vehicles = await DataStore.query(Vehicle, (c) =>
-      //   c.user("eq", user._id)
-      // );
-
-      //////////////////////// DataStore API ////////////////////////
-
-      // console.log(vehicles);
-
-      // Dispatch - Reducer
-
-      dispatch(slice.actions.getVehicles(vehicles));
-
-      return vehicles;
-    } catch (error) {
-      console.log(error);
     }
   }
 }

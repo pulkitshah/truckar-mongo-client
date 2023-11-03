@@ -7,13 +7,11 @@ import * as Yup from "yup";
 import { TextField } from "@mui/material";
 import { useAuth } from "../../../hooks/use-auth";
 import { useDispatch } from "../../../store";
-import { userApi } from "../../../api/user-api";
 import LrChargeForm from "./lr-charges-form";
 import LrFormatAutocomplete from "../autocompletes/lrFormat-autocomplete/lrFormat-autocomplete";
 import { accountApi } from "../../../api/account-api";
 
 export const LrFormatSettings = (props) => {
-  const { user, initialize } = useAuth();
   const { lrSetting } = props;
   const dispatch = useDispatch();
   let newLrSettings = [];

@@ -80,7 +80,7 @@
     "jwt-decode": "^2.2.0",
     "lodash.debounce": "^4.0.8",
     "moment": "^2.29.1",
-    "mongoose": "^6.2.2",
+    "mongoose": "^7.0.3",
     "nanoid": "^3.1.18",
     "next": "^11.1.4",
     "next-fonts": "^1.5.1",

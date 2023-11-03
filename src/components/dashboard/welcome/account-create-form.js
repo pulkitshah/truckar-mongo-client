@@ -1,13 +1,12 @@
-import React, { useRef, useState } from "react";
+import React from "react";
 import { v4 as uuidv4 } from "uuid";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-hot-toast";
-import { useFormik, FormikProvider, FieldArray, getIn } from "formik";
-import * as Yup from "yup";
+import { useFormik } from "formik";
+
 import { useAuth } from "../../../hooks/use-auth";
 import { useDispatch } from "../../../store";
-import { Trash as TrashIcon } from "../../../icons/trash";
-import { Plus as PlusIcon } from "../../../icons/plus";
+
 import {
   Box,
   Button,
@@ -18,9 +17,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { userApi } from "../../../api/user-api";
-import { lrFormats } from "../lr/LrPDFs";
-import { invoiceFormats } from "../invoice/InvoicePDFs";
+
 import { accountApi } from "../../../api/account-api";
 import { authApi } from "../../../api/auth-api";
 

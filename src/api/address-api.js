@@ -1,11 +1,4 @@
 import axios from "../utils/axios";
-
-import { API } from "aws-amplify";
-import { addressesByParty, addressesByUser } from "../graphql/queries";
-import { createAddress, updateAddress } from "../graphql/mutations";
-import { Address } from "../models";
-import { DataStore } from "@aws-amplify/datastore";
-import moment from "moment";
 import { slice } from "../slices/addresses";
 
 const now = new Date();
@@ -93,70 +86,6 @@ class AddressApi {
   }
 
   // API Modified
-
-  async getAddressesByUser(user, dispatch) {
-    try {
-      //////////////////////// GraphQL API ////////////////////////
-
-      const response = await API.graphql({
-        query: addressesByUser,
-        variables: { user: user._id.toString() },
-      });
-      const addresses = response.data.addressesByUser.items;
-
-      //////////////////////// GraphQL API ////////////////////////
-
-      //////////////////////// DataStore API ////////////////////////
-
-      // const addresses = await DataStore.query(Address, (c) =>
-      //   c.user("eq", user._id)
-      // );
-
-      //////////////////////// DataStore API ////////////////////////
-
-      // console.log(addresses);
-
-      // Dispatch - Reducer
-
-      dispatch(slice.actions.getAddresses(addresses));
-
-      return addresses;
-    } catch (error) {
-      console.log(error);
-    }
-  }
-
-  async getAddressesByParty(party, dispatch) {
-    try {
-      //////////////////////// GraphQL API ////////////////////////
-      console.log(party._id.toString());
-      const response = await API.graphql({
-        query: addressesByParty,
-        variables: { partyId: party._id.toString() },
-      });
-      const addresses = response.data.addressesByParty.items;
-
-      //////////////////////// GraphQL API ////////////////////////
-
-      //////////////////////// DataStore API ////////////////////////
-
-      // const addresses = await DataStore.query(Address, (c) =>
-      //   c.user("eq", user._id)
-      // );
-
-      //////////////////////// DataStore API ////////////////////////
-
-      console.log(addresses);
-
-      // Dispatch - Reducer
-
-      dispatch(slice.actions.getAddresses(addresses));
-
-      return addresses;
-    } catch (error) {
-      console.log(error);
-    }
-  }
 }
 
 export const addressApi = new AddressApi();

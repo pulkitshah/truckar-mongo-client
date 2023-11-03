@@ -14,9 +14,7 @@ import {
 } from "@react-pdf/renderer";
 import {
   calculateAmountForDelivery,
-  getInvoiceWeight,
   formatNumber,
-  getSumOfInvoiceCharges,
 } from "../../../../utils/amount-calculation";
 
 Font.register({
@@ -55,7 +53,7 @@ const styles = StyleSheet.create({
     minHeight: 100,
   },
 
-  box: { padding: 10 },
+  box: { borderWidth: "1pt", padding: 10 },
 
   invoiceDetail: {
     display: "flex",
@@ -73,23 +71,23 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
 
-  srNoCell: {
-    maxWidth: 25,
-    minWidth: 25,
+  lrNoCell: {
+    maxWidth: 45,
+    minWidth: 45,
     display: "flex",
-    justifyContent: "center",
+    justifyContent: "space-between",
   },
 
   dateCell: {
     maxWidth: 45,
     minWidth: 45,
     display: "flex",
-    justifyContent: "center",
+    justifyContent: "space-between",
   },
 
   vehicleNumberCell: {
-    maxWidth: 60,
-    minWidth: 60,
+    maxWidth: 65,
+    minWidth: 65,
     display: "flex",
     justifyContent: "center",
   },
@@ -98,21 +96,19 @@ const styles = StyleSheet.create({
     maxWidth: 65,
     minWidth: 65,
     display: "flex",
-    justifyContent: "center",
+    justifyContent: "space-between",
   },
 
-  lrNoCell: {
-    maxWidth: 45,
-    minWidth: 45,
-    display: "flex",
-    justifyContent: "center",
+  particularsCell: {
+    maxWidth: 170,
+    minWidth: 170,
   },
 
   weightCell: {
-    maxWidth: 35,
-    minWidth: 35,
+    maxWidth: 55,
+    minWidth: 55,
     display: "flex",
-    justifyContent: "center",
+    justifyContent: "space-between",
   },
 
   rateCell: {
@@ -125,22 +121,20 @@ const styles = StyleSheet.create({
   othersCell: {
     maxWidth: 50,
     minWidth: 50,
-    display: "flex",
-    justifyContent: "center",
   },
 
   freightCell: {
     maxWidth: 60,
     minWidth: 60,
     display: "flex",
-    justifyContent: "center",
+    justifyContent: "space-between",
   },
 
   advanceCell: {
     maxWidth: 50,
     minWidth: 50,
     display: "flex",
-    justifyContent: "center",
+    // justifyContent: 'center'
   },
 
   subtotalCell: {
@@ -149,8 +143,8 @@ const styles = StyleSheet.create({
   },
 
   amountInWordsCell: {
-    maxWidth: 340,
-    minWidth: 340,
+    maxWidth: 345,
+    minWidth: 345,
   },
 
   termsAndConditionsCell: {
@@ -191,7 +185,7 @@ const styles = StyleSheet.create({
   },
 
   tableCellText: {
-    fontSize: 7,
+    fontSize: 8,
     lineHeight: 1.5,
     margin: 4,
     textAlign: "center",
@@ -225,13 +219,16 @@ const styles = StyleSheet.create({
 const InvoicePDF = ({ invoice, logo }) => {
   let subtotalAmount = 0;
   let advance = 0;
-  console.log(invoice);
   let totalTaxPercentage =
     invoice.taxes && invoice.taxes
       ? invoice.taxes.reduce((a, b) => {
           return a + (parseFloat(b.value) || 0);
         }, 0)
       : 0;
+
+  if (!invoice) {
+    return null;
+  }
 
   return (
     <Document>
@@ -258,32 +255,21 @@ const InvoicePDF = ({ invoice, logo }) => {
             )}
           </View>
           <View style={styles.header}>
-            <View
-              style={[
-                styles.width33,
-                styles.box,
-                styles.topBorder,
-                styles.bottomBorder,
-                styles.leftBorder,
-              ]}
-            >
-              <Text style={[styles.body1, styles.bold, styles.underlined]}>
-                Registered Address:
-              </Text>
+            <View style={[styles.width33]}>
+              <Text style={styles.body1}>Registered Address:</Text>
               <Text style={styles.body1}>
                 {invoice.organisation.addressLine1}
               </Text>
               <Text style={styles.body1}>
                 {invoice.organisation.addressLine2}
               </Text>
+              <Text style={styles.body1}> {invoice.organisation.city}</Text>
               <Text style={styles.body1}>
                 {" "}
-                {invoice.organisation.jurisdiction}
+                {`Contact No: ${invoice.organisation.contact}`}
               </Text>
-              <Text style={styles.body1}>
-                {" "}
-                Contact No: +91 {invoice.organisation.contact}
-              </Text>
+              <Text style={styles.body1}> Email: Bkp.mclrkt@gmail.com,</Text>
+              <Text style={styles.body1}> Ravimclrkt@gamil.com</Text>
               <Text style={styles.body1}> </Text>
               <Text style={styles.body1}>
                 {" "}
@@ -299,16 +285,8 @@ const InvoicePDF = ({ invoice, logo }) => {
               </Text>
             </View>
 
-            {
-              <View
-                style={[
-                  styles.width33,
-                  styles.box,
-                  styles.topBorder,
-                  styles.bottomBorder,
-                  styles.leftBorder,
-                ]}
-              >
+            {invoice.billingAddress && (
+              <View style={[styles.width33, styles.box]}>
                 <Text style={[styles.body1, styles.bold, styles.underlined]}>
                   Billed To
                 </Text>
@@ -341,80 +319,125 @@ const InvoicePDF = ({ invoice, logo }) => {
                     : ""}
                 </Text>
               </View>
-            }
-            <View
-              style={[
-                styles.width33,
-                styles.box,
-                styles.topBorder,
-                styles.rightBorder,
-                styles.bottomBorder,
-                styles.leftBorder,
-                styles.invoiceDetail,
-              ]}
-            >
+            )}
+            <View style={[styles.width33, styles.box, styles.invoiceDetail]}>
               <Text style={[styles.body1, styles.bold, styles.underlined]}>
                 {" "}
-                INVOICE DATE
+                BILL DATE
               </Text>
               <Text style={[styles.body1, styles.bottomBorder]}>
                 {moment(invoice.invoiceDate).format("DD-MMM-YYYY")}
               </Text>
               <Text style={[styles.body1, styles.bold, styles.underlined]}>
-                INVOICE NO
+                {" "}
+                BILL NO
               </Text>
-              <Text style={[styles.body1]}>{invoice.invoiceNo}</Text>
+              <Text style={[styles.body1, styles.bottomBorder]}>
+                {invoice.invoiceNo}
+              </Text>
+              <Text style={[styles.body1, styles.bold, styles.underlined]}>
+                BRANCH
+              </Text>
+              <Text style={[styles.body1]}>
+                {invoice.branch ? invoice.branch : invoice.organisation.city}
+              </Text>
             </View>
           </View>
 
           <View style={styles.table}>
-            <View
-              style={[styles.tableRow, styles.bottomBorder, styles.topBorder]}
-            >
+            <View style={[styles.tableRow]}>
               <View
-                style={[styles.srNoCell, styles.rightBorder, styles.leftBorder]}
+                style={[
+                  styles.locationCell,
+                  styles.rightBorder,
+                  styles.bottomBorder,
+                  styles.topBorder,
+                  styles.leftBorder,
+                ]}
               >
-                <Text style={[styles.tableCellText, styles.bold]}>Sr No</Text>
+                <Text style={[styles.tableCellText, styles.bold]}>
+                  Booking Stn
+                </Text>
               </View>
-              <View style={[styles.dateCell, styles.rightBorder]}>
+              <View
+                style={[
+                  styles.lrNoCell,
+                  styles.rightBorder,
+                  styles.bottomBorder,
+                  styles.topBorder,
+                ]}
+              >
+                <Text style={[styles.tableCellText, styles.bold]}>CN No</Text>
+              </View>
+              <View
+                style={[
+                  styles.dateCell,
+                  styles.rightBorder,
+                  styles.bottomBorder,
+                  styles.topBorder,
+                ]}
+              >
                 <Text style={[styles.tableCellText, styles.bold]}>Date</Text>
               </View>
-              <View style={[styles.vehicleNumberCell, styles.rightBorder]}>
+              <View
+                style={[
+                  styles.locationCell,
+                  styles.rightBorder,
+                  styles.bottomBorder,
+                  styles.topBorder,
+                ]}
+              >
                 <Text style={[styles.tableCellText, styles.bold]}>
-                  Truck No
+                  Destination
                 </Text>
               </View>
-              <View style={[styles.locationCell, styles.rightBorder]}>
-                <Text style={[styles.tableCellText, styles.bold]}>From</Text>
+              <View
+                style={[
+                  styles.particularsCell,
+                  styles.rightBorder,
+                  styles.bottomBorder,
+                  styles.topBorder,
+                ]}
+              >
+                <Text style={[styles.tableCellText, styles.bold]}>
+                  Particulars
+                </Text>
               </View>
-              <View style={[styles.locationCell, styles.rightBorder]}>
-                <Text style={[styles.tableCellText, styles.bold]}>To</Text>
-              </View>
-              <View style={[styles.lrNoCell, styles.rightBorder]}>
-                <Text style={[styles.tableCellText, styles.bold]}>LR No</Text>
-              </View>
-              <View style={[styles.weightCell, styles.rightBorder]}>
+              <View
+                style={[
+                  styles.weightCell,
+                  styles.rightBorder,
+                  styles.bottomBorder,
+                  styles.topBorder,
+                ]}
+              >
                 <Text style={[styles.tableCellText, styles.bold]}>Weight</Text>
               </View>
-              <View style={[styles.rateCell, styles.rightBorder]}>
-                <Text style={[styles.tableCellText, styles.bold]}>
-                  Rate (Rs)
-                </Text>
+              <View
+                style={[
+                  styles.freightCell,
+                  styles.rightBorder,
+                  styles.bottomBorder,
+                  styles.topBorder,
+                ]}
+              >
+                <Text style={[styles.tableCellText, styles.bold]}>Amount</Text>
               </View>
-              <View style={[styles.othersCell, styles.rightBorder]}>
-                <Text style={[styles.tableCellText, styles.bold]}>
-                  Other Charges
-                </Text>
-              </View>
-              <View style={[styles.freightCell, styles.rightBorder]}>
-                <Text style={[styles.tableCellText, styles.bold]}>Freight</Text>
-              </View>
-              <View style={[styles.advanceCell, styles.rightBorder]}>
+
+              <View
+                style={[
+                  styles.advanceCell,
+                  styles.bottomBorder,
+                  styles.topBorder,
+                  styles.rightBorder,
+                ]}
+              >
                 <Text style={[styles.tableCellText, styles.bold]}>Advance</Text>
               </View>
             </View>
 
-            {invoice.deliveries.map((invoiceDelivery, index) => {
+            {invoice.deliveries.map((invoiceDelivery) => {
+              console.log(invoiceDelivery);
               const delivery = {
                 ...invoiceDelivery.order,
                 delivery: invoiceDelivery.order.deliveries.find(
@@ -424,116 +447,161 @@ const InvoicePDF = ({ invoice, logo }) => {
                 particular: invoiceDelivery.particular,
               };
 
-              subtotalAmount =
-                subtotalAmount + calculateAmountForDelivery(delivery, "sale");
-              advance =
-                advance +
-                parseFloat(
-                  delivery.saleAdvance
-                    ? delivery.saleAdvance / delivery.deliveries.length
-                    : 0
-                );
-              return (
-                <View
-                  style={[styles.tableRow, styles.bottomBorder]}
-                  key={delivery.id}
-                >
-                  <View style={[styles.srNoCell, styles.rightBorder]}>
-                    <Text style={[styles.tableCellText]}>{index + 1}</Text>
-                  </View>
-                  <View style={[styles.dateCell, styles.rightBorder]}>
-                    <Text style={[styles.tableCellText]}>
-                      {moment(delivery.saleDate).format("DD-MM-YY")}
-                    </Text>
-                  </View>
+              if (delivery) {
+                subtotalAmount =
+                  subtotalAmount + calculateAmountForDelivery(delivery, "sale");
+                advance =
+                  advance +
+                  parseFloat(
+                    delivery.saleAdvance
+                      ? delivery.saleAdvance / delivery.deliveries.length
+                      : 0
+                  );
+                return (
+                  <View style={[styles.tableRow]} key={delivery.id}>
+                    <View
+                      style={[
+                        styles.locationCell,
+                        styles.rightBorder,
+                        styles.bottomBorder,
+                        styles.leftBorder,
+                      ]}
+                    >
+                      <Text style={[styles.tableCellText]}>
+                        {
+                          delivery.delivery.loading.structured_formatting
+                            .main_text
+                        }
+                      </Text>
+                    </View>
 
-                  <View style={[styles.vehicleNumberCell, styles.rightBorder]}>
-                    <Text style={[styles.tableCellText]}>
-                      {delivery.vehicleNumber}
-                    </Text>
-                  </View>
-                  <View style={[styles.locationCell, styles.rightBorder]}>
-                    <Text style={[styles.tableCellText]}>
-                      {
-                        delivery.delivery.loading.structured_formatting
-                          .main_text
-                      }
-                    </Text>
-                  </View>
-                  <View style={[styles.locationCell, styles.rightBorder]}>
-                    <Text style={[styles.tableCellText]}>
-                      {
-                        delivery.delivery.unloading.structured_formatting
-                          .main_text
-                      }
-                    </Text>
-                  </View>
-                  <View style={[styles.lrNoCell, styles.rightBorder]}>
-                    {Object.keys(delivery.delivery.lr).length ? (
-                      <Text style={[styles.tableCellText]}>
-                        {`${delivery.delivery.lr.organisation.initials} - ${delivery.delivery.lr.lrNo}`}
+                    <View
+                      style={[
+                        styles.lrNoCell,
+                        styles.rightBorder,
+                        styles.bottomBorder,
+                      ]}
+                    >
+                      {delivery.delivery.lr && (
+                        <Text style={[styles.tableCellText]}>
+                          {`${delivery.delivery.lr.organisation.initials} - ${delivery.delivery.lr.lrNo}`}
+                        </Text>
+                      )}
+                    </View>
+                    <View
+                      style={[
+                        styles.dateCell,
+                        styles.rightBorder,
+                        styles.bottomBorder,
+                      ]}
+                    >
+                      <Text billingAddress style={[styles.tableCellText]}>
+                        {moment(delivery.saleDate).format("DD-MM-YY")}
                       </Text>
-                    ) : (
-                      <Text style={[styles.tableCellText]}></Text>
-                    )}
-                  </View>
-                  <View style={[styles.weightCell, styles.rightBorder]}>
-                    <Text style={[styles.tableCellText]}>
-                      {delivery.delivery.lr &&
-                      delivery.delivery.lr.chargedWeight
-                        ? delivery.delivery.lr.chargedWeight
-                        : delivery.delivery.billQuantity
-                        ? `${delivery.delivery.billQuantity} ${delivery.saleType.unit} `
-                        : `${delivery.minimumSaleGuarantee || 0} ${
-                            delivery.saleType.unit
-                          }`}
-                    </Text>
-                  </View>
-                  <View style={[styles.rateCell, styles.rightBorder]}>
-                    <Text style={[styles.tableCellText]}>
-                      {delivery.saleType.value === "quantity"
-                        ? `Rs ${delivery.saleRate} / ${delivery.saleType.unit}`
-                        : `Rs ${delivery.saleRate} (Fixed)`}
-                    </Text>
-                    {getInvoiceWeight(delivery, "sale").guarantee && (
-                      <Text style={[styles.tableCellText]}>
-                        {`( G - ${getInvoiceWeight(delivery, "sale").weight} ${
-                          delivery.saleType.unit
-                        })`}
+                    </View>
+                    <View
+                      style={[
+                        styles.locationCell,
+                        styles.rightBorder,
+                        styles.bottomBorder,
+                      ]}
+                    >
+                      <Text billingAddress style={[styles.tableCellText]}>
+                        {
+                          delivery.delivery.unloading.structured_formatting
+                            .main_text
+                        }
                       </Text>
-                    )}
-                  </View>
-                  <View style={[styles.othersCell, styles.rightBorder]}>
-                    <Text style={[styles.tableCellText]}>{`Rs. ${formatNumber(
-                      getSumOfInvoiceCharges(delivery.invoiceCharges)
-                    )} `}</Text>
-                  </View>
-                  <View style={[styles.freightCell, styles.rightBorder]}>
-                    {console.log(calculateAmountForDelivery(delivery, "sale"))}
-                    <Text style={[styles.tableCellText]}>
-                      {`Rs. ${formatNumber(
-                        calculateAmountForDelivery(delivery, "sale")
-                      )}`}
-                    </Text>
-                  </View>
-                  <View style={[styles.advanceCell]}>
-                    <Text style={[styles.tableCellText]}>
-                      {"Rs " +
-                        formatNumber(
-                          delivery.saleAdvance
-                            ? delivery.saleAdvance / delivery.deliveries.length
-                            : 0
+                    </View>
+                    <View
+                      style={[
+                        styles.particularsCell,
+                        styles.rightBorder,
+                        styles.bottomBorder,
+                      ]}
+                    >
+                      <Text billingAddress style={[styles.tableCellText]}>
+                        {delivery.particular}
+                      </Text>
+                      {delivery.invoiceCharges.map((invoiceCharge, i) => {
+                        return (
+                          <Text key={i} style={[styles.tableCellText]}>
+                            {invoiceCharge.particular}
+                          </Text>
+                        );
+                      })}
+                    </View>
+                    <View
+                      style={[
+                        styles.weightCell,
+                        styles.rightBorder,
+                        styles.bottomBorder,
+                      ]}
+                    >
+                      <React.Fragment>
+                        <Text billingAddress style={[styles.tableCellText]}>
+                          {delivery.delivery.lr &&
+                          delivery.delivery.lr.chargedWeight
+                            ? delivery.delivery.lr.chargedWeight
+                            : delivery.billQuantity
+                            ? `${delivery.billQuantity} ${delivery.saleType.unit} `
+                            : `${delivery.minimumSaleGuarantee || 0} ${
+                                delivery.saleType.unit
+                              }`}
+                        </Text>
+                      </React.Fragment>
+                    </View>
+                    <View
+                      style={[
+                        styles.freightCell,
+                        styles.rightBorder,
+                        styles.bottomBorder,
+                      ]}
+                    >
+                      <Text billingAddress style={[styles.tableCellText]}>
+                        Rs.{" "}
+                        {formatNumber(
+                          calculateAmountForDelivery(delivery, "sale")
                         )}
-                    </Text>
+                      </Text>
+                      {delivery.invoiceCharges.map((invoiceCharge, i) => {
+                        subtotalAmount = subtotalAmount + invoiceCharge.amount;
+
+                        return (
+                          <Text key={i} style={[styles.tableCellText]}>
+                            Rs. {formatNumber(invoiceCharge.amount)}
+                          </Text>
+                        );
+                      })}
+                    </View>
+
+                    <View
+                      style={[
+                        styles.advanceCell,
+                        styles.bottomBorder,
+                        styles.rightBorder,
+                      ]}
+                    >
+                      <Text style={[styles.tableCellText]}>
+                        {"Rs " +
+                          formatNumber(
+                            delivery.saleAdvance
+                              ? delivery.saleAdvance /
+                                  delivery.deliveries.length
+                              : 0
+                          )}
+                      </Text>
+                    </View>
                   </View>
-                </View>
-              );
+                );
+              }
+              return null;
             })}
             {invoice.taxes && invoice.taxes.length > 0 && (
               <View style={[styles.tableRow]}>
                 <View style={[styles.amountInWordsCell, styles.rightBorder]}>
                   <Text style={[styles.amountInWordsCellText]}>
-                    {`Invoice Amount in Words: ${numWords(
+                    {`Amount in Words: ${numWords(
                       Math.round(
                         subtotalAmount * (1 + totalTaxPercentage / 100)
                       )
@@ -567,7 +635,13 @@ const InvoicePDF = ({ invoice, logo }) => {
                     {"Rs " + formatNumber(subtotalAmount)}
                   </Text>
                 </View>
-                <View style={[styles.advanceCell, styles.bottomBorder]}>
+                <View
+                  style={[
+                    styles.advanceCell,
+                    styles.bottomBorder,
+                    styles.rightBorder,
+                  ]}
+                >
                   <Text style={[styles.tableCellText]}>
                     {"Rs " + formatNumber(advance)}
                   </Text>
@@ -614,62 +688,62 @@ const InvoicePDF = ({ invoice, logo }) => {
                   </View>
                 );
               })}
-            {
-              <View style={[styles.tableRow]}>
-                <View style={[styles.amountInWordsCell, styles.rightBorder]}>
-                  <Text style={[styles.amountInWordsCellText]}>
-                    {!(invoice.taxes && invoice.taxes.length > 0) &&
-                      `Invoice Amount in Words: ${numWords(
-                        Math.round(subtotalAmount)
-                      ).replace(/\w\S*/g, function (txt) {
-                        return (
-                          txt.charAt(0).toUpperCase() +
-                          txt.substr(1).toLowerCase()
-                        );
-                      })} Only`}
-                  </Text>
-                </View>
-                <View
-                  style={[
-                    styles.subtotalCell,
-                    styles.rightBorder,
-                    styles.bottomBorder,
-                  ]}
-                >
-                  <Text style={[styles.tableCellText, styles.bold]}>Total</Text>
-                </View>
-                <View
-                  style={[
-                    styles.freightCell,
-                    styles.rightBorder,
-                    styles.bottomBorder,
-                  ]}
-                >
-                  <Text style={[styles.tableCellText]}>
-                    {"Rs " +
-                      formatNumber(
-                        Math.round(
-                          subtotalAmount * (1 + totalTaxPercentage / 100)
-                        )
-                      )}
-                  </Text>
-                </View>
-                {
-                  <View
-                    style={[
-                      styles.advanceCell,
-                      !(invoice.taxes && invoice.taxes.length > 0) &&
-                        styles.bottomBorder,
-                    ]}
-                  >
-                    <Text style={[styles.tableCellText]}>
-                      {!(invoice.taxes && invoice.taxes.length > 0) &&
-                        "Rs " + formatNumber(advance)}
-                    </Text>
-                  </View>
-                }
+            <View style={[styles.tableRow]}>
+              <View style={[styles.amountInWordsCell, styles.rightBorder]}>
+                <Text style={[styles.amountInWordsCellText]}>
+                  {!(invoice.taxes && invoice.taxes.length > 0) &&
+                    `Amount in Words: ${numWords(
+                      Math.round(
+                        subtotalAmount * (1 + totalTaxPercentage / 100)
+                      )
+                    ).replace(/\w\S*/g, function (txt) {
+                      return (
+                        txt.charAt(0).toUpperCase() +
+                        txt.substr(1).toLowerCase()
+                      );
+                    })} Only`}
+                </Text>
               </View>
-            }
+              <View
+                style={[
+                  styles.subtotalCell,
+                  styles.rightBorder,
+                  styles.bottomBorder,
+                ]}
+              >
+                <Text style={[styles.tableCellText, styles.bold]}>Total</Text>
+              </View>
+              <View
+                style={[
+                  styles.freightCell,
+                  styles.rightBorder,
+                  styles.bottomBorder,
+                ]}
+              >
+                <Text style={[styles.tableCellText]}>
+                  {"Rs " +
+                    formatNumber(
+                      Math.round(
+                        subtotalAmount * (1 + totalTaxPercentage / 100)
+                      )
+                    )}
+                </Text>
+              </View>
+              <View
+                style={[
+                  styles.advanceCell,
+                  !(invoice.taxes && invoice.taxes.length > 0) &&
+                    styles.rightBorder,
+                  !(invoice.taxes && invoice.taxes.length > 0) &&
+                    styles.bottomBorder,
+                ]}
+              >
+                <Text style={[styles.tableCellText]}>
+                  {!(invoice.taxes && invoice.taxes.length > 0) &&
+                    "Rs " + formatNumber(advance)}
+                </Text>
+              </View>
+            </View>
             <View style={[styles.tableRow]}>
               <View style={[styles.amountInWordsCell, styles.rightBorder]}>
                 <Text style={[styles.tableCellText]}></Text>
@@ -748,22 +822,17 @@ const InvoicePDF = ({ invoice, logo }) => {
                 <Text style={[styles.termsAndConditionsCellText, styles.bold]}>
                   Terms & Conditions
                 </Text>
-                {console.log(
-                  Boolean(invoice.organisation.invoiceTermsAndConditions)
-                )}
-                {Boolean(invoice.organisation.invoiceTermsAndConditions) ? (
+
+                {Boolean(invoice.organisation.invoiceTermsAndConditions) &&
                   invoice.organisation.invoiceTermsAndConditions
                     .split("\n")
                     .map((tc) => {
                       return (
                         <Text style={[styles.termsAndConditionsCellText]}>
-                          {tc ? tc : ""}
+                          {tc}
                         </Text>
                       );
-                    })
-                ) : (
-                  <Text style={[styles.termsAndConditionsCellText]}>{""}</Text>
-                )}
+                    })}
               </View>
               <View
                 style={[
@@ -794,7 +863,7 @@ const InvoicePDF = ({ invoice, logo }) => {
               >
                 <View style={[styles.signatureCell]}>
                   <Text style={[styles.signatureCellText, styles.bold]}>
-                    Authorized Signatory
+                    {`For ${invoice.organisation.name}`}
                   </Text>
                 </View>
               </View>
@@ -811,11 +880,3 @@ InvoicePDF.propTypes = {
 };
 
 export default InvoicePDF;
-
-var getsaleRate = function (delivery) {
-  if (delivery.saleType === "quantity") {
-    return `Rs. ${delivery.saleRate}/ton`;
-  } else {
-    return `Rs. ${delivery.saleRate} (Fixed)`;
-  }
-};

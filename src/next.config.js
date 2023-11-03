@@ -1,15 +1,15 @@
-const path = require('path');
+const path = require("path");
 
 module.exports = {
   reactStrictMode: true,
   webpack(config) {
-    if (process.env.NODE_ENV === 'production') {
-      config.target = 'electron-renderer';
-      config.output.globalObject = 'this';
+    if (process.env.NODE_ENV === "production") {
+      config.target = "electron-renderer";
+      config.output.globalObject = "this";
     } else {
       config.module.rules.push({
-        test: path.resolve(__dirname, '../node_modules/electron'),
-        use: 'null-loader',
+        test: path.resolve(__dirname, "../node_modules/electron"),
+        use: "null-loader",
       });
       config.optimization.minimizer = [];
     }
@@ -18,7 +18,7 @@ module.exports = {
       issuer: { and: [/\.(js|ts|md)x?$/] },
       use: [
         {
-          loader: '@svgr/webpack',
+          loader: "@svgr/webpack",
           options: {
             svgoConfig: { plugins: [{ removeViewBox: false }] },
           },
@@ -30,13 +30,13 @@ module.exports = {
   async redirects() {
     return [
       {
-        source: '/docs',
-        destination: '/docs/welcome',
+        source: "/docs",
+        destination: "/docs/welcome",
         permanent: true,
       },
       {
-        source: '/',
-        destination: '/authentication/login?returnUrl=%2Fdashboard',
+        source: "/",
+        destination: "/authentication/login?returnUrl=%2Fdashboard",
         permanent: true,
       },
     ];

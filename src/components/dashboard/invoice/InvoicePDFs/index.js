@@ -1,5 +1,5 @@
-import tableFormatWithParticulars from "./Format1";
-import standardTableFormat from "./Format2";
+import tableFormatWithParticulars from "./tableFormatWithParticulars";
+import standardTableFormat from "./standardTableFormat";
 
 export default {
   standardTableFormat,

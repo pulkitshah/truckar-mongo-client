@@ -15,7 +15,6 @@ import {
   Grid,
   Typography,
 } from "@mui/material";
-import { userApi } from "../../../api/user-api";
 import { LrFormatSettings } from "./lr-format-settings";
 
 export const LrSettings = (props) => {

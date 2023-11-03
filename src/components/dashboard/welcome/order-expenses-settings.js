@@ -21,7 +21,6 @@ import {
   Typography,
 } from "@mui/material";
 import { Plus as PlusIcon } from "../../../icons/plus";
-import { userApi } from "../../../api/user-api";
 import { accountApi } from "../../../api/account-api";
 
 export const OrderExpensesSettings = (props) => {

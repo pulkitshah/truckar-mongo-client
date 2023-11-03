@@ -1,7 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
 import _ from "lodash";
-import { userApi } from "../api/user-api";
-import axios from "../utils/axios";
 
 const initialState = {
   users: [],

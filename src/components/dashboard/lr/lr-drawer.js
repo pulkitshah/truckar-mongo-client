@@ -82,10 +82,9 @@ const LrPreview = (props) => {
     onSubmit: async (values, helpers) => {
       try {
         const editedLr = {
-          _id: lr.deliveries.lr._id,
+          order: lr._id,
+          delivery: delivery._id,
           lrCharges: values.lrCharges,
-          account: account._id,
-          _version: lr.deliveries.lr._version,
         };
         console.log(editedLr);
 
@@ -559,7 +558,6 @@ const LrPreview = (props) => {
             </Button>
           </Box>
           <Box flexGrow={1}>
-            {console.log(lr)}
             <PDFViewer
               width="100%"
               height="100%"
@@ -623,6 +621,7 @@ export const LrForm = (props) => {
 
   const formik = useFormik({
     initialValues: {
+      order: lr._id,
       organisation: lr.deliveries.lr.organisation || "",
       lrDate: moment(lr.deliveries.lr.lrDate) || moment(),
       lrNo: lr.deliveries.lr.lrNo || "",
