@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { accountef, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-hot-toast";
@@ -21,16 +21,16 @@ import {
   Typography,
 } from "@mui/material";
 import { Plus as PlusIcon } from "../../../icons/plus";
-import { userApi } from "../../../api/user-api";
+import { accountApi } from "../../../api/account-api";
 
 export const OrderExpensesSettings = (props) => {
-  const { user } = useAuth();
+  const { account } = useAuth();
   const { t } = useTranslation();
   const dispatch = useDispatch();
 
   const formik = useFormik({
     initialValues: {
-      orderExpensesSettings: user.orderExpensesSettings || [
+      orderExpensesSettings: account.orderExpensesSettings || [
         {
           id: uuidv4(),
           orderExpenseName: "",
@@ -43,13 +43,13 @@ export const OrderExpensesSettings = (props) => {
       try {
         console.log(values.orderExpensesSettings),
           // await orderApi.createOrder(newOrder, dispatch);
-          await userApi.updateUser(
+          await accountApi.updateAccount(
             {
-              id: user.id,
+              id: account.id,
               orderExpensesSettings: JSON.stringify(
                 values.orderExpensesSettings
               ),
-              _version: user._version,
+              _version: account._version,
             },
             dispatch
           );

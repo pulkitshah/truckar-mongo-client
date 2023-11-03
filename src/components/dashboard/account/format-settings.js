@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { accountef, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-hot-toast";
@@ -18,12 +18,12 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { userApi } from "../../../api/user-api";
+import { accountApi } from "../../../api/account-api";
 import { lrFormats } from "../lr/LrPDFs";
 import { invoiceFormats } from "../invoice/InvoicePDFs";
 
 export const FormatSettings = (props) => {
-  const { user } = useAuth();
+  const { account } = useAuth();
   const dispatch = useDispatch();
   const { t } = useTranslation();
   const [lrFormat, setLrFormat] = React.useState("standardLoose");
@@ -39,12 +39,12 @@ export const FormatSettings = (props) => {
     onSubmit: async (values, helpers) => {
       try {
         // await orderApi.createOrder(newOrder, dispatch);
-        await userApi.updateUser(
+        await accountApi.updateAccount(
           {
-            id: user.id,
+            id: account.id,
             lrFormat: values.lrFormat,
             invoiceFormat: values.invoiceFormat,
-            _version: user._version,
+            _version: account._version,
           },
           dispatch
         );

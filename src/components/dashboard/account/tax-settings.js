@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { accountef, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-hot-toast";
@@ -18,16 +18,16 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { userApi } from "../../../api/user-api";
+import { accountApi } from "../../../api/account-api";
 
 export const TaxSettings = (props) => {
-  const { user } = useAuth();
+  const { account } = useAuth();
   const dispatch = useDispatch();
   const { t } = useTranslation();
 
   const formik = useFormik({
     initialValues: {
-      taxOptions: user.taxOptions || [
+      taxOptions: account.taxOptions || [
         {
           id: uuidv4(),
           name: "",
@@ -43,11 +43,11 @@ export const TaxSettings = (props) => {
       try {
         console.log(values.taxOptions),
           // await orderApi.createOrder(newOrder, dispatch);
-          await userApi.updateUser(
+          await accountApi.updateAccount(
             {
-              id: user.id,
+              id: account.id,
               taxOptions: JSON.stringify(values.taxOptions),
-              _version: user._version,
+              _version: account._version,
             },
             dispatch
           );

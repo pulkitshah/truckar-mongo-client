@@ -36,6 +36,27 @@ export default async function handler(req, res) {
       }
       break;
 
+    case "PATCH":
+      auth(req, res, async () => {
+        console.log("API Hit");
+        const updates = Object.keys(req.body);
+        try {
+          const account = await Account.findOne({
+            _id: req.query.id,
+          });
+
+          updates.forEach((update) => (account[update] = req.body[update]));
+
+          await account.save();
+
+          res.send(account);
+        } catch (error) {
+          console.log(error);
+          // res.status(400).send(error);
+        }
+      });
+
+      break;
     default:
       res.status(400).json({ success: false });
       break;
