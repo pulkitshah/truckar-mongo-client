@@ -1,5 +1,5 @@
 import dbConnect from "../../../../lib/dbConnect";
-import Organisation from "../../../../models/Organisation";
+import Vehicle from "../../../../models/Vehicle";
 import auth from "../../../../middleware";
 
 export default async function handler(req, res) {
@@ -9,19 +9,20 @@ export default async function handler(req, res) {
   switch (method) {
     case "GET":
       auth(req, res, async () => {
-        const { account, organisationNumber } = JSON.parse(req.query.id);
+        const { account, vehicleNumber } = JSON.parse(req.query.id);
         try {
           const query = {
             account: account,
           };
-          if (organisationNumber) {
-            query.organisationNumber = {
-              $regex: `^${organisationNumber}$`,
+          if (vehicleNumber) {
+            query.vehicleNumber = {
+              $regex: `^${vehicleNumber}$`,
               $options: "i",
             };
           }
-          const organisation = await Organisation.findOne(query);
-          res.json(organisation);
+
+          const vehicle = await Vehicle.findOne(query);
+          res.json(vehicle);
         } catch (error) {
           console.log(error.message);
           res.status(500).send("Server Error");

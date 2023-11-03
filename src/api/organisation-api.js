@@ -1,5 +1,4 @@
 import axios from "../utils/axios";
-import moment from "moment";
 import { slice } from "../slices/organisations";
 
 const now = new Date();
@@ -80,52 +79,6 @@ class OrganisationApi {
         };
       }
     }
-  }
-
-  /// API Modified
-
-  async getOrganisationsByUser(user, dispatch) {
-    try {
-      //////////////////////// GraphQL API ////////////////////////
-
-      const response = await API.graphql({
-        query: organisationsByUser,
-        variables: { user: user.id.toString() },
-      });
-      const organisations = response.data.organisationsByUser.items;
-
-      //////////////////////// GraphQL API ////////////////////////
-
-      //////////////////////// DataStore API ////////////////////////
-
-      // const organisations = await DataStore.query(Organisation, (c) =>
-      //   c.user("eq", user.id)
-      // );
-
-      //////////////////////// DataStore API ////////////////////////
-
-      // console.log(organisationesDB);
-
-      // Dispatch - Reducer
-
-      dispatch(slice.actions.getOrganisations(organisations));
-
-      return organisations;
-    } catch (error) {
-      console.log(error);
-    }
-  }
-
-  async validateDuplicateInitials(initials, user) {
-    const response = await API.graphql({
-      query: organisationsByUser,
-      variables: { user: user.id.toString() },
-    });
-    const organisations = response.data.organisationsByUser.items;
-    const organisation = organisations.find((organisation) => {
-      return organisation.initials === initials;
-    });
-    return Boolean(!organisation);
   }
 }
 
