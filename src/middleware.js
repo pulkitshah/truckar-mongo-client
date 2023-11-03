@@ -2,7 +2,7 @@ import jwt from "jsonwebtoken";
 // const config = require('config');
 
 export default async function handler(req, res, next) {
-  const token = req.header("x-auth-token");
+  const token = req.headers["x-auth-token"];
 
   //Check if no token
   if (!token) {

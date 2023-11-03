@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 
 import dbConnect from "../../../lib/dbConnect";
 import User from "../../../models/User";
+import auth from "../../../middleware";
 
 export default async function handler(req, res) {
   const { method } = req;
@@ -10,13 +11,15 @@ export default async function handler(req, res) {
 
   switch (method) {
     case "GET":
-      try {
-        const user = await User.findById(req.user).select("-password");
-        res.json(user);
-      } catch (error) {
-        console.log(error.message);
-        res.status(500).send("Server Error");
-      }
+      auth(req, res, async () => {
+        try {
+          const user = await User.findById(req.user).select("-password");
+          res.json(user);
+        } catch (error) {
+          console.log(error.message);
+          res.status(500).send("Server Error");
+        }
+      });
       break;
 
     case "POST":
@@ -83,6 +86,7 @@ export default async function handler(req, res) {
         // res.status(400).send(error);
       }
       break;
+
     default:
       res.status(400).json({ success: false });
       break;
