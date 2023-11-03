@@ -14,7 +14,14 @@ export default async function handler(req, res) {
       auth(req, res, async () => {
         try {
           const user = await User.findById(req.user).select("-password");
-          res.json(user);
+          res.json(user, {
+            status: 200,
+            headers: {
+              "Access-Control-Allow-Origin": "*",
+              "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+              "Access-Control-Allow-Headers": "Content-Type, Authorization",
+            },
+          });
         } catch (error) {
           console.log(error.message);
           res.status(500).send("Server Error");
