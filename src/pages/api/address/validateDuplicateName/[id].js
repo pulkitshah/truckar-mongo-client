@@ -1,6 +1,6 @@
-import dbConnect from "../../../lib/dbConnect";
-import Address from "../../../models/Address";
-import auth from "../../../middleware";
+import dbConnect from "../../../../lib/dbConnect";
+import Address from "../../../../models/Address";
+import auth from "../../../../middleware";
 
 export default async function handler(req, res) {
   const { method } = req;
@@ -9,7 +9,9 @@ export default async function handler(req, res) {
   switch (method) {
     case "GET":
       auth(req, res, async () => {
-        const { account, value } = JSON.parse(req.params.id);
+        const { account, value } = JSON.parse(req.query.id);
+        console.log("error.message");
+
         try {
           const query = {
             account: account,

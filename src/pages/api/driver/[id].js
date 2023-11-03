@@ -1,6 +1,6 @@
-import dbConnect from "../../../../lib/dbConnect";
-import Address from "../../../../models/Address";
-import auth from "../../../../middleware";
+import dbConnect from "../../../lib/dbConnect";
+import Driver from "../../../models/Driver";
+import auth from "../../../middleware";
 
 export default async function handler(req, res) {
   const { method } = req;
@@ -12,14 +12,14 @@ export default async function handler(req, res) {
         const { account, value } = JSON.parse(req.query.id);
         try {
           const query = {
-            account: account,
+            account,
           };
           if (value) {
-            query.mobile = value;
+            query.name = { $regex: value, $options: "i" };
+            // query.name = new RegExp(`.*${value}*.`, "i");
           }
-
-          const address = await Address.findOne(query);
-          res.json(address);
+          const drivers = await Driver.find(query).populate("vehicle");
+          res.json(drivers);
         } catch (error) {
           console.log(error.message);
           res.status(500).send("Server Error");
