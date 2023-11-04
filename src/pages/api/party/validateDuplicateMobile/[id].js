@@ -1,6 +1,6 @@
 import dbConnect from "../../../../lib/dbConnect";
 import Party from "../../../../models/Party";
-import auth from "../../../../middleware";
+import auth from "../../../../auth";
 
 export default async function handler(req, res) {
   const { method } = req;
