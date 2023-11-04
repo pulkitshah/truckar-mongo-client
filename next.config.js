@@ -31,7 +31,7 @@ module.exports = {
       },
     ];
   },
-  reactStrictMode: true,
+  // reactStrictMode: true,
   webpack(config) {
     config.module.rules.push({
       test: path.resolve(__dirname, "../node_modules/electron"),
