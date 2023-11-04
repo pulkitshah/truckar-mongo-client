@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const axiosInstance = axios.create();
-axiosInstance.defaults.baseURL = "http://localhost:4000";
+// axiosInstance.defaults.baseURL = "http://localhost:4000";
 
 axiosInstance.interceptors.response.use(
   (response) => response,
