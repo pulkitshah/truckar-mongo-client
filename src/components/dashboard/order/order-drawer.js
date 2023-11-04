@@ -88,9 +88,7 @@ const OrderPreview = (props) => {
   const { user, account } = useAuth();
   const align = lgUp ? "horizontal" : "vertical";
   const dispatch = useDispatch();
-
-  console.log(user);
-
+  console.log(order);
   const formik = useFormik({
     enableReinitialize: true,
     initialValues: {

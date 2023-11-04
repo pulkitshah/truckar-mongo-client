@@ -5,8 +5,11 @@ import mongoose from "mongoose";
 Source :
 https://github.com/vercel/next.js/blob/canary/examples/with-mongodb-mongoose/utils/dbConnect.js
 **/
-
-const MONGODB_URI = process.env.MONGODB_URI_DEV;
+let MONGODB_URI = process.env.MONGODB_URI_DEV;
+console.log(process.env.NODE_ENV);
+// if (process.env.NODE_ENV !== "production") {
+//   MONGODB_URI = process.env.MONGODB_URI_PROD.toString();
+// }
 
 if (!MONGODB_URI) {
   throw new Error(

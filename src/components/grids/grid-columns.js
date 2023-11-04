@@ -366,6 +366,8 @@ export const deliveriesTable = (account) => {
               </Link>
             );
           }
+        } else {
+          return "";
         }
       },
     },

@@ -2,7 +2,14 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 
 import dbConnect from "../../../lib/dbConnect";
+import Organisation from "../../../models/Organisation";
+import Account from "../../../models/Account";
+import Address from "../../../models/Address";
+import Driver from "../../../models/Driver";
+import Order from "../../../models/Order";
+import Party from "../../../models/Party";
 import User from "../../../models/User";
+import Vehicle from "../../../models/Vehicle";
 import auth from "../../../auth";
 
 export default async function handler(req, res) {

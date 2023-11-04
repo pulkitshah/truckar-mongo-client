@@ -64,7 +64,7 @@ const Table = ({ onOpenDrawer, open, toggleDrawer }) => {
             filter,
           })
         );
-
+        console.log(data);
         params.successCallback(data, count);
       },
     };

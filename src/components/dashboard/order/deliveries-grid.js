@@ -3,7 +3,7 @@ import { AgGridReact } from "ag-grid-react";
 import "ag-grid-community/styles/ag-grid.css";
 import { useAuth } from "../../../hooks/use-auth";
 import { deliveryApi } from "../../../api/delivery-api";
-import { deliveriesTable } from "../../grids/grid-columns";
+import { deliveriesTable, orderTable } from "../../grids/grid-columns";
 import { orderApi } from "../../../api/order-api";
 
 const DeliveriesGrid = ({ onOpenDrawer }) => {

@@ -27,9 +27,76 @@ const orderSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "driver",
   },
-  deliveries: {
-    type: Array,
-  },
+  deliveries: [
+    {
+      _id: {
+        type: String,
+      },
+      billQuantity: {
+        type: Number,
+      },
+      unloadingQuantity: {
+        type: Number,
+      },
+      loading: {
+        type: Object,
+      },
+      unloading: {
+        type: Object,
+      },
+      weighbridgeName: {
+        type: String,
+      },
+
+      remarks: {
+        type: String,
+      },
+      status: {
+        type: String,
+      },
+
+      lr: {
+        lrFormat: { type: String },
+        lrNo: {
+          type: Number,
+        },
+        lrDate: {
+          type: Date,
+        },
+        organisation: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "organisation",
+        },
+        consignor: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "address",
+        },
+        consignee: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "address",
+        },
+        descriptionOfGoods: {
+          type: Object,
+        },
+        dimesnionsLength: { type: String },
+        dimesnionsBreadth: { type: String },
+        dimesnionsHeight: { type: String },
+        fareBasis: { type: String },
+        valueOfGoods: { type: String },
+        chargedWeight: { type: String },
+        insuranceCompany: { type: String },
+        insuranceDate: { type: String },
+        insurancePolicyNo: { type: String },
+        insuranceAmount: { type: String },
+        ewayBillNo: { type: String },
+        ewayBillExpiryDate: { type: String },
+        gstPayableBy: { type: String },
+        lrCharges: {
+          type: Object,
+        },
+      },
+    },
+  ],
   orderExpenses: {
     type: Array,
   },
