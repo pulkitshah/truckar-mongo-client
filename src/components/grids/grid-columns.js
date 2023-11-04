@@ -644,7 +644,7 @@ export const lrTable = (account) => {
     {
       field: "lrDate",
       headerName: "Date",
-      width: 130,
+      width: 100,
       valueGetter: (params) => {
         if (params.data !== undefined) {
           return moment(params.data.deliveries.lr.lrDate).format("DD-MM-YY");
@@ -671,7 +671,7 @@ export const lrTable = (account) => {
     {
       field: "organisation",
       headerName: "Organisation",
-      width: 80,
+      width: 130,
       valueGetter: (params) => {
         if (params.data) {
           return `${params.data.deliveries.lr.organisation.name}`;
@@ -785,6 +785,8 @@ export const invoiceTable = (account) => {
       cellRenderer: (params) => {
         if (params.value !== undefined) {
           return moment(params.data.invoiceDate).format("DD-MM-YY");
+        } else {
+          return "";
         }
       },
     },
@@ -799,6 +801,8 @@ export const invoiceTable = (account) => {
               {`${params.data.organisation.initials}-${params.data.invoiceNo}`}
             </Link>
           );
+        } else {
+          return "";
         }
       },
       filter: "agNumberColumnFilter",
@@ -816,6 +820,8 @@ export const invoiceTable = (account) => {
       valueGetter: (params) => {
         if (params.data) {
           return params.data.organisation.name;
+        } else {
+          return "";
         }
       },
       filter: "agSetColumnFilter",
@@ -851,6 +857,8 @@ export const invoiceTable = (account) => {
       valueGetter: (params) => {
         if (params.data && params.data.customer) {
           return params.data.customer.name;
+        } else {
+          return "";
         }
       },
     },
@@ -891,6 +899,8 @@ export const orderTableForCreateInvoice = [
             </Link>
           );
         }
+      } else {
+        return "";
       }
     },
   },
