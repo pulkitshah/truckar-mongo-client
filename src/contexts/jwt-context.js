@@ -102,7 +102,7 @@ export const AuthProvider = (props) => {
 
       if (response.status === 200 && response.data !== null) {
         const user = response.data;
-        console.log(response);
+
         const response2 = await accountApi.getAccountsByUser(user);
         const accounts = response2.data;
         // console.log(accounts);

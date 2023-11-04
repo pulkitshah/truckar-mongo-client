@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 
 import dbConnect from "../../../lib/dbConnect";
 import User from "../../../models/User";
-import auth from "../../../middleware";
+import auth from "../../../auth";
 
 export default async function handler(req, res) {
   const { method } = req;
