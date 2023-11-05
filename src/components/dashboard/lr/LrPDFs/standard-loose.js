@@ -150,7 +150,7 @@ const styles = StyleSheet.create({
   },
 });
 
-const LrPDF = ({ lr, logo, printRates = false }) => {
+const LrPDF = ({ lr, printRates = false }) => {
   if (!lr) {
     return null;
   }

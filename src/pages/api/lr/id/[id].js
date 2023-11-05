@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 import dbConnect from "../../../../lib/dbConnect";
-import Invoice from "../../../../models/Invoice";
+import Order from "../../../../models/Order";
 import auth from "../../../../auth";
 import { lookups } from "../index";
 
@@ -11,8 +11,10 @@ export default async function handler(req, res) {
   switch (method) {
     case "GET":
       auth(req, res, async () => {
+        console.log(JSON.parse(req.query.id));
+        const { deliveryId, orderId } = JSON.parse(req.query.id);
         try {
-          let matches = { _id: new mongoose.Types.ObjectId(req.query.id) };
+          let matches = { _id: new mongoose.Types.ObjectId(orderId) };
 
           let query = [
             // filter the results by our accountId
@@ -23,16 +25,8 @@ export default async function handler(req, res) {
 
           query = [...query, ...lookups];
 
-          const invoices = await Invoice.aggregate(query);
-
-          if (!invoices) {
-            res.status(400).json({
-              errors: [{ msg: "There are no invoices by this user" }],
-            });
-          }
-
-          // console.log(response[0]);
-          res.json(invoices[0]);
+          const lrs = await Order.aggregate(query);
+          res.json(lrs.find((lr) => lr.deliveries._id === deliveryId));
         } catch (error) {
           console.log(error.message);
           res.status(500).send("Server Error");

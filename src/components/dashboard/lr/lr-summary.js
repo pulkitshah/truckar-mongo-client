@@ -28,15 +28,15 @@ import { useDispatch } from "../../../store";
 const statusOptions = ["Canceled", "Complete", "Rejected"];
 
 export const LrSummary = (props) => {
-  const { lr, getLr, ...other } = props;
+  const { order, getLr, ...other } = props;
   const { user } = useAuth();
   const dispatch = useDispatch();
   const smDown = useMediaQuery((theme) => theme.breakpoints.down("sm"));
   const [status, setStatus] = useState(statusOptions[0]);
   const [addresses, setAddresses] = useState({ waypoints: [] });
 
-  let delivery = lr.delivery;
-  console.log(lr);
+  let delivery = order.deliveries;
+  let lr = delivery.lr;
   const align = smDown ? "vertical" : "horizontal";
 
   const formik = useFormik({
@@ -154,7 +154,7 @@ export const LrSummary = (props) => {
               <PropertyListItem
                 align={align}
                 label="Vehicle Number"
-                value={lr.order.vehicleNumber}
+                value={order.vehicleNumber}
               />
               <Divider />
             </PropertyList>
@@ -168,25 +168,25 @@ export const LrSummary = (props) => {
               <PropertyListItem
                 align={align}
                 label="Order No"
-                value={lr.order.orderNo}
+                value={order.orderNo}
               />
               <Divider />
               <PropertyListItem
                 align={align}
                 label="Sale Date"
-                value={moment(lr.order.saleDate).format("DD/MM/YY")}
+                value={moment(order.saleDate).format("DD/MM/YY")}
               />
               <Divider />
 
               <PropertyListItem align={align} label="Customer">
                 <Typography color="primary" variant="body2">
-                  {`${lr.order.customer.name}`}
+                  {`${order.customer.name}`}
                 </Typography>
                 <Typography color="textSecondary" variant="body2">
-                  {lr.order.customer.city.description}
+                  {order.customer.city.description}
                 </Typography>
                 <Typography color="textSecondary" variant="body2">
-                  {`${lr.order.customer.mobile}`}
+                  {`${order.customer.mobile}`}
                 </Typography>
               </PropertyListItem>
               <Divider />
@@ -206,26 +206,28 @@ export const LrSummary = (props) => {
         />
         <Divider />
 
-        <PropertyListItem align={align} label="Consignor">
-          <Typography color="primary" variant="body2">
-            {lr.consignor.name}
-          </Typography>
-          <Typography color="textSecondary" variant="body2">
-            {lr.consignor.billingAddressLine1}
-          </Typography>
-          <Typography color="textSecondary" variant="body2">
-            {lr.consignor.billingAddressLine2}
-          </Typography>
-          <Typography color="textSecondary" variant="body2">
-            {lr.consignor.city.description}
-          </Typography>
-          <Typography color="textSecondary" variant="body2">
-            {lr.consignor.pan && `PAN - ${lr.consignor.pan}`}
-          </Typography>
-          <Typography color="textSecondary" variant="body2">
-            {lr.consignor.gstin && `GSTIN - ${lr.consignor.gstin}`}
-          </Typography>
-        </PropertyListItem>
+        {lr.consignor && (
+          <PropertyListItem align={align} label="Consignor">
+            <Typography color="primary" variant="body2">
+              {lr.consignor.name}
+            </Typography>
+            <Typography color="textSecondary" variant="body2">
+              {lr.consignor.billingAddressLine1}
+            </Typography>
+            <Typography color="textSecondary" variant="body2">
+              {lr.consignor.billingAddressLine2}
+            </Typography>
+            <Typography color="textSecondary" variant="body2">
+              {lr.consignor.city.description}
+            </Typography>
+            <Typography color="textSecondary" variant="body2">
+              {lr.consignor.pan && `PAN - ${lr.consignor.pan}`}
+            </Typography>
+            <Typography color="textSecondary" variant="body2">
+              {lr.consignor.gstin && `GSTIN - ${lr.consignor.gstin}`}
+            </Typography>
+          </PropertyListItem>
+        )}
         <Divider />
 
         <PropertyListItem
@@ -235,26 +237,28 @@ export const LrSummary = (props) => {
         />
         <Divider />
 
-        <PropertyListItem align={align} label="Consignee">
-          <Typography color="primary" variant="body2">
-            {lr.consignee.name}
-          </Typography>
-          <Typography color="textSecondary" variant="body2">
-            {lr.consignor.billingAddressLine1}
-          </Typography>
-          <Typography color="textSecondary" variant="body2">
-            {lr.consignor.billingAddressLine2}
-          </Typography>
-          <Typography color="textSecondary" variant="body2">
-            {lr.consignee.city.description}
-          </Typography>
-          <Typography color="textSecondary" variant="body2">
-            {lr.consignee.pan && `PAN - ${lr.consignee.pan}`}
-          </Typography>
-          <Typography color="textSecondary" variant="body2">
-            {lr.consignee.gstin && `GSTIN - ${lr.consignee.gstin}`}
-          </Typography>
-        </PropertyListItem>
+        {lr.consignee && (
+          <PropertyListItem align={align} label="Consignee">
+            <Typography color="primary" variant="body2">
+              {lr.consignee.name}
+            </Typography>
+            <Typography color="textSecondary" variant="body2">
+              {lr.consignor.billingAddressLine1}
+            </Typography>
+            <Typography color="textSecondary" variant="body2">
+              {lr.consignor.billingAddressLine2}
+            </Typography>
+            <Typography color="textSecondary" variant="body2">
+              {lr.consignee.city.description}
+            </Typography>
+            <Typography color="textSecondary" variant="body2">
+              {lr.consignee.pan && `PAN - ${lr.consignee.pan}`}
+            </Typography>
+            <Typography color="textSecondary" variant="body2">
+              {lr.consignee.gstin && `GSTIN - ${lr.consignee.gstin}`}
+            </Typography>
+          </PropertyListItem>
+        )}
       </Card>
 
       {

@@ -34,7 +34,6 @@ export default async function handler(req, res) {
           {
             $match: Object.assign(matches),
           },
-          { $unwind: "$deliveries" },
         ];
 
         if (filter.organisation) {

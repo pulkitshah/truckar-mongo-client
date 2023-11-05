@@ -63,6 +63,8 @@ export const LrCreateForm = ({ order, deliveryId, lr = {} }) => {
     consignee: Yup.object().required("Consignee is Required"), // these constraints take precedence
   };
 
+  console.log(order);
+
   let delivery = order.deliveries.find(
     (delivery) => delivery._id === deliveryId
   );

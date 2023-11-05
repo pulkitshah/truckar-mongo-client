@@ -349,7 +349,10 @@ export const deliveriesTable = (account) => {
             return (
               <Link
                 color="secondary"
-                href={`/dashboard/lrs/?deliveryId=${params.data.delivery._id}&orderId=${params.data._id}`}
+                href={`/dashboard/lrs/${JSON.stringify({
+                  deliveryId: params.data.delivery._id,
+                  orderId: params.data._id,
+                })}`}
                 variant="body"
               >
                 {`${params.data.delivery.lr.organisation.initials}-${params.data.delivery.lr.lrNo}`}
@@ -566,16 +569,28 @@ export const deliveryDetailsTableForOrderDrawer = [
     headerName: "LR",
     width: 90,
     renderCell: (params) => {
-      if (Object.keys(params.row.deliveries.lr).length) {
-        return (
-          <Link
-            color="secondary"
-            href={`/dashboard/lrs/?deliveryId=${params.row.deliveries._id}&orderId=${params.row._id}`}
-            variant="body"
-          >
-            {`${params.row.deliveries.lr.organisation.initials}-${params.row.deliveries.lr.lrNo}`}
-          </Link>
-        );
+      if (params.row.deliveries.lr) {
+        if (Object.keys(params.row.deliveries.lr).length) {
+          return (
+            <Link
+              color="secondary"
+              href={`/dashboard/lrs/?deliveryId=${params.row.deliveries._id}&orderId=${params.row._id}`}
+              variant="body"
+            >
+              {`${params.row.deliveries.lr.organisation.initials}-${params.row.deliveries.lr.lrNo}`}
+            </Link>
+          );
+        } else {
+          return (
+            <Link
+              color="secondary"
+              href={`/dashboard/lrs/new?deliveryId=${params.row.deliveries._id}&orderId=${params.row._id}`}
+              variant="body"
+            >
+              Make LR
+            </Link>
+          );
+        }
       } else {
         return (
           <Link

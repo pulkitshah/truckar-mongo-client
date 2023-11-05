@@ -114,7 +114,6 @@ export const OrderCreateForm = (props) => {
           message: "Loading is Required",
           test: function (value) {
             try {
-              console.log(value);
               return !(Object.keys(value).length === 0);
             } catch (error) {
               console.log(error);
@@ -130,7 +129,6 @@ export const OrderCreateForm = (props) => {
           message: "Unloading is Required",
           test: function (value) {
             try {
-              console.log(value);
               return !(Object.keys(value).length === 0);
             } catch (error) {
               console.log(error);
@@ -146,7 +144,7 @@ export const OrderCreateForm = (props) => {
       saleDate: order.saleDate || moment(),
       customer: order.customer || null,
       vehicle: order.vehicle || null,
-      driver: order.driver || null,
+      driver: order.driver || "",
       transporter: order.transporter || "",
       saleType: order.saleType
         ? order.saleType

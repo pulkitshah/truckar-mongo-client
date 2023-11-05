@@ -5,18 +5,13 @@ import Organisation from "../../../models/Organisation";
 import auth from "../../../auth";
 
 export const lookups = [
-  {
-    $addFields: {
-      delivery: "$deliveries",
-    },
-  },
-  { $unwind: "$delivery" },
+  { $unwind: "$deliveries" },
   {
     $lookup: {
       from: "organisations",
       let: {
         id: {
-          $toObjectId: "$delivery.lr.organisation",
+          $toObjectId: "$deliveries.lr.organisation",
         },
         deliveries: "$deliveries",
       },
@@ -28,15 +23,71 @@ export const lookups = [
           },
         },
       ],
-      as: "delivery.lr.organisation",
+      as: "deliveries.lr.organisation",
     },
   },
   {
     $unwind: {
-      path: "$delivery.lr.organisation",
+      path: "$deliveries.lr.organisation",
       preserveNullAndEmptyArrays: true,
     },
   },
+  {
+    $group: {
+      _id: "$_id",
+      orderNo: { $first: "$orderNo" },
+      saleDate: { $first: "$saleDate" },
+      customer: { $first: "$customer" },
+      vehicleNumber: { $first: "$vehicleNumber" },
+      vehicle: { $first: "$vehicle" },
+      driver: { $first: "$driver" },
+      orderExpenses: { $first: "$orderExpenses" },
+      saleType: { $first: "$saleType" },
+      saleRate: { $first: "$saleRate" },
+      minimumSaleGuarantee: { $first: "$minimumSaleGuarantee" },
+      saleAdvance: { $first: "$saleAdvance" },
+      purchaseType: { $first: "$purchaseType" },
+      purchaseRate: { $first: "$purchaseRate" },
+      minimumPurchaseGuarantee: { $first: "$minimumPurchaseGuarantee" },
+      purchaseAdvance: { $first: "$purchaseAdvance" },
+      transporter: { $first: "$transporter" },
+      createdDate: { $first: "$createdDate" },
+      account: { $first: "$account" },
+      deliveries: { $push: "$deliveries" },
+    },
+  },
+  {
+    $addFields: {
+      delivery: "$deliveries",
+    },
+  },
+  { $unwind: "$delivery" },
+  // {
+  //   $lookup: {
+  //     from: "organisations",
+  //     let: {
+  //       id: {
+  //         $toObjectId: "$delivery.lr.organisation",
+  //       },
+  //       deliveries: "$deliveries",
+  //     },
+
+  //     pipeline: [
+  //       {
+  //         $match: {
+  //           $expr: { $eq: ["$_id", "$$id"] },
+  //         },
+  //       },
+  //     ],
+  //     as: "delivery.lr.organisation",
+  //   },
+  // },
+  // {
+  //   $unwind: {
+  //     path: "$delivery.lr.organisation",
+  //     preserveNullAndEmptyArrays: true,
+  //   },
+  // },
   {
     $lookup: {
       from: "addresses",
@@ -193,6 +244,37 @@ export const lookups = [
   {
     $unwind: {
       path: "$vehicle",
+      preserveNullAndEmptyArrays: true,
+    },
+  },
+  {
+    $lookup: {
+      from: "drivers",
+      let: {
+        id: "$driver",
+      },
+      pipeline: [
+        {
+          $match: {
+            $expr: {
+              $eq: ["$_id", "$$id"],
+            },
+          },
+        },
+        {
+          $project: {
+            name: 1,
+            mobile: 1,
+            _id: 1,
+          },
+        },
+      ],
+      as: "driver",
+    },
+  },
+  {
+    $unwind: {
+      path: "$driver",
       preserveNullAndEmptyArrays: true,
     },
   },

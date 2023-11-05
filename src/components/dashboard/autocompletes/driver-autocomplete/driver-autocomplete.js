@@ -39,13 +39,8 @@ const DriverAutocomplete = ({ formik, driver }) => {
     }
   }, [getDriversByAccount, open]);
 
-  useEffect(() => {
-    setFieldValue("driver", driver);
-    setValue(driver);
-  }, [setFieldValue, driver, value]);
-
   const handleOnChange = (event, newValue) => {
-    setFieldValue("driver", newValue);
+    formik.setFieldValue("driver", newValue);
     setValue(newValue);
 
     // setFieldValue('driver', newValue);
@@ -55,6 +50,8 @@ const DriverAutocomplete = ({ formik, driver }) => {
     setInputValue(newInputValue);
     // setFieldValue('driver', newInputValue);
   };
+
+  console.log(formik.values);
 
   return (
     <Grid item>
@@ -89,7 +86,6 @@ const DriverAutocomplete = ({ formik, driver }) => {
           );
         }}
         options={drivers}
-        value={value}
         onChange={handleOnChange}
         inputValue={inputValue}
         onInputChange={handleInputChange}

@@ -62,7 +62,6 @@ const statusOptions = [
 
 const LrPreview = (props) => {
   const { lgUp, onEdit, lr, gridApi } = props;
-  console.log(lr);
   const [viewPDF, setViewPDF] = useState(false);
   const LrFormat = LrPDFs["standardLoose"];
   const align = lgUp ? "horizontal" : "vertical";
@@ -144,11 +143,10 @@ const LrPreview = (props) => {
               Preview
             </Button>
           </Hidden>
-          {logo && (
+          {/* {
             <PDFDownloadLink
               document={
                 <LrFormat
-                  logo={logo}
                   lr={{
                     ...lr.deliveries.lr,
                     delivery: lr.deliveries,
@@ -170,7 +168,7 @@ const LrPreview = (props) => {
                 Download
               </Button>
             </PDFDownloadLink>
-          )}
+          } */}
         </Box>
       </Box>
       <Divider sx={{ my: 1 }} />
@@ -566,7 +564,6 @@ const LrPreview = (props) => {
               }}
             >
               <LrFormat
-                logo={logo}
                 lr={{ ...lr.deliveries.lr, delivery: lr.deliveries, order: lr }}
                 printRates={false}
               />

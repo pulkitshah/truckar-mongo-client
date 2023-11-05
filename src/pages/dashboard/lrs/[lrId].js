@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import NextLink from "next/link";
 import Head from "next/head";
-import { PDFDownloadLink } from "@react-pdf/renderer";
+import { PDFDownloadLink, PDFViewer } from "@react-pdf/renderer";
 import { Storage } from "aws-amplify";
 import {
   Box,
@@ -10,8 +10,10 @@ import {
   Card,
   CardHeader,
   Container,
+  Dialog,
   Divider,
   Grid,
+  Hidden,
   Link,
   Typography,
 } from "@mui/material";
@@ -33,16 +35,15 @@ import moment from "moment";
 
 const LrDetails = () => {
   const router = useRouter();
-  const { user } = useAuth();
   const isMounted = useMounted();
-  const dispatch = useDispatch();
   const [isEditing, setIsEditing] = useState(false);
-  const { lrs } = useSelector((state) => state.lrs);
+  const [viewPDF, setViewPDF] = useState(false);
+
   const [logo, setLogo] = useState();
   const [lr, setLr] = useState();
   const { lrId } = router.query;
 
-  const LrFormat = LrPDFs[lr ? lr.lrFormat : "standardLoose"];
+  const LrFormat = LrPDFs["standardLoose"];
 
   const handleEdit = () => {
     setIsEditing(true);
@@ -72,25 +73,6 @@ const LrDetails = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     []
   );
-
-  const getOrganisationLogo = useCallback(async () => {
-    try {
-      if (lr) {
-        const logo = await Storage.get(lr.organisation.logo);
-        setLogo(logo);
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  }, [lr]);
-
-  useEffect(() => {
-    try {
-      getOrganisationLogo();
-    } catch (error) {
-      console.log(error);
-    }
-  }, [lr]);
 
   if (!lr) {
     return null;
@@ -162,32 +144,75 @@ const LrDetails = () => {
                 >
                   Edit
                 </Button>
-
-                {logo && (
+                <Hidden smDown>
+                  <Button
+                    variant="outlined"
+                    sx={{ ml: 2 }}
+                    onClick={() => setViewPDF(true)}
+                  >
+                    Preview
+                  </Button>
+                </Hidden>
+                {
                   <PDFDownloadLink
                     document={
-                      <LrFormat logo={logo} lr={lr} printRates={false} />
+                      <LrFormat
+                        logo={logo}
+                        lr={{
+                          ...lr.deliveries.lr,
+                          delivery: lr.deliveries,
+                          order: lr,
+                        }}
+                        printRates={false}
+                      />
                     }
-                    fileName={`Lr - ${lr.id}`}
+                    fileName={`Lr - ${lr.deliveries.lr.organisation.initials}-${lr.deliveries.lr.lrNo}`}
                     style={{
                       textDecoration: "none",
                     }}
                   >
                     <Button variant="outlined" sx={{ ml: 2 }}>
-                      Preview
+                      Download
                     </Button>
                   </PDFDownloadLink>
-                )}
+                }
               </Grid>
             </Grid>
           </Box>
           {!isEditing ? (
-            <LrSummary lr={lr} getLr={getLr} />
+            <LrSummary order={lr} getLr={getLr} />
           ) : (
             <LrForm onCancel={handleCancel} getLr={getLr} lr={lr} />
           )}
         </Container>
       </Box>
+      <Dialog fullScreen open={viewPDF}>
+        <Box height="100%" display="flex" flexDirection="column">
+          <Box bgcolor="common.white" p={2}>
+            <Button
+              variant="contained"
+              color="secondary"
+              onClick={() => setViewPDF(false)}
+            >
+              Back
+            </Button>
+          </Box>
+          <Box flexGrow={1}>
+            <PDFViewer
+              width="100%"
+              height="100%"
+              style={{
+                border: "none",
+              }}
+            >
+              <LrFormat
+                lr={{ ...lr.deliveries.lr, delivery: lr.deliveries, order: lr }}
+                printRates={false}
+              />
+            </PDFViewer>
+          </Box>
+        </Box>
+      </Dialog>
     </>
   );
 };

@@ -5,6 +5,7 @@ import Organisation from "../../../models/Organisation";
 import auth from "../../../auth";
 
 export const lookups = [
+  { $unwind: "$deliveries" },
   {
     $lookup: {
       from: "parties",
@@ -84,7 +85,6 @@ export const lookups = [
       preserveNullAndEmptyArrays: true,
     },
   },
-
   {
     $lookup: {
       from: "organisations",
@@ -196,7 +196,7 @@ export default async function handler(req, res) {
             ...lookups,
           ]);
 
-          res.send(lrs[0]);
+          res.send(lrs.find((lr) => lr.deliveries._id === req.body.delivery));
         } catch (error) {
           console.log(error.message);
           res.status(500).send("Server Error");

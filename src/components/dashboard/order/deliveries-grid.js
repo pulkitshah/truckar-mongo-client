@@ -51,11 +51,9 @@ const DeliveriesGrid = ({ onOpenDrawer }) => {
           onGridReady={onGridReady}
           rowSelection="multiple"
           onSelectionChanged={async (event) => {
-            event.api.getSelectedNodes().map(async (node) => {
-              let response = await orderApi.getOrderById(node.data._id);
-
-              onOpenDrawer(response.data, gridApi);
-            });
+            event.api
+              .getSelectedNodes()
+              .map(async (node) => onOpenDrawer(node.data, gridApi));
           }}
         />
       </div>
