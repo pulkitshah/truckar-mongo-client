@@ -40,7 +40,11 @@ export default async function handler(req, res) {
         if (filter.organisation) {
           query.push({
             $match: {
-              "deliveries.lr.organisation": { $in: filter.organisation.values },
+              "deliveries.lr.organisation": {
+                $in: filter.organisation.values.map(
+                  (value) => new mongoose.Types.ObjectId(value)
+                ),
+              },
             },
           });
         }
@@ -80,6 +84,7 @@ export default async function handler(req, res) {
         );
 
         const lrs = await Order.aggregate(query);
+        console.log(query);
         res.json(lrs);
       });
       break;
