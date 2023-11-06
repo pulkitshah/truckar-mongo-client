@@ -20,6 +20,7 @@ import { OnBoardingGuard } from "../../../components/authentication/onboarding-g
 import { DashboardLayout } from "../../../components/dashboard/dashboard-layout";
 import { InvoiceDrawer } from "../../../components/dashboard/invoice/invoice-drawer";
 import InvoiceGrid from "../../../components/dashboard/invoice/invoice-grid";
+import InvoicesByOrganisationTable from "../../../components/dashboard/invoice/invoice-organisation-grid";
 import { useMounted } from "../../../hooks/use-mounted";
 import { useAuth } from "../../../hooks/use-auth";
 import { Plus as PlusIcon } from "../../../icons/plus";

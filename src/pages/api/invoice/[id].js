@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import dbConnect from "../../../lib/dbConnect";
 import Invoice from "../../../models/Invoice";
 import auth from "../../../auth";
+import createFilterAggPipeline from "../../../utils/get-aggregation-pipeline";
 import { lookups } from ".";
 
 export default async function handler(req, res) {
