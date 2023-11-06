@@ -10,11 +10,6 @@ export default async function handler(req, res) {
     case "POST":
       auth(req, res, async () => {
         try {
-          const errors = validationResult(req);
-          if (!errors.isEmpty()) {
-            return res.status(400).json({ errors: errors.array() });
-          }
-
           // Get fields
           const updates = Object.keys(req.body);
           const driverFields = {};
@@ -25,7 +20,7 @@ export default async function handler(req, res) {
 
           try {
             // Create
-            driver = new Driver(driverFields);
+            const driver = new Driver(driverFields);
             await driver.save();
             res.send(driver);
           } catch (error) {

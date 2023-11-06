@@ -32,7 +32,7 @@ export const DriverCreateForm = forwardRef(({ handleNext, ...props }, ref) => {
   const formik = useFormik({
     initialValues: {
       driverName: "",
-      vehicle: "",
+      vehicle: null,
       mobile: "",
       city: "",
       driverType: "main",

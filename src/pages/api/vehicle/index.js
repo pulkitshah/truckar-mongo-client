@@ -17,7 +17,7 @@ export default async function handler(req, res) {
 
         try {
           // Create
-          vehicle = new Vehicle(vehicleFields);
+          const vehicle = new Vehicle(vehicleFields);
           await vehicle.save();
           res.send(vehicle);
         } catch (error) {
