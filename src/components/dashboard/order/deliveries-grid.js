@@ -25,6 +25,7 @@ const DeliveriesGrid = ({ onOpenDrawer }) => {
             filter,
           })
         );
+        console.log(data);
         params.successCallback(data, count);
       },
     };

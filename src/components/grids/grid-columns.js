@@ -345,7 +345,6 @@ export const deliveriesTable = (account) => {
       headerName: "LR",
       width: 90,
       cellRenderer: (params) => {
-        console.log(params.data);
         if (params.data) {
           if (Object.keys(params.data.delivery.lr).length) {
             return (
@@ -376,35 +375,36 @@ export const deliveriesTable = (account) => {
         }
       },
     },
-    // {
-    //   field: "salesInvoice",
-    //   headerName: "Sale Bill No",
-    //   width: 90,
-    //   cellRenderer: (params) => {
-    //     console.log(params.data);
-    //     if (params.data) {
-    //       if (params.data.delivery.invoices.length) {
-    //         console.log(params.data.delivery.invoices);
-    //         return params.data.delivery.invoices
-    //           .map(
-    //             (invoice) =>
-    //               `${invoice.organisation.initials}-${invoice.invoiceNo}`
-    //           )
-    //           .join(" - ");
-    //       } else {
-    //         return (
-    //           <Link
-    //             color="primary"
-    //             href={`/dashboard/sales/new?deliveryId=${params.data.delivery._id}&orderId=${params.data._id}`}
-    //             variant="body"
-    //           >
-    //             Make Invoice
-    //           </Link>
-    //         );
-    //       }
-    //     }
-    //   },
-    // },
+    {
+      field: "salesInvoice",
+      headerName: "Sale Bill No",
+      width: 120,
+      cellRenderer: (params) => {
+        if (params.data) {
+          if (params.data.invoice.length) {
+            console.log(params.data.invoice);
+            return params.data.invoice
+              .map(
+                (invoice) =>
+                  `${invoice.organisation.initials}-${invoice.invoiceNo}`
+              )
+              .join(" - ");
+          } else {
+            return (
+              <Link
+                color="primary"
+                href={`/dashboard/invoices/new`}
+                variant="body"
+              >
+                Make Invoice
+              </Link>
+            );
+          }
+        } else {
+          return "";
+        }
+      },
+    },
     {
       field: "orderNo",
       headerName: "Order No",
@@ -773,6 +773,7 @@ export const lrTable = (account) => {
       width: 100,
       valueGetter: (params) => {
         if (params.data !== undefined) {
+          console.log(params.data);
           return moment(params.data.deliveries.lr.lrDate).format("DD-MM-YY");
         }
       },
@@ -780,7 +781,7 @@ export const lrTable = (account) => {
     {
       field: "lrNo",
       headerName: "LR No",
-      width: 100,
+      width: 120,
 
       cellRenderer: (params) => {
         if (params.data) {
@@ -909,12 +910,30 @@ export const lrTable = (account) => {
     {
       field: "saleBillNo",
       headerName: "Sale Bill No",
-      width: 130,
-      valueGetter: (params) => {
+      width: 120,
+      cellRenderer: (params) => {
         if (params.data) {
-          return params.data.deliveries.invoiceId
-            ? `${params.data.delivery.invoice.organisation.initials}-${params.data.delivery.invoice.invoiceNo}`
-            : "Not Issued";
+          if (params.data.invoice.length) {
+            console.log(params.data.invoice);
+            return params.data.invoice
+              .map(
+                (invoice) =>
+                  `${invoice.organisation.initials}-${invoice.invoiceNo}`
+              )
+              .join(" - ");
+          } else {
+            return (
+              <Link
+                color="primary"
+                href={`/dashboard/invoices/new`}
+                variant="body"
+              >
+                Make Invoice
+              </Link>
+            );
+          }
+        } else {
+          return "";
         }
       },
     },
