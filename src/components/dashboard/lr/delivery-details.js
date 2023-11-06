@@ -86,6 +86,32 @@ const DeliveryForm = ({ sx, formik, order, user, ...rest }) => {
                             user={user}
                             formik={formik}
                           />
+                          <Typography
+                            sx={{ mt: 1, pl: 1 }}
+                            variant="body1"
+                            color="textPrimary"
+                          >
+                            {formik.values.consignor &&
+                              formik.values.consignor.billingAddressLine1}{" "}
+                            <br />
+                            {formik.values.consignor &&
+                              formik.values.consignor.billingAddressLine2}
+                            <br />
+                            {formik.values.consignor &&
+                              formik.values.consignor.city &&
+                              formik.values.consignor.city.description}
+                            <br />
+                            <br />
+                            {formik.values.consignor &&
+                            formik.values.consignor.pan
+                              ? `PAN No. ${formik.values.consignor.pan}`
+                              : ""}
+                            <br />
+                            {formik.values.consignor &&
+                            formik.values.consignor.gstin
+                              ? `GSTIN No. ${formik.values.consignor.gstin}`
+                              : ""}
+                          </Typography>
                         </Grid>
                         <Grid item md={6} xs={12} className="col">
                           <AddressAutocomplete
@@ -94,6 +120,32 @@ const DeliveryForm = ({ sx, formik, order, user, ...rest }) => {
                             user={user}
                             formik={formik}
                           />
+                          <Typography
+                            sx={{ mt: 1, pl: 1 }}
+                            variant="body1"
+                            color="textPrimary"
+                          >
+                            {formik.values.consignee &&
+                              formik.values.consignee.billingAddressLine1}{" "}
+                            <br />
+                            {formik.values.consignee &&
+                              formik.values.consignee.billingAddressLine2}
+                            <br />
+                            {formik.values.consignee &&
+                              formik.values.consignee.city &&
+                              formik.values.consignee.city.description}
+                            <br />
+                            <br />
+                            {formik.values.consignee &&
+                            formik.values.consignee.pan
+                              ? `PAN No. ${formik.values.consignee.pan}`
+                              : ""}
+                            <br />
+                            {formik.values.consignee &&
+                            formik.values.consignee.gstin
+                              ? `GSTIN No. ${formik.values.consignee.gstin}`
+                              : ""}
+                          </Typography>
                         </Grid>
                       </Grid>
                     </React.Fragment>
