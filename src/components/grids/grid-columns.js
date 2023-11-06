@@ -451,38 +451,38 @@ export const deliveriesTable = (account) => {
       },
     },
 
-    {
-      field: "consignor",
-      headerName: "Consignor",
-      width: 200,
-      valueGetter: (params) => {
-        if (params.data) {
-          if (params.data.delivery.lr) {
-            if (params.data.delivery.lr.consignor) {
-              return params.data.delivery.lr.consignor.name;
-            } else {
-              return "N/A";
-            }
-          }
-        }
-      },
-    },
-    {
-      field: "consignee",
-      headerName: "Consignee",
-      width: 200,
-      valueGetter: (params) => {
-        if (params.data) {
-          if (params.data.delivery.lr) {
-            if (params.data.delivery.lr.consignee) {
-              return params.data.delivery.lr.consignee.name;
-            } else {
-              return "N/A";
-            }
-          }
-        }
-      },
-    },
+    // {
+    //   field: "consignor",
+    //   headerName: "Consignor",
+    //   width: 200,
+    //   valueGetter: (params) => {
+    //     if (params.data) {
+    //       if (params.data.delivery.lr) {
+    //         if (params.data.delivery.lr.consignor) {
+    //           return params.data.delivery.lr.consignor.name;
+    //         } else {
+    //           return "N/A";
+    //         }
+    //       }
+    //     }
+    //   },
+    // },
+    // {
+    //   field: "consignee",
+    //   headerName: "Consignee",
+    //   width: 200,
+    //   valueGetter: (params) => {
+    //     if (params.data) {
+    //       if (params.data.delivery.lr) {
+    //         if (params.data.delivery.lr.consignee) {
+    //           return params.data.delivery.lr.consignee.name;
+    //         } else {
+    //           return "N/A";
+    //         }
+    //       }
+    //     }
+    //   },
+    // },
     {
       field: "loading",
       headerName: "Loading",
@@ -544,10 +544,14 @@ export const deliveriesTable = (account) => {
       width: 120,
       editable: true,
       valueGetter: (params) => {
-        if (params.data.delivery.unloadingQuantity) {
-          return `Rs. ${
-            params.data.delivery.unloadingQuantity
-          } / ${getOrderUnit(params.data)}`;
+        if (params.data) {
+          if (params.data.delivery.unloadingQuantity) {
+            return `Rs. ${
+              params.data.delivery.unloadingQuantity
+            } / ${getOrderUnit(params.data)}`;
+          } else {
+            return "-";
+          }
         } else {
           return "-";
         }

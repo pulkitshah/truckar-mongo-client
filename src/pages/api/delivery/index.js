@@ -196,62 +196,64 @@ export const lookups = [
       deliveries: { $push: "$deliveries" },
     },
   },
+  { $sort: { saleDate: -1, orderNo: -1 } },
   {
     $addFields: {
       delivery: "$deliveries",
     },
   },
   { $unwind: "$delivery" },
-  {
-    $lookup: {
-      from: "addresses",
-      let: {
-        id: {
-          $toObjectId: "$delivery.lr.consignor",
-        },
-      },
+  // {
+  //   $lookup: {
+  //     from: "addresses",
+  //     let: {
+  //       id: {
+  //         $toObjectId: "$delivery.lr.consignor",
+  //       },
+  //     },
 
-      pipeline: [
-        {
-          $match: {
-            $expr: { $eq: ["$_id", "$$id"] },
-          },
-        },
-      ],
-      as: "delivery.lr.consignor",
-    },
-  },
-  {
-    $unwind: {
-      path: "$delivery.lr.consignor",
-      preserveNullAndEmptyArrays: true,
-    },
-  },
-  {
-    $lookup: {
-      from: "addresses",
-      let: {
-        id: {
-          $toObjectId: "$delivery.lr.consignee",
-        },
-      },
+  //     pipeline: [
+  //       {
+  //         $match: {
+  //           $expr: { $eq: ["$_id", "$$id"] },
+  //         },
+  //       },
+  //     ],
+  //     as: "delivery.lr.consignor",
+  //   },
+  // },
+  // {
+  //   $unwind: {
+  //     path: "$delivery.lr.consignor",
+  //     preserveNullAndEmptyArrays: true,
+  //   },
+  // },
+  // {
+  //   $lookup: {
+  //     from: "addresses",
+  //     let: {
+  //       id: {
+  //         $toObjectId: "$delivery.lr.consignee",
+  //       },
+  //     },
 
-      pipeline: [
-        {
-          $match: {
-            $expr: { $eq: ["$_id", "$$id"] },
-          },
-        },
-      ],
-      as: "delivery.lr.consignee",
-    },
-  },
-  {
-    $unwind: {
-      path: "$delivery.lr.consignee",
-      preserveNullAndEmptyArrays: true,
-    },
-  },
+  //     pipeline: [
+  //       {
+  //         $match: {
+  //           $expr: { $eq: ["$_id", "$$id"] },
+  //         },
+  //       },
+  //       {},
+  //     ],
+  //     as: "delivery.lr.consignee",
+  //   },
+  // },
+  // {
+  //   $unwind: {
+  //     path: "$delivery.lr.consignee",
+  //     preserveNullAndEmptyArrays: true,
+  //   },
+  // },
   {
     $lookup: {
       from: "invoices",
@@ -271,6 +273,12 @@ export const lookups = [
                   $expr: {
                     $eq: ["$_id", "$$id"],
                   },
+                },
+              },
+              {
+                $project: {
+                  initials: 1,
+                  _id: 1,
                 },
               },
             ],
@@ -294,6 +302,13 @@ export const lookups = [
             $expr: {
               $eq: ["$deliveries.delivery", "$$id"],
             },
+          },
+        },
+        {
+          $project: {
+            organisation: 1,
+            invoiceNo: 1,
+            _id: 1,
           },
         },
       ],

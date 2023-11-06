@@ -86,12 +86,14 @@ export const AddressCard = (props) => {
           label="Address Line 2"
           value={address.billingAddressLine2}
         />
-        <PropertyListItem
-          align={align}
-          disableGutters
-          label="City"
-          value={address.city.description}
-        />
+        {address.city && (
+          <PropertyListItem
+            align={align}
+            disableGutters
+            label="City"
+            value={address.city.description}
+          />
+        )}
       </PropertyList>
     </React.Fragment>
   ) : (

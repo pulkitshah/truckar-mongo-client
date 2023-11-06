@@ -13,56 +13,58 @@ export default async function handler(req, res) {
       auth(req, res, async () => {
         const {
           account,
-          startRow = 0,
-          endRow = 100,
+          startRow,
+          endRow,
           filter = {},
           sort = { saleDate: -1, orderNo: -1 },
         } = JSON.parse(req.query.id);
 
-        let query = [];
-        if (account)
-          query.push(
-            {
-              $match: Object.assign({
-                account: new mongoose.Types.ObjectId(account),
-              }),
-            },
-            {
-              $match: {
-                "deliveries.0": {
-                  $exists: true,
-                },
-              },
-            }
-          );
+        console.log({
+          account,
+          startRow,
+          endRow,
+          filter,
+          sort,
+        });
+
+        let matches = { account: new mongoose.Types.ObjectId(account) };
+
+        let query = [
+          // filter the results by our accountId
+          {
+            $match: Object.assign(matches),
+          },
+        ];
 
         // filter according to filterModel object
-        // if (filter.orderNo) {
-        //   const orderNoQuery = createFilterAggPipeline({ orderNo: filter.orderNo });
-        //   query.push(orderNoQuery[0]);
-        // }
+        if (filter.orderNo) {
+          const orderNoQuery = createFilterAggPipeline({
+            orderNo: filter.orderNo,
+          });
+          query.push(orderNoQuery[0]);
+        }
 
-        // if (filter.customer) {
-        //   const customerQuery = createFilterAggPipeline({
-        //     customer: filter.customer,
-        //   });
-        //   query.push(customerQuery[0]);
-        // }
+        if (filter.customer) {
+          const customerQuery = createFilterAggPipeline({
+            customer: filter.customer,
+          });
+          query.push(customerQuery[0]);
+        }
 
-        // if (filter.vehicleNumber) {
-        //   const vehicleNumberQuery = createFilterAggPipeline({
-        //     vehicleNumber: filter.vehicleNumber,
-        //   });
-        //   query.push(vehicleNumberQuery[0]);
-        // }
+        if (filter.vehicleNumber) {
+          const vehicleNumberQuery = createFilterAggPipeline({
+            vehicleNumber: filter.vehicleNumber,
+          });
+          query.push(vehicleNumberQuery[0]);
+        }
 
         query = [...query, ...lookups];
 
-        if (sort) {
-          // maybe we want to sort by blog title or something
-          query.push({ $sort: sort });
-        }
-
+        // if (sort) {
+        //   // maybe we want to sort by blog title or something
+        //   query.push({ $sort: sort });
+        // }
+        console.log(query);
         query.push(
           {
             $group: {
@@ -82,8 +84,8 @@ export default async function handler(req, res) {
           }
         );
 
-        const deliveries = await Order.aggregate(query);
-        res.json(deliveries);
+        const orders = await Order.aggregate(query, { allowDiskUse: true });
+        res.json(orders);
       });
       break;
 
