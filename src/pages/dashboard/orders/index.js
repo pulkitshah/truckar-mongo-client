@@ -27,6 +27,7 @@ import { Search as SearchIcon } from "../../../icons/search";
 import { gtm } from "../../../lib/gtm";
 import { useDispatch, useSelector } from "../../../store";
 import DeliveriesGrid from "../../../components/dashboard/order/deliveries-grid";
+import LorryRegisterGrid from "../../../components/dashboard/order/lorry-register-grid";
 
 const tabs = [
   {
@@ -36,6 +37,10 @@ const tabs = [
   {
     label: "Deliveries",
     value: "delivery-register",
+  },
+  {
+    label: "Lorry Register (Purchase)",
+    value: "lorry-register",
   },
 ];
 
@@ -151,6 +156,9 @@ const OrderList = () => {
             )}
             {currentTab === "delivery-register" && (
               <DeliveriesGrid onOpenDrawer={handleOpenDrawer} />
+            )}
+            {currentTab === "lorry-register" && (
+              <LorryRegisterGrid onOpenDrawer={handleOpenDrawer} />
             )}
           </Box>
         </OrderListInner>

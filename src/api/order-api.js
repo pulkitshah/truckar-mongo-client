@@ -28,6 +28,31 @@ class OrderApi {
     }
   }
 
+  async getPurchaseOrdersByAccount(params) {
+    try {
+      const response = await axios.get(`/api/order/purchase/${params}`);
+      let orders = response.data[0].rows;
+      let count = response.data[0].count;
+      console.log(orders);
+      return {
+        status: response.status,
+        data: orders,
+        count,
+        error: false,
+      };
+    } catch (err) {
+      console.error("[Order Api]: ", err);
+      if (err) {
+        return {
+          status: 400,
+          data: err,
+          error:
+            "Order not created, please try again or contact customer support.",
+        };
+      }
+    }
+  }
+
   async createOrder(newOrder, dispatch) {
     try {
       const response = await axios.post(`/api/order/`, newOrder);

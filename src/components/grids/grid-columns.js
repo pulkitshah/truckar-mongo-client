@@ -4,6 +4,7 @@ import { PartyFilter } from "./ag-grid-filters";
 import {
   calculateAmountForOrder,
   dataFormatter,
+  formatNumber,
 } from "../../utils/amount-calculation";
 import { partyApi } from "../../api/party-api";
 import { organisationApi } from "../../api/organisation-api";
@@ -559,6 +560,104 @@ export const deliveriesTable = (account) => {
       //     return "-";
       //   }
       // },
+    },
+  ];
+};
+
+export const lorryRegisterTable = (account) => {
+  return [
+    {
+      field: "orderNo",
+      headerName: "Order No",
+      width: 100,
+      filter: "agNumberColumnFilter",
+      filterParams: {
+        buttons: ["reset"],
+        filterOptions: ["equals", "lessThan", "greaterThan"],
+        debounceMs: 1000,
+        maxNumConditions: 1,
+      },
+    },
+    {
+      field: "saleDate",
+      headerName: "Date",
+      width: 120,
+      valueGetter: (params) => {
+        if (params.data) {
+          return moment(params.data.saleDate).format("DD-MM-YY");
+        }
+      },
+    },
+    {
+      field: "vehicleNumber",
+      headerName: "Vehicle Number",
+      width: 150,
+      filter: "agTextColumnFilter",
+      filterParams: {
+        buttons: ["reset"],
+        filterOptions: ["contains", "equals"],
+        debounceMs: 1000,
+        maxNumConditions: 1,
+      },
+    },
+    {
+      field: "purchaseAdvance",
+      headerName: "Purchase Advance",
+      width: 150,
+      valueGetter: (params) => {
+        if (params.data) {
+          return `Rs. ${formatNumber(params.data.purchaseAdvance || 0)}`;
+        }
+      },
+    },
+    {
+      field: "expenses",
+      headerName: "Expenses",
+      width: 100,
+      valueGetter: (params) => {
+        if (params.data) {
+          return calculateAmountForOrder(params.data, "outflow", false);
+        }
+      },
+      valueFormatter: (params) => {
+        if (params.value) {
+          return dataFormatter(params.value, "currency");
+        }
+      },
+    },
+
+    {
+      field: "profit",
+      headerName: "Profit",
+      width: 100,
+      valueGetter: (params) => {
+        if (params.data) {
+          return (
+            calculateAmountForOrder(params.data, "sale", false) -
+            calculateAmountForOrder(params.data, "outflow", false)
+          );
+        }
+      },
+      valueFormatter: (params) => {
+        if (params.value) {
+          return dataFormatter(params.value, "currency");
+        }
+      },
+    },
+
+    {
+      field: "transporter",
+      headerName: "Transporter",
+      width: 150,
+      valueGetter: (params) => {
+        if (params.data) {
+          if (params.data.vehicle) {
+            return params.data.vehicle.organisation.name;
+          } else {
+            return params.data.transporter.name;
+          }
+        }
+      },
     },
   ];
 };
