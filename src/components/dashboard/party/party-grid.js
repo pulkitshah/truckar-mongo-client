@@ -7,7 +7,9 @@ const Table = ({ parties, onOpenDrawer }) => {
     <DataGrid
       onRowClick={onOpenDrawer}
       rows={parties}
-      getRowId={(row) => row._id}
+      getRowId={(row) => {
+        return row._id;
+      }}
       columns={partyTable}
       disableSelectionOnClick
       experimentalFeatures={{ newEditingApi: true }}

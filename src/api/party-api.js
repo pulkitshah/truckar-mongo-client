@@ -67,7 +67,7 @@ class PartyApi {
       const response = await axios.post(`/api/party/`, values);
       let party = response.data;
       console.log(party);
-      dispatch(slice.actions.createParty(party));
+      dispatch(slice.actions.createParty({ party }));
       return {
         status: response.status,
         data: party,

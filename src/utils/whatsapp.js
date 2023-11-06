@@ -17,11 +17,9 @@ let options = {
 };
 
 export const sendOrderConfirmationMessageToOwner = async (order, user) => {
-  console.log(order);
-  console.log(user);
   let template;
 
-  if (order.transporterId) {
+  if (order.transporter) {
     template = "owner_order_conf_trade";
   } else {
     template = "owner_order_conf_self";
