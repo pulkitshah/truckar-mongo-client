@@ -17,7 +17,7 @@ export default async function handler(req, res) {
 
         try {
           // Create
-          party = new Party(partyFields);
+          const party = new Party(partyFields);
           await party.save();
           res.send(party);
         } catch (error) {

@@ -20,7 +20,7 @@ export default async function handler(req, res) {
 
           try {
             // Create
-            address = new Address(addressFields);
+            const address = new Address(addressFields);
             await address.save();
             await address.populate("party");
             res.send(address);

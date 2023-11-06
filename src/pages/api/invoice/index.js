@@ -260,7 +260,7 @@ export default async function handler(req, res) {
 
           try {
             // Create
-            invoice = new Invoice(invoiceFields);
+            const invoice = new Invoice(invoiceFields);
             await invoice.save();
             res.send(invoice);
           } catch (error) {
