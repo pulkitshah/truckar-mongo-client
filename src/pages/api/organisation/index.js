@@ -20,7 +20,7 @@ export default async function handler(req, res) {
 
           try {
             // Create
-            organisation = new Organisation(organisationFields);
+            const organisation = new Organisation(organisationFields);
             await organisation.save();
             res.send(organisation);
           } catch (error) {
