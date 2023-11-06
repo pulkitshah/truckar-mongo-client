@@ -601,19 +601,9 @@ export const lorryRegisterTable = (account) => {
       },
     },
     {
-      field: "purchaseAdvance",
-      headerName: "Purchase Advance",
-      width: 150,
-      valueGetter: (params) => {
-        if (params.data) {
-          return `Rs. ${formatNumber(params.data.purchaseAdvance || 0)}`;
-        }
-      },
-    },
-    {
       field: "expenses",
-      headerName: "Expenses",
-      width: 100,
+      headerName: "Purchase Amount",
+      width: 150,
       valueGetter: (params) => {
         if (params.data) {
           return calculateAmountForOrder(params.data, "outflow", false);
@@ -625,16 +615,26 @@ export const lorryRegisterTable = (account) => {
         }
       },
     },
+    {
+      field: "purchaseAdvance",
+      headerName: "Purchase Advance",
+      width: 150,
+      valueGetter: (params) => {
+        if (params.data) {
+          return `Rs. ${formatNumber(params.data.purchaseAdvance || 0)}`;
+        }
+      },
+    },
 
     {
-      field: "profit",
-      headerName: "Profit",
+      field: "balance",
+      headerName: "Balance",
       width: 100,
       valueGetter: (params) => {
         if (params.data) {
           return (
-            calculateAmountForOrder(params.data, "sale", false) -
-            calculateAmountForOrder(params.data, "outflow", false)
+            calculateAmountForOrder(params.data, "outflow", false) -
+            (params.data.purchaseAdvance || 0)
           );
         }
       },
