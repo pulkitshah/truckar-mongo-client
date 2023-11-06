@@ -524,9 +524,7 @@ export const deliveriesTable = (account) => {
       valueGetter: (params) => {
         if (params.data) {
           if (params.data.delivery.billQuantity) {
-            return `Rs. ${params.data.delivery.billQuantity} / ${getOrderUnit(
-              params.data
-            )}`;
+            return `${params.data.delivery.billQuantity} ${params.data.saleType.unit}`;
           } else {
             return "-";
           }

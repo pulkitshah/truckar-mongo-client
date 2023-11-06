@@ -5,113 +5,6 @@ import Organisation from "../../../models/Organisation";
 import auth from "../../../auth";
 
 export const lookups = [
-  { $unwind: "$deliveries" },
-  {
-    $lookup: {
-      from: "organisations",
-      let: {
-        id: {
-          $toObjectId: "$deliveries.lr.organisation",
-        },
-        deliveries: "$deliveries",
-      },
-
-      pipeline: [
-        {
-          $match: {
-            $expr: { $eq: ["$_id", "$$id"] },
-          },
-        },
-      ],
-      as: "deliveries.lr.organisation",
-    },
-  },
-  {
-    $unwind: {
-      path: "$deliveries.lr.organisation",
-      preserveNullAndEmptyArrays: true,
-    },
-  },
-  {
-    $group: {
-      _id: "$_id",
-      orderNo: { $first: "$orderNo" },
-      saleDate: { $first: "$saleDate" },
-      customer: { $first: "$customer" },
-      vehicleNumber: { $first: "$vehicleNumber" },
-      vehicle: { $first: "$vehicle" },
-      driver: { $first: "$driver" },
-      orderExpenses: { $first: "$orderExpenses" },
-      saleType: { $first: "$saleType" },
-      saleRate: { $first: "$saleRate" },
-      minimumSaleGuarantee: { $first: "$minimumSaleGuarantee" },
-      saleAdvance: { $first: "$saleAdvance" },
-      purchaseType: { $first: "$purchaseType" },
-      purchaseRate: { $first: "$purchaseRate" },
-      minimumPurchaseGuarantee: { $first: "$minimumPurchaseGuarantee" },
-      purchaseAdvance: { $first: "$purchaseAdvance" },
-      transporter: { $first: "$transporter" },
-      createdDate: { $first: "$createdDate" },
-      account: { $first: "$account" },
-      deliveries: { $push: "$deliveries" },
-    },
-  },
-  {
-    $addFields: {
-      delivery: "$deliveries",
-    },
-  },
-  { $unwind: "$delivery" },
-  {
-    $lookup: {
-      from: "addresses",
-      let: {
-        id: {
-          $toObjectId: "$delivery.lr.consignor",
-        },
-      },
-
-      pipeline: [
-        {
-          $match: {
-            $expr: { $eq: ["$_id", "$$id"] },
-          },
-        },
-      ],
-      as: "delivery.lr.consignor",
-    },
-  },
-  {
-    $unwind: {
-      path: "$delivery.lr.consignor",
-      preserveNullAndEmptyArrays: true,
-    },
-  },
-  {
-    $lookup: {
-      from: "addresses",
-      let: {
-        id: {
-          $toObjectId: "$delivery.lr.consignee",
-        },
-      },
-
-      pipeline: [
-        {
-          $match: {
-            $expr: { $eq: ["$_id", "$$id"] },
-          },
-        },
-      ],
-      as: "delivery.lr.consignee",
-    },
-  },
-  {
-    $unwind: {
-      path: "$delivery.lr.consignee",
-      preserveNullAndEmptyArrays: true,
-    },
-  },
   {
     $lookup: {
       from: "parties",
@@ -249,6 +142,113 @@ export const lookups = [
   {
     $unwind: {
       path: "$driver",
+      preserveNullAndEmptyArrays: true,
+    },
+  },
+  { $unwind: "$deliveries" },
+  {
+    $lookup: {
+      from: "organisations",
+      let: {
+        id: {
+          $toObjectId: "$deliveries.lr.organisation",
+        },
+        deliveries: "$deliveries",
+      },
+
+      pipeline: [
+        {
+          $match: {
+            $expr: { $eq: ["$_id", "$$id"] },
+          },
+        },
+      ],
+      as: "deliveries.lr.organisation",
+    },
+  },
+  {
+    $unwind: {
+      path: "$deliveries.lr.organisation",
+      preserveNullAndEmptyArrays: true,
+    },
+  },
+  {
+    $group: {
+      _id: "$_id",
+      orderNo: { $first: "$orderNo" },
+      saleDate: { $first: "$saleDate" },
+      customer: { $first: "$customer" },
+      vehicleNumber: { $first: "$vehicleNumber" },
+      vehicle: { $first: "$vehicle" },
+      driver: { $first: "$driver" },
+      orderExpenses: { $first: "$orderExpenses" },
+      saleType: { $first: "$saleType" },
+      saleRate: { $first: "$saleRate" },
+      minimumSaleGuarantee: { $first: "$minimumSaleGuarantee" },
+      saleAdvance: { $first: "$saleAdvance" },
+      purchaseType: { $first: "$purchaseType" },
+      purchaseRate: { $first: "$purchaseRate" },
+      minimumPurchaseGuarantee: { $first: "$minimumPurchaseGuarantee" },
+      purchaseAdvance: { $first: "$purchaseAdvance" },
+      transporter: { $first: "$transporter" },
+      createdDate: { $first: "$createdDate" },
+      account: { $first: "$account" },
+      deliveries: { $push: "$deliveries" },
+    },
+  },
+  {
+    $addFields: {
+      delivery: "$deliveries",
+    },
+  },
+  { $unwind: "$delivery" },
+  {
+    $lookup: {
+      from: "addresses",
+      let: {
+        id: {
+          $toObjectId: "$delivery.lr.consignor",
+        },
+      },
+
+      pipeline: [
+        {
+          $match: {
+            $expr: { $eq: ["$_id", "$$id"] },
+          },
+        },
+      ],
+      as: "delivery.lr.consignor",
+    },
+  },
+  {
+    $unwind: {
+      path: "$delivery.lr.consignor",
+      preserveNullAndEmptyArrays: true,
+    },
+  },
+  {
+    $lookup: {
+      from: "addresses",
+      let: {
+        id: {
+          $toObjectId: "$delivery.lr.consignee",
+        },
+      },
+
+      pipeline: [
+        {
+          $match: {
+            $expr: { $eq: ["$_id", "$$id"] },
+          },
+        },
+      ],
+      as: "delivery.lr.consignee",
+    },
+  },
+  {
+    $unwind: {
+      path: "$delivery.lr.consignee",
       preserveNullAndEmptyArrays: true,
     },
   },
