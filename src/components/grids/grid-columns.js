@@ -670,11 +670,30 @@ export const lrTable = (account) => {
       field: "lrNo",
       headerName: "LR No",
       width: 100,
-      valueGetter: (params) => {
-        if (params.data !== undefined) {
-          return `${params.data.deliveries.lr.organisation.initials} - ${params.data.deliveries.lr.lrNo}`;
+
+      cellRenderer: (params) => {
+        if (params.data) {
+          if (Object.keys(params.data.deliveries.lr).length) {
+            return (
+              <Link
+                color="secondary"
+                href={`/dashboard/lrs/${JSON.stringify({
+                  deliveryId: params.data.deliveries._id,
+                  orderId: params.data._id,
+                })}`}
+                variant="body"
+              >
+                {`${params.data.deliveries.lr.organisation.initials}-${params.data.deliveries.lr.lrNo}`}
+              </Link>
+            );
+          } else {
+            return "-";
+          }
+        } else {
+          return "-";
         }
       },
+
       filter: "agNumberColumnFilter",
       filterParams: {
         buttons: ["reset"],
