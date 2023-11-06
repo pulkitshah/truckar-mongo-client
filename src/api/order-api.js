@@ -109,9 +109,9 @@ class OrderApi {
 
   async updateOrder(editedOrder) {
     try {
-      console.log(editedOrder);
       const response = await axios.patch(`/api/order/`, editedOrder);
       let order = response.data;
+      console.log(order);
 
       return {
         status: response.status,

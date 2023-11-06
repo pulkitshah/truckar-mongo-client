@@ -10,6 +10,7 @@ import { partyApi } from "../../api/party-api";
 import { organisationApi } from "../../api/organisation-api";
 import { vehicleApi } from "../../api/vehicle-api";
 import { getOrderUnit } from "../dashboard/order/order-drawer";
+import { orderApi } from "../../api/order-api";
 
 const getPartiesByAccount = async (params, account) => {
   const { data } = await partyApi.getPartiesByAccount({ account });
@@ -625,7 +626,6 @@ export const lorryRegisterTable = (account) => {
         }
       },
     },
-
     {
       field: "balance",
       headerName: "Balance",
@@ -644,7 +644,6 @@ export const lorryRegisterTable = (account) => {
         }
       },
     },
-
     {
       field: "transporter",
       headerName: "Transporter",
@@ -657,6 +656,19 @@ export const lorryRegisterTable = (account) => {
             return params.data.transporter.name;
           }
         }
+      },
+    },
+    {
+      field: "purchaseRemarks",
+      headerName: "Remarks",
+      editable: true,
+      width: 150,
+      valueSetter: (params) => {
+        orderApi.updateOrder({
+          _id: params.data._id,
+          purchaseRemarks: params.newValue,
+        });
+        params.api.refreshInfiniteCache();
       },
     },
   ];

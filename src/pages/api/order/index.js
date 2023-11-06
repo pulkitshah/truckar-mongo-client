@@ -50,6 +50,7 @@ export const lookups = [
       purchaseRate: { $first: "$purchaseRate" },
       minimumPurchaseGuarantee: { $first: "$minimumPurchaseGuarantee" },
       purchaseAdvance: { $first: "$purchaseAdvance" },
+      purchaseRemarks: { $first: "$purchaseRemarks" },
       transporter: { $first: "$transporter" },
       createdDate: { $first: "$createdDate" },
       account: { $first: "$account" },
@@ -246,7 +247,7 @@ export default async function handler(req, res) {
           await order.populate("driver");
           await order.populate("vehicle");
 
-          console.log(order);
+          // console.log(order);
 
           const orders = await Order.aggregate([
             {

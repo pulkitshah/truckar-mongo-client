@@ -128,6 +128,9 @@ const orderSchema = new mongoose.Schema({
   purchaseAdvance: {
     type: Number,
   },
+  purchaseRemarks: {
+    type: String,
+  },
   account: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "account",
