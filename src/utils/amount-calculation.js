@@ -759,6 +759,8 @@ export var calculateAmountForDelivery = (delivery, type) => {
   });
 
   let amount = 0;
+  let lrAmount = 0;
+  let invoiceAmount = 0;
 
   switch (type) {
     case "sale":
@@ -790,7 +792,6 @@ export var calculateAmountForDelivery = (delivery, type) => {
           break;
       }
 
-      let lrAmount = 0;
       if (delivery.delivery.lr) {
         if (delivery.delivery.lr.lrCharges) {
           lrAmount = parseFloat(
@@ -799,7 +800,6 @@ export var calculateAmountForDelivery = (delivery, type) => {
         }
       }
 
-      let invoiceAmount = 0;
       if (delivery.invoiceCharges) {
         invoiceAmount = parseFloat(
           getSumOfInvoiceCharges(delivery.invoiceCharges || 0)
@@ -807,87 +807,53 @@ export var calculateAmountForDelivery = (delivery, type) => {
       }
 
       return parseFloat(amount) + lrAmount + invoiceAmount;
+      break;
 
-    // case "purchase":
-    //   if (order.transporter) {
-    //     switch (order.purchaseType) {
-    //       case "quantity":
-    //         amount =
-    //           parseFloat(sumOfBillQuantity) * parseFloat(order.purchaseRate);
-    //         if (
-    //           parseFloat(sumOfBillQuantity) <
-    //           parseFloat(order.minimumPurchaseGuarantee || 0)
-    //         ) {
-    //           amount =
-    //             parseFloat(order.minimumPurchaseGuarantee || 0) *
-    //             parseFloat(order.purchaseRate);
-    //         }
+    case "freight+lr":
+      switch (delivery.saleType.value) {
+        case "quantity":
+          if (delivery.delivery.billQuantity) {
+            amount =
+              parseFloat(delivery.delivery.billQuantity) *
+              parseFloat(delivery.saleRate);
+          }
+          if (
+            parseFloat(sumOfBillQuantity) <
+            parseFloat(delivery.minimumSaleGuarantee || 0)
+          ) {
+            amount =
+              (parseFloat(delivery.minimumSaleGuarantee || 0) *
+                parseFloat(delivery.saleRate) *
+                parseFloat(delivery.delivery.billQuantity || 1)) /
+              parseFloat(sumOfBillQuantity || delivery.deliveries.length);
+          }
+          // console.log("amount");
+          // console.log(amount);
+          break;
+        case "fixed":
+          amount = parseFloat(delivery.saleRate);
+          break;
 
-    //         break;
-    //       case "fixed":
-    //         amount = parseFloat(order.purchaseRate);
-    //         break;
+        default:
+          break;
+      }
 
-    //       case "commission":
-    //         switch (order.commissionType) {
-    //           case "quantity":
-    //             amount =
-    //               calculateAmount(trips, "sale") -
-    //               parseFloat(sumOfBillQuantity) *
-    //                 parseFloat(order.purchaseRate);
-    //             if (
-    //               parseFloat(sumOfBillQuantity) <
-    //               parseFloat(order.minimumSaleGuarantee || 0)
-    //             ) {
-    //               amount =
-    //                 calculateAmount(trips, "sale") -
-    //                 parseFloat(order.minimumSaleGuarantee) *
-    //                   parseFloat(order.purchaseRate);
-    //             }
-    //             break;
+      if (delivery.delivery.lr) {
+        if (delivery.delivery.lr.lrCharges) {
+          lrAmount = parseFloat(
+            getSumOfLrCharges(delivery.delivery.lr.lrCharges || 0)
+          );
+        }
+      }
 
-    //           case "percentage":
-    //             amount =
-    //               calculateAmount(trips, "sale") -
-    //               (parseFloat(sumOfBillQuantity) *
-    //                 parseFloat(order.purchaseRate) *
-    //                 parseFloat(order.saleRate)) /
-    //                 100;
-    //             if (
-    //               parseFloat(sumOfBillQuantity) <
-    //               parseFloat(order.minimumSaleGuarantee || 0)
-    //             ) {
-    //               amount =
-    //                 calculateAmount(trips, "sale") -
-    //                 parseFloat(order.minimumSaleGuarantee) *
-    //                   parseFloat(order.purchaseRate);
-    //             }
-    //             break;
-    //           case "fixed":
-    //             amount =
-    //               calculateAmount(trips, "sale") -
-    //               parseFloat(order.purchaseRate);
-    //             break;
-    //           default:
-    //             amount = 0;
-    //         }
+      if (delivery.invoiceCharges) {
+        invoiceAmount = parseFloat(
+          getSumOfInvoiceCharges(delivery.invoiceCharges || 0)
+        );
+      }
 
-    //         break;
-
-    //       default:
-    //         break;
-    //     }
-    //   } else {
-    //     amount = 0;
-    //   }
-    //   return (
-    //     parseFloat(amount) +
-    //     //Adding Purchase others of every delivery
-    //     // trips.reduce(function (sum, current) {
-    //     //   return parseFloat(sum) + (parseFloat(current.purchaseOthers) || 0);
-    //     // }, 0)
-    //     -(advance && parseFloat(order.purchaseAdvance || 0))
-    //   );
+      return parseFloat(amount) + lrAmount;
+      break;
 
     // case "outflow":
     //   amount = calculateAmountForOrder(order, "purchase");

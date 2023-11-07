@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import PropTypes from "prop-types";
 import * as Yup from "yup";
-import { useFormik, FormikProvider, FieldArray, getIn } from "formik";
+import { Formik, useFormik, FormikProvider, FieldArray, getIn } from "formik";
 import { v4 as uuidv4 } from "uuid";
 import toast from "react-hot-toast";
 
@@ -9,6 +9,10 @@ import {
   Avatar,
   Box,
   Button,
+  Card,
+  CardContent,
+  Dialog,
+  DialogTitle,
   Divider,
   Drawer,
   Grid,
@@ -33,6 +37,7 @@ import { Trash as TrashIcon } from "../../../icons/trash";
 import { PropertyList } from "../../property-list";
 import { PropertyListItem } from "../../property-list-item";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
 import { useAuth } from "../../../hooks/use-auth";
 import { useDispatch } from "../../../store";
 import DeliveryDetails from "./delivery-details";
@@ -46,7 +51,10 @@ import { deliveryApi } from "../../../api/delivery-api";
 
 import moment from "moment";
 import { dataFormatter } from "../../../utils/amount-calculation";
-import { sendOrderConfirmationMessageToOwner } from "../../../utils/whatsapp";
+import {
+  sendOrderConfirmationMessageToOwner,
+  sendOrderConfirmationMessageToTransporter,
+} from "../../../utils/whatsapp";
 
 const statusOptions = [
   {
@@ -88,7 +96,9 @@ const OrderPreview = (props) => {
   const { user, account } = useAuth();
   const align = lgUp ? "horizontal" : "vertical";
   const dispatch = useDispatch();
+  const [open, toggleOpen] = React.useState(false);
   console.log(order);
+
   const formik = useFormik({
     enableReinitialize: true,
     initialValues: {
@@ -254,14 +264,42 @@ const OrderPreview = (props) => {
                 </Typography>
               </PropertyListItem>
               <Button
-                disabled={true}
                 onClick={() => {
-                  sendOrderConfirmationMessageToOwner(order, user);
+                  sendOrderConfirmationMessageToTransporter({
+                    order,
+                    user,
+                    account,
+                  });
                 }}
                 size="small"
                 sx={{ pt: 3 }}
               >
                 Whatsapp
+              </Button>
+            </Box>
+            <Box
+              sx={{
+                display: "flex",
+                flex: 1,
+                justifyContent: "space-between",
+              }}
+            >
+              <PropertyListItem align={align} disableGutters label="Driver">
+                <Typography color="primary" variant="body2">
+                  {order.driverName}
+                </Typography>
+                <Typography color="textSecondary" variant="body2">
+                  {order.driverMobile}
+                </Typography>
+              </PropertyListItem>
+              <Button
+                onClick={() => {
+                  toggleOpen(true);
+                }}
+                size="small"
+                sx={{ pt: 3 }}
+              >
+                Update
               </Button>
             </Box>
           </>
@@ -523,6 +561,154 @@ const OrderPreview = (props) => {
           </FormikProvider>
         </form>
       }
+      <Dialog
+        open={open}
+        onClose={() => toggleOpen(false)}
+        aria-labelledby="form-dialog-name"
+      >
+        <DialogTitle id="form-dialog-name">Update Driver Details</DialogTitle>
+        <Formik
+          initialValues={{
+            _id: order._id,
+            driverName: "",
+            driverMobile: "",
+            driverArrivalTime: "",
+          }}
+          validationSchema={Yup.object().shape({
+            name: Yup.string().max(255),
+            driverMobile: Yup.string().matches(
+              /^[6-9]\d{9}$/,
+              "Mobile is not valid"
+            ),
+          })}
+          onSubmit={async (values, { setErrors, setStatus, setSubmitting }) => {
+            try {
+              setSubmitting(true);
+              console.log(values);
+              const response = await orderApi.updateOrder(values);
+              console.log(response.data);
+
+              toast.success("Driver Details updated!");
+              // toggleOpen(false);
+            } catch (err) {
+              console.log(err);
+              setStatus({ success: false });
+              setErrors({ submit: err.message });
+              setSubmitting(false);
+            }
+          }}
+        >
+          {({
+            errors,
+            handleBlur,
+            handleChange,
+            handleSubmit,
+            isSubmitting,
+            setFieldValue,
+            touched,
+            values,
+          }) => (
+            <form onSubmit={handleSubmit}>
+              <Card>
+                <CardContent>
+                  <Grid container spacing={3}>
+                    <Grid item xs={12}>
+                      <TextField
+                        error={Boolean(touched.driverName && errors.driverName)}
+                        fullWidth
+                        helperText={touched.driverName && errors.driverName}
+                        label="Driver Name"
+                        name="driverName"
+                        onBlur={handleBlur}
+                        onChange={(event) => {
+                          setFieldValue("driverName", event.target.value);
+                        }}
+                        value={values.driverName}
+                        variant="outlined"
+                      />
+                    </Grid>
+                    <Grid item xs={12}>
+                      <TextField
+                        error={Boolean(
+                          touched.driverMobile && errors.driverMobile
+                        )}
+                        fullWidth
+                        helperText={touched.driverMobile && errors.driverMobile}
+                        label="Driver Mobile"
+                        name="driverMobile"
+                        onBlur={handleBlur}
+                        onChange={(event) => {
+                          setFieldValue(
+                            "driverMobile",
+                            event.target.value.replace(/ /g, "")
+                          );
+                        }}
+                        value={values.mobile}
+                        variant="outlined"
+                      />
+                    </Grid>
+                    <Grid item xs={12}>
+                      <DateTimePicker
+                        sx={{ my: 2 }}
+                        _id="driverArrivalTime"
+                        name="driverArrivalTime"
+                        label="Driver Arrival Time"
+                        inputFormat="DD/MM/YYYY hh:mm a"
+                        showTodayButton={true}
+                        value={formik.values.driverArrivalTime}
+                        onClick={() => setFieldTouched("end")}
+                        onChange={(date) =>
+                          formik.setFieldValue(
+                            "driverArrivalTime",
+                            moment(date)
+                          )
+                        }
+                        slotProps={{
+                          textField: {
+                            helperText:
+                              formik.touched.driverArrivalTime &&
+                              formik.errors.driverArrivalTime,
+                            error: Boolean(
+                              formik.touched.driverArrivalTime &&
+                                formik.errors.driverArrivalTime
+                            ),
+                          },
+                        }}
+                        renderInput={(params) => (
+                          <TextField fullWidth {...params} />
+                        )}
+                      />
+                    </Grid>
+                  </Grid>
+                  <Box mt={2}>
+                    <Grid container spacing={3}>
+                      <Grid item>
+                        <Button
+                          variant="contained"
+                          color="secondary"
+                          type="submit"
+                          disabled={isSubmitting}
+                        >
+                          Update Driver
+                        </Button>
+                      </Grid>
+                      <Grid item>
+                        <Button
+                          variant="contained"
+                          color="secondary"
+                          onClick={() => toggleOpen(false)}
+                        >
+                          Cancel
+                        </Button>
+                      </Grid>
+                    </Grid>
+                  </Box>
+                </CardContent>
+              </Card>
+            </form>
+          )}
+        </Formik>
+      </Dialog>
     </>
   );
 };

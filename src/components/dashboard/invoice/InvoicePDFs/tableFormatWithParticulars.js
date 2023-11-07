@@ -449,7 +449,8 @@ const InvoicePDF = ({ invoice, logo }) => {
 
               if (delivery) {
                 subtotalAmount =
-                  subtotalAmount + calculateAmountForDelivery(delivery, "sale");
+                  subtotalAmount +
+                  calculateAmountForDelivery(delivery, "freight+lr");
                 advance =
                   advance +
                   parseFloat(
@@ -561,7 +562,7 @@ const InvoicePDF = ({ invoice, logo }) => {
                       <Text billingAddress style={[styles.tableCellText]}>
                         Rs.{" "}
                         {formatNumber(
-                          calculateAmountForDelivery(delivery, "sale")
+                          calculateAmountForDelivery(delivery, "freight+lr")
                         )}
                       </Text>
                       {delivery.invoiceCharges.map((invoiceCharge, i) => {

@@ -131,6 +131,15 @@ const orderSchema = new mongoose.Schema({
   purchaseRemarks: {
     type: String,
   },
+  driverName: {
+    type: String,
+  },
+  driverMobile: {
+    type: String,
+  },
+  driverArrivalTime: {
+    type: Date,
+  },
   account: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "account",

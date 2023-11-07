@@ -107,3 +107,66 @@ export const sendOrderConfirmationMessageToOwner = async (order, user) => {
     console.error(error);
   }
 };
+
+export const sendOrderConfirmationMessageToTransporter = async ({
+  order,
+  user,
+  account,
+}) => {
+  let template;
+
+  if (order.transporter) {
+    template = "transporter_order_conf";
+  }
+
+  switch (template) {
+    case "transporter_order_conf":
+      options.data = {
+        to: order.transporter.mobile.replace("+", ""),
+        type: "template",
+        template: {
+          name: template,
+          component: [
+            {
+              type: "body",
+              parameter: [
+                account.name,
+                order.vehicleNumber,
+                getRouteFromOrder(order.deliveries),
+                order.driverName
+                  ? `${order.driverName
+                      .toLowerCase()
+                      .split(" ")
+                      .map((s) => s.charAt(0).toUpperCase() + s.substring(1))
+                      .join(" ")} ${
+                      order.driverMobile
+                        ? "(" + order.driveMobile + ")"
+                        : "(Mobile Not Updated)"
+                    }`
+                  : "(Driver Not Updated)",
+                order.purchaseType === "quantity"
+                  ? `Rs ${order.purchaseRate} / ${order.saleType.unit}`
+                  : `Rs ${order.purchaseRate} (Fixed)`,
+                order.minimumPurchaseGuarantee
+                  ? `${order.minimumPurchaseGuarantee} ${order.saleType.unit}`
+                  : `N/A`,
+
+                `For any enquiry, please contact ${user.name} (${user.mobile})`,
+              ],
+            },
+          ],
+        },
+      };
+      break;
+
+    default:
+      break;
+  }
+  try {
+    console.log(options);
+    const { data } = await axios.request(options);
+    toast.success("Whatsaap message sent successfully.");
+  } catch (error) {
+    console.error(error);
+  }
+};
