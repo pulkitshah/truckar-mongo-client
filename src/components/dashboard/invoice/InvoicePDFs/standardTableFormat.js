@@ -17,6 +17,7 @@ import {
   getInvoiceWeight,
   formatNumber,
   getSumOfInvoiceCharges,
+  calculateAmountForDeliveryNew,
 } from "../../../../utils/amount-calculation";
 
 Font.register({
@@ -426,7 +427,7 @@ const InvoicePDF = ({ invoice, logo }) => {
 
               subtotalAmount =
                 subtotalAmount +
-                calculateAmountForDelivery(delivery.delivery, "sale");
+                calculateAmountForDeliveryNew(delivery, "freight+lr+invoice");
               advance =
                 advance +
                 parseFloat(
@@ -512,7 +513,10 @@ const InvoicePDF = ({ invoice, logo }) => {
                   <View style={[styles.freightCell, styles.rightBorder]}>
                     <Text style={[styles.tableCellText]}>
                       {`Rs. ${formatNumber(
-                        calculateAmountForDelivery(delivery.delivery, "sale")
+                        calculateAmountForDeliveryNew(
+                          delivery,
+                          "freight+lr+invoice"
+                        )
                       )}`}
                     </Text>
                   </View>
@@ -574,7 +578,7 @@ const InvoicePDF = ({ invoice, logo }) => {
                 </View>
               </View>
             )}
-            {invoice.taxes &&
+            {invoice.taxes && invoice.taxes.length ? (
               invoice.taxes.map((tax) => {
                 return (
                   <View style={[styles.tableRow]}>
@@ -604,7 +608,9 @@ const InvoicePDF = ({ invoice, logo }) => {
                       <Text style={[styles.tableCellText]}>
                         {"Rs " +
                           formatNumber(
-                            Math.round((tax.value / 100) * subtotalAmount)
+                            Math.round(
+                              ((tax.value || 0) / 100) * subtotalAmount
+                            )
                           )}
                       </Text>
                     </View>
@@ -613,8 +619,8 @@ const InvoicePDF = ({ invoice, logo }) => {
                     </View>
                   </View>
                 );
-              })}
-            {
+              })
+            ) : (
               <View style={[styles.tableRow]}>
                 <View style={[styles.amountInWordsCell, styles.rightBorder]}>
                   <Text style={[styles.amountInWordsCellText]}>
@@ -654,22 +660,21 @@ const InvoicePDF = ({ invoice, logo }) => {
                       )}
                   </Text>
                 </View>
-                {
-                  <View
-                    style={[
-                      styles.advanceCell,
-                      !(invoice.taxes && invoice.taxes.length > 0) &&
-                        styles.bottomBorder,
-                    ]}
-                  >
-                    <Text style={[styles.tableCellText]}>
-                      {!(invoice.taxes && invoice.taxes.length > 0) &&
-                        "Rs " + formatNumber(advance)}
-                    </Text>
-                  </View>
-                }
+                <View
+                  style={[
+                    styles.advanceCell,
+                    !(invoice.taxes && invoice.taxes.length > 0) &&
+                      styles.bottomBorder,
+                  ]}
+                >
+                  <Text style={[styles.tableCellText]}>
+                    {!(invoice.taxes && invoice.taxes.length > 0) &&
+                      "Rs " + formatNumber(advance)}
+                  </Text>
+                </View>
               </View>
-            }
+            )}
+
             <View style={[styles.tableRow]}>
               <View style={[styles.amountInWordsCell, styles.rightBorder]}>
                 <Text style={[styles.tableCellText]}></Text>

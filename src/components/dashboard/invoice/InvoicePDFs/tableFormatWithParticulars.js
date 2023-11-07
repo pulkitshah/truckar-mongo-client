@@ -483,11 +483,12 @@ const InvoicePDF = ({ invoice, logo }) => {
                         styles.bottomBorder,
                       ]}
                     >
-                      {delivery.delivery.lr && (
-                        <Text style={[styles.tableCellText]}>
-                          {`${delivery.delivery.lr.organisation.initials} - ${delivery.delivery.lr.lrNo}`}
-                        </Text>
-                      )}
+                      <Text style={[styles.tableCellText]}>
+                        {delivery.delivery.lr &&
+                        Object.keys(delivery.delivery.lr).length
+                          ? `${delivery.delivery.lr.organisation.initials} - ${delivery.delivery.lr.lrNo}`
+                          : ""}
+                      </Text>
                     </View>
                     <View
                       style={[
@@ -544,8 +545,8 @@ const InvoicePDF = ({ invoice, logo }) => {
                           {delivery.delivery.lr &&
                           delivery.delivery.lr.chargedWeight
                             ? delivery.delivery.lr.chargedWeight
-                            : delivery.billQuantity
-                            ? `${delivery.billQuantity} ${delivery.saleType.unit} `
+                            : delivery.delivery.billQuantity
+                            ? `${delivery.delivery.billQuantity} ${delivery.saleType.unit} `
                             : `${delivery.minimumSaleGuarantee || 0} ${
                                 delivery.saleType.unit
                               }`}
@@ -679,7 +680,9 @@ const InvoicePDF = ({ invoice, logo }) => {
                       <Text style={[styles.tableCellText]}>
                         {"Rs " +
                           formatNumber(
-                            Math.round((tax.value / 100) * subtotalAmount)
+                            Math.round(
+                              ((tax.value || 0) / 100) * subtotalAmount
+                            )
                           )}
                       </Text>
                     </View>
