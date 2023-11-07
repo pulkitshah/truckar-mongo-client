@@ -13,7 +13,7 @@ import {
   Image,
 } from "@react-pdf/renderer";
 import {
-  calculateAmountForDelivery,
+  calculateAmountForDeliveryNew,
   formatNumber,
 } from "../../../../utils/amount-calculation";
 
@@ -450,7 +450,7 @@ const InvoicePDF = ({ invoice, logo }) => {
               if (delivery) {
                 subtotalAmount =
                   subtotalAmount +
-                  calculateAmountForDelivery(delivery, "freight+lr");
+                  calculateAmountForDeliveryNew(delivery, "freight+lr");
                 advance =
                   advance +
                   parseFloat(
@@ -562,7 +562,7 @@ const InvoicePDF = ({ invoice, logo }) => {
                       <Text billingAddress style={[styles.tableCellText]}>
                         Rs.{" "}
                         {formatNumber(
-                          calculateAmountForDelivery(delivery, "freight+lr")
+                          calculateAmountForDeliveryNew(delivery, "freight+lr")
                         )}
                       </Text>
                       {delivery.invoiceCharges.map((invoiceCharge, i) => {
