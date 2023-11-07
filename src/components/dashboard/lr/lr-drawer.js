@@ -627,7 +627,7 @@ export const LrForm = (props) => {
     consignee: Yup.object().nullable().required("Consignee is Required"), // these constraints take precedence
   };
 
-  let delivery = lr.deliveries;
+  let delivery = lr.delivery;
 
   const formik = useFormik({
     initialValues: {
@@ -709,10 +709,10 @@ export const LrForm = (props) => {
 
         let { data } = await lrApi.updateLr(newLr, dispatch);
         console.log(data);
-        // onOpen && onOpen(data, gridApi);
+        onOpen && onOpen(data, gridApi);
         gridApi && gridApi.refreshInfiniteCache();
         toast.success("Lr updated!");
-        // onCancel();
+        onCancel();
       } catch (err) {
         console.error(err);
         toast.error("Something went wrong!");
