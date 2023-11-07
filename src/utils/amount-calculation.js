@@ -445,3 +445,67 @@ export var getInvoiceWeight = (delivery, type) => {
       return { deliveryString, weight: 0, guarantee };
   }
 };
+
+export var calculateAmountForDeliveryNew = (delivery, type) => {
+  let sumOfBillQuantity = 0;
+
+  delivery.deliveries.map((delivery) => {
+    if (Boolean(delivery.billQuantity)) {
+      return (sumOfBillQuantity =
+        sumOfBillQuantity + parseFloat(delivery.billQuantity));
+    }
+    return sumOfBillQuantity;
+  });
+
+  let freight = 0;
+  let lrAmount = 0;
+  let invoiceAmount = 0;
+
+  switch (delivery.saleType.value) {
+    case "quantity":
+      if (delivery.delivery.billQuantity) {
+        freight =
+          parseFloat(delivery.delivery.billQuantity) *
+          parseFloat(delivery.saleRate);
+      }
+      if (
+        parseFloat(sumOfBillQuantity) <
+        parseFloat(delivery.minimumSaleGuarantee || 0)
+      ) {
+        freight =
+          (parseFloat(delivery.minimumSaleGuarantee || 0) *
+            parseFloat(delivery.saleRate) *
+            parseFloat(delivery.delivery.billQuantity || 1)) /
+          parseFloat(sumOfBillQuantity || delivery.deliveries.length);
+      }
+      // console.log("freight");
+      // console.log(freight);
+      break;
+    case "fixed":
+      freight = parseFloat(delivery.saleRate);
+      break;
+    default:
+      break;
+  }
+
+  if (delivery.delivery.lr) {
+    if (delivery.delivery.lr.lrCharges) {
+      lrAmount = parseFloat(
+        getSumOfLrCharges(delivery.delivery.lr.lrCharges || 0)
+      );
+    }
+  }
+
+  if (delivery.invoiceCharges) {
+    invoiceAmount = parseFloat(
+      getSumOfInvoiceCharges(delivery.invoiceCharges || 0)
+    );
+  }
+
+  if (type === "freight") return parseFloat(freight);
+  if (type === "freight+lr") return parseFloat(freight) + lrAmount;
+  if (type === "freight+lr+invoice")
+    return parseFloat(freight) + lrAmount + invoiceAmount;
+
+  return parseFloat(freight);
+};

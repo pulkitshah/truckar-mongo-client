@@ -155,6 +155,7 @@ const LrPDF = ({ lr, printRates = false }) => {
     return null;
   }
 
+  let lrChargeAmount = 0;
   console.log(lr);
 
   return (
@@ -853,6 +854,8 @@ const LrPDF = ({ lr, printRates = false }) => {
                       : "TBB"}
                   </Text>
                   {lr.lrCharges.map((lrCharge) => {
+                    lrChargeAmount =
+                      lrChargeAmount + lrCharge.chargeDefaultAmount;
                     return (
                       <Text
                         style={[
@@ -893,7 +896,7 @@ const LrPDF = ({ lr, printRates = false }) => {
                   </Text>
                   <Text style={[styles.chargesText, styles.bold]}>
                     {printRates
-                      ? `Rs. 0`
+                      ? `Rs. ${lr.order.saleRate + lrChargeAmount}`
                       : lr.fareBasis
                       ? lr.fareBasis.toUpperCase()
                       : "TBB"}
