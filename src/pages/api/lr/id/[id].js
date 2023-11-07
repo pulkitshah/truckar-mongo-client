@@ -26,7 +26,7 @@ export default async function handler(req, res) {
           query = [...query, ...lookups];
 
           const lrs = await Order.aggregate(query);
-          res.json(lrs.find((lr) => lr.deliveries._id === deliveryId));
+          res.json(lrs.find((lr) => lr.delivery._id === deliveryId));
         } catch (error) {
           console.log(error.message);
           res.status(500).send("Server Error");

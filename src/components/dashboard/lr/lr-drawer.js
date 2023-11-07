@@ -162,11 +162,7 @@ const LrPreview = (props) => {
             <PDFDownloadLink
               document={
                 <LrFormat
-                  lr={{
-                    ...lr.delivery.lr,
-                    delivery: lr.deliveries,
-                    order: lr,
-                  }}
+                  delivery={lr}
                   printRates={printRates}
                 />
               }
@@ -575,11 +571,7 @@ const LrPreview = (props) => {
                 border: "none",
               }}
             >
-              <LrFormat
-                lr={{ ...lr.delivery.lr, delivery: lr.deliveries, order: lr }}
-                delivery={lr}
-                printRates={printRates}
-              />
+              <LrFormat delivery={lr} printRates={printRates} />
             </PDFViewer>
           </Box>
         </Box>

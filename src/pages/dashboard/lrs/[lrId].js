@@ -44,6 +44,7 @@ const LrDetails = () => {
 
   const [logo, setLogo] = useState();
   const [lr, setLr] = useState();
+
   const { lrId } = router.query;
 
   const LrFormat = LrPDFs["standardLoose"];
@@ -173,17 +174,9 @@ const LrDetails = () => {
                 {
                   <PDFDownloadLink
                     document={
-                      <LrFormat
-                        logo={logo}
-                        lr={{
-                          ...lr.deliveries.lr,
-                          delivery: lr.deliveries,
-                          order: lr,
-                        }}
-                        printRates={printRates}
-                      />
+                      <LrFormat delivery={lr} printRates={printRates} />
                     }
-                    fileName={`Lr - ${lr.deliveries.lr.organisation.initials}-${lr.deliveries.lr.lrNo}`}
+                    fileName={`Lr - ${lr.delivery.lr.organisation.initials}-${lr.delivery.lr.lrNo}`}
                     style={{
                       textDecoration: "none",
                     }}

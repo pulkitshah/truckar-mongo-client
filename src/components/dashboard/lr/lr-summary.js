@@ -35,7 +35,7 @@ export const LrSummary = (props) => {
   const [status, setStatus] = useState(statusOptions[0]);
   const [addresses, setAddresses] = useState({ waypoints: [] });
 
-  let delivery = order.deliveries;
+  let delivery = order.delivery;
   let lr = delivery.lr;
   const align = smDown ? "vertical" : "horizontal";
 
