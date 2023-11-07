@@ -775,7 +775,6 @@ export const lrTable = (account) => {
       width: 100,
       valueGetter: (params) => {
         if (params.data !== undefined) {
-          console.log(params.data);
           return moment(params.data.deliveries.lr.lrDate).format("DD-MM-YY");
         }
       },

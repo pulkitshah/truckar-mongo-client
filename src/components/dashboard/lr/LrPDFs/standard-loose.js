@@ -498,7 +498,7 @@ const LrPDF = ({ lr, printRates = false }) => {
                     Date
                   </Text>
                   <Text style={[styles.body1, styles.bottomBorder]}>
-                    {moment(lr.date).format("DD-MM-YYYY")}
+                    {moment(lr.lrDate).format("DD-MM-YYYY")}
                   </Text>
                   <Text style={[styles.body1, styles.bold, styles.underlined]}>
                     Address of Issuing Office
