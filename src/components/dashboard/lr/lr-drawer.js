@@ -12,9 +12,11 @@ import LrPDFs from "./LrPDFs";
 import {
   Box,
   Button,
+  Checkbox,
   Dialog,
   Divider,
   Drawer,
+  FormControlLabel,
   Grid,
   Hidden,
   IconButton,
@@ -63,13 +65,16 @@ const statusOptions = [
 const LrPreview = (props) => {
   const { lgUp, onEdit, lr, gridApi } = props;
   const [viewPDF, setViewPDF] = useState(false);
+  const [printRates, setPrintRates] = useState(false);
   const LrFormat = LrPDFs["standardLoose"];
   const align = lgUp ? "horizontal" : "vertical";
-  const [logo, setLogo] = useState();
-  const { account } = useAuth();
   const dispatch = useDispatch();
 
   let delivery = lr.deliveries;
+
+  const togglePrintRates = () => {
+    setPrintRates(!printRates);
+  };
 
   const formik = useFormik({
     enableReinitialize: true,
@@ -134,6 +139,16 @@ const LrPreview = (props) => {
           >
             Edit
           </Button>
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={printRates}
+                onChange={togglePrintRates}
+                name="checkedF"
+              />
+            }
+            label="Print Rates"
+          />
           <Hidden smDown>
             <Button
               size="small"
@@ -152,7 +167,7 @@ const LrPreview = (props) => {
                     delivery: lr.deliveries,
                     order: lr,
                   }}
-                  printRates={false}
+                  printRates={printRates}
                 />
               }
               fileName={`Lr - ${lr.deliveries.lr.organisation.initials}-${lr.deliveries.lr.lrNo}`}
@@ -565,7 +580,7 @@ const LrPreview = (props) => {
             >
               <LrFormat
                 lr={{ ...lr.deliveries.lr, delivery: lr.deliveries, order: lr }}
-                printRates={false}
+                printRates={printRates}
               />
             </PDFViewer>
           </Box>

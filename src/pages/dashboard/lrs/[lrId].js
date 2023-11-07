@@ -9,9 +9,11 @@ import {
   Button,
   Card,
   CardHeader,
+  Checkbox,
   Container,
   Dialog,
   Divider,
+  FormControlLabel,
   Grid,
   Hidden,
   Link,
@@ -37,6 +39,7 @@ const LrDetails = () => {
   const router = useRouter();
   const isMounted = useMounted();
   const [isEditing, setIsEditing] = useState(false);
+  const [printRates, setPrintRates] = useState(false);
   const [viewPDF, setViewPDF] = useState(false);
 
   const [logo, setLogo] = useState();
@@ -44,6 +47,10 @@ const LrDetails = () => {
   const { lrId } = router.query;
 
   const LrFormat = LrPDFs["standardLoose"];
+
+  const togglePrintRates = () => {
+    setPrintRates(!printRates);
+  };
 
   const handleEdit = () => {
     setIsEditing(true);
@@ -139,11 +146,21 @@ const LrDetails = () => {
                 <Button
                   endIcon={<PencilAltIcon fontSize="small" />}
                   variant="outlined"
-                  sx={{ ml: 2 }}
+                  sx={{ mx: 2 }}
                   onClick={handleEdit}
                 >
                   Edit
                 </Button>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={printRates}
+                      onChange={togglePrintRates}
+                      name="checkedF"
+                    />
+                  }
+                  label="Print Rates"
+                />
                 <Hidden smDown>
                   <Button
                     variant="outlined"
@@ -163,7 +180,7 @@ const LrDetails = () => {
                           delivery: lr.deliveries,
                           order: lr,
                         }}
-                        printRates={false}
+                        printRates={printRates}
                       />
                     }
                     fileName={`Lr - ${lr.deliveries.lr.organisation.initials}-${lr.deliveries.lr.lrNo}`}
@@ -207,7 +224,7 @@ const LrDetails = () => {
             >
               <LrFormat
                 lr={{ ...lr.deliveries.lr, delivery: lr.deliveries, order: lr }}
-                printRates={false}
+                printRates={printRates}
               />
             </PDFViewer>
           </Box>
