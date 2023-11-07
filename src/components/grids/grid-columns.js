@@ -775,7 +775,7 @@ export const lrTable = (account) => {
       width: 100,
       valueGetter: (params) => {
         if (params.data !== undefined) {
-          return moment(params.data.deliveries.lr.lrDate).format("DD-MM-YY");
+          return moment(params.data.delivery.lr.lrDate).format("DD-MM-YY");
         }
       },
     },
@@ -786,17 +786,17 @@ export const lrTable = (account) => {
 
       cellRenderer: (params) => {
         if (params.data) {
-          if (Object.keys(params.data.deliveries.lr).length) {
+          if (Object.keys(params.data.delivery.lr).length) {
             return (
               <Link
                 color="secondary"
                 href={`/dashboard/lrs/${JSON.stringify({
-                  deliveryId: params.data.deliveries._id,
+                  deliveryId: params.data.delivery._id,
                   orderId: params.data._id,
                 })}`}
                 variant="body"
               >
-                {`${params.data.deliveries.lr.organisation.initials}-${params.data.deliveries.lr.lrNo}`}
+                {`${params.data.delivery.lr.organisation.initials}-${params.data.delivery.lr.lrNo}`}
               </Link>
             );
           } else {
@@ -821,7 +821,7 @@ export const lrTable = (account) => {
       width: 130,
       valueGetter: (params) => {
         if (params.data) {
-          return `${params.data.deliveries.lr.organisation.name}`;
+          return `${params.data.delivery.lr.organisation.name}`;
         }
       },
       filter: "agSetColumnFilter",
@@ -873,7 +873,7 @@ export const lrTable = (account) => {
       width: 130,
       valueGetter: (params) => {
         if (params.data) {
-          return params.data.deliveries.loading.structured_formatting.main_text;
+          return params.data.delivery.loading.structured_formatting.main_text;
         }
       },
     },
@@ -883,8 +883,7 @@ export const lrTable = (account) => {
       width: 130,
       valueGetter: (params) => {
         if (params.data) {
-          return params.data.deliveries.unloading.structured_formatting
-            .main_text;
+          return params.data.delivery.unloading.structured_formatting.main_text;
         }
       },
     },
@@ -893,8 +892,8 @@ export const lrTable = (account) => {
       headerName: "Consignor",
       width: 250,
       valueGetter: (params) => {
-        if (params.data && params.data.deliveries.lr.consignor) {
-          return params.data.deliveries.lr.consignor.name;
+        if (params.data && params.data.delivery.lr.consignor) {
+          return params.data.delivery.lr.consignor.name;
         }
       },
     },
@@ -903,8 +902,8 @@ export const lrTable = (account) => {
       headerName: "Consignee",
       width: 250,
       valueGetter: (params) => {
-        if (params.data && params.data.deliveries.lr.consignee) {
-          return params.data.deliveries.lr.consignee.name;
+        if (params.data && params.data.delivery.lr.consignee) {
+          return params.data.delivery.lr.consignee.name;
         }
       },
     },

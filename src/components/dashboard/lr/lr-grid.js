@@ -40,8 +40,6 @@ const Table = ({ onOpenDrawer }) => {
             }
           });
 
-          console.log(filter.organisation);
-
           filter.organisation = {
             filterType: "set",
             values: filteredOrganisations,
@@ -56,6 +54,7 @@ const Table = ({ onOpenDrawer }) => {
             filter,
           })
         );
+        console.log(data);
 
         params.successCallback(data, count);
       },

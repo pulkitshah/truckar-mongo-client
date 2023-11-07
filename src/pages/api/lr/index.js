@@ -5,31 +5,6 @@ import Organisation from "../../../models/Organisation";
 import auth from "../../../auth";
 
 export const lookups = [
-  { $unwind: "$deliveries" },
-  {
-    $lookup: {
-      from: "parties",
-      let: {
-        id: { $toObjectId: "$customer" },
-      },
-      pipeline: [
-        {
-          $match: {
-            $expr: {
-              $eq: ["$_id", "$$id"],
-            },
-          },
-        },
-      ],
-      as: "customer",
-    },
-  },
-  {
-    $unwind: {
-      path: "$customer",
-      preserveNullAndEmptyArrays: true,
-    },
-  },
   {
     $match: {
       "deliveries.lr": {
@@ -39,9 +14,43 @@ export const lookups = [
   },
   {
     $lookup: {
+      from: "parties",
+      let: {
+        id: "$customer",
+      },
+      pipeline: [
+        {
+          $match: {
+            $expr: {
+              $eq: ["$_id", "$$id"],
+            },
+          },
+        },
+        {
+          $project: {
+            name: 1,
+            city: 1,
+            mobile: 1,
+            // isTransporter: 1,
+            _id: 1,
+          },
+        },
+      ],
+      as: "customer",
+    },
+  },
+  { $unwind: "$customer" },
+  {
+    $addFields: {
+      delivery: "$deliveries",
+    },
+  },
+  { $unwind: "$delivery" },
+  {
+    $lookup: {
       from: "addresses",
       let: {
-        id: { $toObjectId: "$deliveries.lr.consignor" },
+        id: { $toObjectId: "$delivery.lr.consignor" },
       },
       pipeline: [
         {
@@ -52,12 +61,12 @@ export const lookups = [
           },
         },
       ],
-      as: "deliveries.lr.consignor",
+      as: "delivery.lr.consignor",
     },
   },
   {
     $unwind: {
-      path: "$deliveries.lr.consignor",
+      path: "$delivery.lr.consignor",
       preserveNullAndEmptyArrays: true,
     },
   },
@@ -65,7 +74,7 @@ export const lookups = [
     $lookup: {
       from: "addresses",
       let: {
-        id: { $toObjectId: "$deliveries.lr.consignee" },
+        id: { $toObjectId: "$delivery.lr.consignee" },
       },
       pipeline: [
         {
@@ -76,12 +85,12 @@ export const lookups = [
           },
         },
       ],
-      as: "deliveries.lr.consignee",
+      as: "delivery.lr.consignee",
     },
   },
   {
     $unwind: {
-      path: "$deliveries.lr.consignee",
+      path: "$delivery.lr.consignee",
       preserveNullAndEmptyArrays: true,
     },
   },
@@ -89,7 +98,7 @@ export const lookups = [
     $lookup: {
       from: "organisations",
       let: {
-        id: { $toObjectId: "$deliveries.lr.organisation" },
+        id: { $toObjectId: "$delivery.lr.organisation" },
       },
       pipeline: [
         {
@@ -100,12 +109,12 @@ export const lookups = [
           },
         },
       ],
-      as: "deliveries.lr.organisation",
+      as: "delivery.lr.organisation",
     },
   },
   {
     $unwind: {
-      path: "$deliveries.lr.organisation",
+      path: "$delivery.lr.organisation",
       preserveNullAndEmptyArrays: true,
     },
   },
@@ -113,7 +122,7 @@ export const lookups = [
     $lookup: {
       from: "invoices",
       let: {
-        id: "$deliveries._id",
+        id: "$delivery._id",
       },
       pipeline: [
         {

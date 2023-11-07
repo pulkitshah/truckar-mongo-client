@@ -69,8 +69,8 @@ const LrPreview = (props) => {
   const LrFormat = LrPDFs["standardLoose"];
   const align = lgUp ? "horizontal" : "vertical";
   const dispatch = useDispatch();
-
-  let delivery = lr.deliveries;
+  console.log(lr);
+  let delivery = lr.delivery;
 
   const togglePrintRates = () => {
     setPrintRates(!printRates);
@@ -79,8 +79,8 @@ const LrPreview = (props) => {
   const formik = useFormik({
     enableReinitialize: true,
     initialValues: {
-      _id: lr.deliveries.lr._id,
-      lrCharges: lr.deliveries.lr.lrCharges,
+      _id: lr.delivery.lr._id,
+      lrCharges: lr.delivery.lr.lrCharges,
     },
     // validationSchema: Yup.object().shape(validationShape),
     onSubmit: async (values, helpers) => {
@@ -163,14 +163,14 @@ const LrPreview = (props) => {
               document={
                 <LrFormat
                   lr={{
-                    ...lr.deliveries.lr,
+                    ...lr.delivery.lr,
                     delivery: lr.deliveries,
                     order: lr,
                   }}
                   printRates={printRates}
                 />
               }
-              fileName={`Lr - ${lr.deliveries.lr.organisation.initials}-${lr.deliveries.lr.lrNo}`}
+              fileName={`Lr - ${lr.delivery.lr.organisation.initials}-${lr.delivery.lr.lrNo}`}
               style={{
                 textDecoration: "none",
               }}
@@ -193,19 +193,19 @@ const LrPreview = (props) => {
           align={align}
           disableGutters
           label="Lr No"
-          value={`${lr.deliveries.lr.lrNo}`}
+          value={`${lr.delivery.lr.lrNo}`}
         />
         <PropertyListItem
           align={align}
           disableGutters
           label="LR Date"
-          value={moment(lr.deliveries.lr.lrDate).format("DD/MM/YY")}
+          value={moment(lr.delivery.lr.lrDate).format("DD/MM/YY")}
         />
         <PropertyListItem
           align={align}
           disableGutters
           label="Organisation"
-          value={lr.deliveries.lr.organisation.name}
+          value={lr.delivery.lr.organisation.name}
         />
         <Divider sx={{ my: 3 }} />
 
@@ -219,28 +219,28 @@ const LrPreview = (props) => {
           value={delivery.loading.description}
         />
 
-        {lr.deliveries.lr.consignor && (
+        {lr.delivery.lr.consignor && (
           <PropertyListItem align={align} disableGutters label="Consignor">
             <Typography color="primary" variant="body2">
-              {lr.deliveries.lr.consignor.name}
+              {lr.delivery.lr.consignor.name}
             </Typography>
             <Typography color="textSecondary" variant="body2">
-              {lr.deliveries.lr.consignor.billingAddressLine1}
+              {lr.delivery.lr.consignor.billingAddressLine1}
             </Typography>
             <Typography color="textSecondary" variant="body2">
-              {lr.deliveries.lr.consignor.billingAddressLine2}
+              {lr.delivery.lr.consignor.billingAddressLine2}
             </Typography>
             <Typography color="textSecondary" variant="body2">
-              {lr.deliveries.lr.consignor.city &&
-                lr.deliveries.lr.consignor.city.description}
+              {lr.delivery.lr.consignor.city &&
+                lr.delivery.lr.consignor.city.description}
             </Typography>
             <Typography color="textSecondary" variant="body2">
-              {lr.deliveries.lr.consignor.pan &&
-                `PAN - ${lr.deliveries.lr.consignor.pan}`}
+              {lr.delivery.lr.consignor.pan &&
+                `PAN - ${lr.delivery.lr.consignor.pan}`}
             </Typography>
             <Typography color="textSecondary" variant="body2">
-              {lr.deliveries.lr.consignor.gstin &&
-                `GSTIN - ${lr.deliveries.lr.consignor.gstin}`}
+              {lr.delivery.lr.consignor.gstin &&
+                `GSTIN - ${lr.delivery.lr.consignor.gstin}`}
             </Typography>
           </PropertyListItem>
         )}
@@ -250,27 +250,27 @@ const LrPreview = (props) => {
           label="Unloading at"
           value={delivery.unloading.description}
         />
-        {lr.deliveries.lr.consignee && (
+        {lr.delivery.lr.consignee && (
           <PropertyListItem align={align} disableGutters label="Consignee">
             <Typography color="primary" variant="body2">
-              {lr.deliveries.lr.consignee.name}
+              {lr.delivery.lr.consignee.name}
             </Typography>
             <Typography color="textSecondary" variant="body2">
-              {lr.deliveries.lr.consignee.billingAddressLine1}
+              {lr.delivery.lr.consignee.billingAddressLine1}
             </Typography>
             <Typography color="textSecondary" variant="body2">
-              {lr.deliveries.lr.consignee.billingAddressLine2}
+              {lr.delivery.lr.consignee.billingAddressLine2}
             </Typography>
             <Typography color="textSecondary" variant="body2">
-              {lr.deliveries.lr.consignee.city.description}
+              {lr.delivery.lr.consignee.city.description}
             </Typography>
             <Typography color="textSecondary" variant="body2">
-              {lr.deliveries.lr.consignee.pan &&
-                `PAN - ${lr.deliveries.lr.consignee.pan}`}
+              {lr.delivery.lr.consignee.pan &&
+                `PAN - ${lr.delivery.lr.consignee.pan}`}
             </Typography>
             <Typography color="textSecondary" variant="body2">
-              {lr.deliveries.lr.consignee.gstin &&
-                `GSTIN - ${lr.deliveries.lr.consignee.gstin}`}
+              {lr.delivery.lr.consignee.gstin &&
+                `GSTIN - ${lr.delivery.lr.consignee.gstin}`}
             </Typography>
           </PropertyListItem>
         )}
@@ -419,14 +419,14 @@ const LrPreview = (props) => {
           </form>
         }
 
-        {lr.deliveries.lr.descriptionOfGoods[0].description && (
+        {lr.delivery.lr.descriptionOfGoods[0].description && (
           <React.Fragment>
             <Divider sx={{ my: 3 }} />
             <Typography sx={{ mt: 6, mb: 3 }} variant="h6">
               Description of Goods
             </Typography>
             <PropertyListItem align={align} disableGutters label="Description">
-              {lr.deliveries.lr.descriptionOfGoods.map((goodsDescription) => {
+              {lr.delivery.lr.descriptionOfGoods.map((goodsDescription) => {
                 return (
                   <React.Fragment>
                     <Typography color="textSecondary" variant="body2">
@@ -439,61 +439,59 @@ const LrPreview = (props) => {
           </React.Fragment>
         )}
 
-        {(lr.deliveries.lr.insuranceCompany ||
-          lr.deliveries.lr.insuranceDate ||
-          lr.deliveries.lr.insurancePolicyNo ||
-          lr.deliveries.lr.insuranceAmount) && (
+        {(lr.delivery.lr.insuranceCompany ||
+          lr.delivery.lr.insuranceDate ||
+          lr.delivery.lr.insurancePolicyNo ||
+          lr.delivery.lr.insuranceAmount) && (
           <React.Fragment>
             <Divider sx={{ my: 3 }} />
             <Typography sx={{ mt: 6, mb: 3 }} variant="h6">
               Insurance Details
             </Typography>
-            {lr.deliveries.lr.insuranceCompany && (
+            {lr.delivery.lr.insuranceCompany && (
               <PropertyListItem
                 align={align}
                 disableGutters
                 label="Insurance Company"
-                value={lr.deliveries.lr.insuranceCompany}
+                value={lr.delivery.lr.insuranceCompany}
               />
             )}
-            {lr.deliveries.lr.insuranceDate && (
+            {lr.delivery.lr.insuranceDate && (
               <PropertyListItem
                 align={align}
                 disableGutters
                 label="Insurance Date"
-                value={moment(lr.deliveries.lr.insuranceDate).format(
-                  "DD/MM/YY"
-                )}
+                value={moment(lr.delivery.lr.insuranceDate).format("DD/MM/YY")}
               />
             )}
-            {lr.deliveries.lr.insurancePolicyNo && (
+            {lr.delivery.lr.insurancePolicyNo && (
               <PropertyListItem
                 align={align}
                 disableGutters
                 label="Insurance Policy No"
-                value={lr.deliveries.lr.insurancePolicyNo}
+                value={lr.delivery.lr.insurancePolicyNo}
               />
             )}
-            {lr.deliveries.lr.insuranceAmount && (
+            {lr.delivery.lr.insuranceAmount && (
               <PropertyListItem
                 align={align}
                 disableGutters
                 label="Insurance Amount"
-                value={lr.deliveries.lr.insuranceAmount}
+                value={lr.delivery.lr.insuranceAmount}
               />
             )}
           </React.Fragment>
         )}
 
-        {(lr.deliveries.lr.fareBasis ||
-          lr.deliveries.lr.valueOfGoods ||
-          lr.deliveries.lr.chargedWeight) && (
+        {(lr.delivery.lr.fareBasis ||
+          lr.delivery.lr.valueOfGoods ||
+          lr.delivery.lr.chargedWeight) && (
           <React.Fragment>
             <Divider sx={{ my: 3 }} />
             <Typography sx={{ mt: 6, mb: 3 }} variant="h6">
               Other Details
             </Typography>
-            {lr.deliveries.lr.fareBasis && (
+            {lr.delivery.lr.fareBasis && (
               <PropertyListItem
                 align={align}
                 disableGutters
@@ -508,50 +506,49 @@ const LrPreview = (props) => {
                       value: "topay",
                       label: "To Pay",
                     },
-                  ].find((x) => x.value === lr.deliveries.lr.fareBasis).label
+                  ].find((x) => x.value === lr.delivery.lr.fareBasis).label
                 }
               />
             )}
-            {lr.deliveries.lr.valueOfGoods && (
+            {lr.delivery.lr.valueOfGoods && (
               <PropertyListItem
                 align={align}
                 disableGutters
                 label="Value of Goods"
-                value={dataFormatter(lr.deliveries.lr.valueOfGoods, "currency")}
+                value={dataFormatter(lr.delivery.lr.valueOfGoods, "currency")}
               />
             )}
-            {lr.deliveries.lr.chargedWeight && (
+            {lr.delivery.lr.chargedWeight && (
               <PropertyListItem
                 align={align}
                 disableGutters
                 label="Charged Weight"
-                value={lr.deliveries.lr.chargedWeight}
+                value={lr.delivery.lr.chargedWeight}
               />
             )}
           </React.Fragment>
         )}
 
-        {(lr.deliveries.lr.ewayBillNo ||
-          lr.deliveries.lr.ewayBillExpiryDate) && (
+        {(lr.delivery.lr.ewayBillNo || lr.delivery.lr.ewayBillExpiryDate) && (
           <React.Fragment>
             <Divider sx={{ my: 3 }} />
             <Typography sx={{ mt: 6, mb: 3 }} variant="h6">
               E-Way Bill Details
             </Typography>
-            {lr.deliveries.lr.ewayBillNo && (
+            {lr.delivery.lr.ewayBillNo && (
               <PropertyListItem
                 align={align}
                 disableGutters
                 label="E-Way Bill No"
-                value={lr.deliveries.lr.ewayBillNo}
+                value={lr.delivery.lr.ewayBillNo}
               />
             )}
-            {lr.deliveries.lr.ewayBillExpiryDate && (
+            {lr.delivery.lr.ewayBillExpiryDate && (
               <PropertyListItem
                 align={align}
                 disableGutters
                 label="E-Way Expiry Date"
-                value={moment(lr.deliveries.lr.ewayBillExpiryDate).format(
+                value={moment(lr.delivery.lr.ewayBillExpiryDate).format(
                   "DD/MM/YY"
                 )}
               />
@@ -579,7 +576,8 @@ const LrPreview = (props) => {
               }}
             >
               <LrFormat
-                lr={{ ...lr.deliveries.lr, delivery: lr.deliveries, order: lr }}
+                lr={{ ...lr.delivery.lr, delivery: lr.deliveries, order: lr }}
+                delivery={lr}
                 printRates={printRates}
               />
             </PDFViewer>
@@ -609,7 +607,7 @@ export const LrForm = (props) => {
           "Lr No cannot be repeated for an organisation in the same fiscal year of LR date",
         test: async function (value) {
           try {
-            if (value === lr.deliveries.lr.lrNo) {
+            if (value === lr.delivery.lr.lrNo) {
               return true;
             }
             const response = await lrApi.validateDuplicateLrNo({
@@ -634,12 +632,12 @@ export const LrForm = (props) => {
   const formik = useFormik({
     initialValues: {
       order: lr._id,
-      organisation: lr.deliveries.lr.organisation || "",
-      lrDate: moment(lr.deliveries.lr.lrDate) || moment(),
-      lrNo: lr.deliveries.lr.lrNo || "",
+      organisation: lr.delivery.lr.organisation || "",
+      lrDate: moment(lr.delivery.lr.lrDate) || moment(),
+      lrNo: lr.delivery.lr.lrNo || "",
       deliveries: [delivery],
-      consignee: lr.deliveries.lr.consignee,
-      consignor: lr.deliveries.lr.consignor,
+      consignee: lr.delivery.lr.consignee,
+      consignor: lr.delivery.lr.consignor,
       saleType: lr.saleType
         ? lr.saleType
         : {
@@ -648,8 +646,8 @@ export const LrForm = (props) => {
             label: "Per Ton",
           },
       // LR
-      descriptionOfGoods: lr.deliveries.lr.descriptionOfGoods
-        ? lr.deliveries.lr.descriptionOfGoods
+      descriptionOfGoods: lr.delivery.lr.descriptionOfGoods
+        ? lr.delivery.lr.descriptionOfGoods
         : [
             {
               description: "",
@@ -657,24 +655,24 @@ export const LrForm = (props) => {
               packing: "",
             },
           ],
-      dimesnionsLength: lr.deliveries.lr.dimesnionsLength || null,
-      dimesnionsBreadth: lr.deliveries.lr.dimesnionsBreadth || null,
-      dimesnionsHeight: lr.deliveries.lr.dimesnionsHeight || null,
-      fareBasis: lr.deliveries.lr.fareBasis || "tbb",
-      valueOfGoods: lr.deliveries.lr.valueOfGoods || null,
-      chargedWeight: lr.deliveries.lr.chargedWeight || null,
-      insuranceCompany: lr.deliveries.lr.insuranceCompany || null,
-      insuranceDate: lr.deliveries.lr.insuranceDate
-        ? moment(lr.deliveries.lr.insuranceDate)
+      dimesnionsLength: lr.delivery.lr.dimesnionsLength || null,
+      dimesnionsBreadth: lr.delivery.lr.dimesnionsBreadth || null,
+      dimesnionsHeight: lr.delivery.lr.dimesnionsHeight || null,
+      fareBasis: lr.delivery.lr.fareBasis || "tbb",
+      valueOfGoods: lr.delivery.lr.valueOfGoods || null,
+      chargedWeight: lr.delivery.lr.chargedWeight || null,
+      insuranceCompany: lr.delivery.lr.insuranceCompany || null,
+      insuranceDate: lr.delivery.lr.insuranceDate
+        ? moment(lr.delivery.lr.insuranceDate)
         : null,
-      insurancePolicyNo: lr.deliveries.lr.insurancePolicyNo || null,
-      insuranceAmount: lr.deliveries.lr.insuranceAmount || null,
-      ewayBillNo: lr.deliveries.lr.ewayBillNo || null,
-      ewayBillExpiryDate: lr.deliveries.lr.ewayBillExpiryDate
-        ? moment(lr.deliveries.lr.ewayBillExpiryDate)
+      insurancePolicyNo: lr.delivery.lr.insurancePolicyNo || null,
+      insuranceAmount: lr.delivery.lr.insuranceAmount || null,
+      ewayBillNo: lr.delivery.lr.ewayBillNo || null,
+      ewayBillExpiryDate: lr.delivery.lr.ewayBillExpiryDate
+        ? moment(lr.delivery.lr.ewayBillExpiryDate)
         : null,
-      gstPayableBy: lr.deliveries.lr.gstPayableBy || "consignor",
-      lrCharges: lr.deliveries.lr.lrCharges || account.lrSettings[0],
+      gstPayableBy: lr.delivery.lr.gstPayableBy || "consignor",
+      lrCharges: lr.delivery.lr.lrCharges || account.lrSettings[0],
       account: account._id,
     },
     validationSchema: Yup.object().shape(validationShape),
@@ -682,7 +680,7 @@ export const LrForm = (props) => {
       try {
         const newLr = {
           order: lr._id,
-          delivery: lr.deliveries._id,
+          delivery: lr.delivery._id,
           lrFormat: values.lrFormat,
           lrNo: parseInt(values.lrNo),
           lrDate: values.lrDate.format(),
@@ -1261,7 +1259,7 @@ export const LrDrawer = (props) => {
         }}
       >
         <Typography color="inherit" variant="h6">
-          {lr.deliveries.lr.number}
+          {lr.delivery.lr.number}
         </Typography>
         <IconButton color="inherit" onClick={onClose}>
           <XIcon fontSize="small" />

@@ -11,7 +11,10 @@ import {
   Image,
   Font,
 } from "@react-pdf/renderer";
-import { formatNumber } from "../../../../utils/amount-calculation";
+import {
+  calculateAmountForDeliveryNew,
+  formatNumber,
+} from "../../../../utils/amount-calculation";
 
 Font.register({
   family: "Roboto",
@@ -150,12 +153,14 @@ const styles = StyleSheet.create({
   },
 });
 
-const LrPDF = ({ lr, printRates = false }) => {
-  if (!lr) {
+const LrPDF = ({ delivery, printRates = false }) => {
+  if (!delivery.delivery.lr) {
     return null;
   }
 
   let lrChargeAmount = 0;
+  let lr = delivery.delivery.lr;
+
   console.log(lr);
 
   return (
@@ -402,13 +407,13 @@ const LrPDF = ({ lr, printRates = false }) => {
                     FROM
                   </Text>
                   <Text style={[styles.body1, styles.bottomBorder]}>
-                    {lr.delivery.loading.description}
+                    {delivery.delivery.loading.description}
                   </Text>
                   <Text style={[styles.body1, styles.bold, styles.underlined]}>
                     TO
                   </Text>
                   <Text style={[styles.body1]}>
-                    {lr.delivery.unloading.description}
+                    {delivery.delivery.unloading.description}
                   </Text>
                 </View>
                 <View
@@ -511,7 +516,7 @@ const LrPDF = ({ lr, printRates = false }) => {
                   <Text style={[styles.body1, styles.bold, styles.underlined]}>
                     Vehicle No.
                   </Text>
-                  <Text style={[styles.body1]}>{lr.order.vehicleNumber}</Text>
+                  <Text style={[styles.body1]}>{delivery.vehicleNumber}</Text>
                 </View>
               </View>
             </View>
@@ -595,8 +600,8 @@ const LrPDF = ({ lr, printRates = false }) => {
                     </View>
                     <View style={[styles.tableCell]}>
                       <Text style={[styles.body1]}>
-                        {lr.delivery.billQuantity &&
-                          `${lr.delivery.billQuantity} ${lr.order.saleType.unit}`}
+                        {delivery.delivery.billQuantity &&
+                          `${delivery.delivery.billQuantity} ${delivery.saleType.unit}`}
                       </Text>
                     </View>
                   </View>
@@ -714,8 +719,8 @@ const LrPDF = ({ lr, printRates = false }) => {
                       style={[styles.tableCell, { minWidth: 60, maxWidth: 60 }]}
                     >
                       <Text style={[styles.body1]}>
-                        {lr.order.minimumSaleGuarantee &&
-                          `${lr.order.minimumSaleGuarantee} MT`}
+                        {delivery.minimumSaleGuarantee &&
+                          `${delivery.minimumSaleGuarantee} MT`}
                       </Text>
 
                       <Text style={[styles.body1]}>
@@ -737,7 +742,7 @@ const LrPDF = ({ lr, printRates = false }) => {
                     <View style={[styles.tableCell]}>
                       <Text style={[styles.body1]}>
                         {printRates
-                          ? `Rs. ${lr.order.saleRate}`
+                          ? `Rs. ${delivery.saleRate}`
                           : lr.fareBasis
                           ? lr.fareBasis.toUpperCase()
                           : "TBB"}
@@ -848,7 +853,10 @@ const LrPDF = ({ lr, printRates = false }) => {
                     ]}
                   >
                     {printRates
-                      ? `Rs. ${lr.order.saleRate}`
+                      ? `Rs. ${calculateAmountForDeliveryNew(
+                          delivery,
+                          "freight"
+                        )}`
                       : lr.fareBasis
                       ? lr.fareBasis.toUpperCase()
                       : "TBB"}
@@ -896,7 +904,10 @@ const LrPDF = ({ lr, printRates = false }) => {
                   </Text>
                   <Text style={[styles.chargesText, styles.bold]}>
                     {printRates
-                      ? `Rs. ${lr.order.saleRate + lrChargeAmount}`
+                      ? `Rs. ${calculateAmountForDeliveryNew(
+                          delivery,
+                          "freight+lr"
+                        )}`
                       : lr.fareBasis
                       ? lr.fareBasis.toUpperCase()
                       : "TBB"}
