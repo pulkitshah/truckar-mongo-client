@@ -1019,6 +1019,14 @@ export const invoiceTable = (account) => {
         }
       },
     },
+    {
+      field: "subtotal",
+      headerName: "Subtotal",
+      width: 120,
+      valueFormatter: (params) => {
+        return params.data && dataFormatter(params.data.subtotal, "currency");
+      },
+    },
   ];
 };
 

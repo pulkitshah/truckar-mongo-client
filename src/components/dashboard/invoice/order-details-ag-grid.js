@@ -63,8 +63,6 @@ const OrderDetailsGrid = ({ formik }) => {
       }),
     });
   }, []);
-  console.log("order-grid");
-  console.log(formik.values);
 
   return (
     <div style={{ width: "100%", height: "100%" }}>

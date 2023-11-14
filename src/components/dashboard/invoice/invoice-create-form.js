@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { useRouter } from "next/router";
 import { v4 as uuidv4 } from "uuid";
 import toast from "react-hot-toast";
@@ -25,11 +25,15 @@ import DeliveryDetails from "./delivery-details";
 import { useDispatch } from "../../../store";
 import { invoiceApi } from "../../../api/invoice-api";
 import { deliveryApi } from "../../../api/delivery-api";
+import { useEffect } from "react";
+import { calculateAmountForDeliveryNew } from "../../../utils/amount-calculation";
 
 export const InvoiceCreateForm = ({ invoice = {} }) => {
   const router = useRouter();
   const { account } = useAuth();
   const dispatch = useDispatch();
+
+  const subtotal = useRef(0);
 
   let validationShape = {
     invoiceNo: Yup.number()
@@ -72,6 +76,7 @@ export const InvoiceCreateForm = ({ invoice = {} }) => {
       customer: invoice.customer || null,
       billingAddress: invoice.billingAddress || null,
       deliveries: invoice.deliveries || [],
+      subtotal: invoice.subtotal || 0,
       taxes: invoice.taxes ? invoice.taxes : [],
     },
     validationSchema: Yup.object().shape(validationShape),
@@ -86,6 +91,7 @@ export const InvoiceCreateForm = ({ invoice = {} }) => {
           billingAddress: values.billingAddress._id,
           deliveries: values.deliveries,
           invoiceFormat: account.invoiceFormat,
+          subtotal: subtotal.current,
           account: account._id,
         };
         let { data } = await invoiceApi.createInvoice(newInvoice, dispatch);
@@ -103,6 +109,17 @@ export const InvoiceCreateForm = ({ invoice = {} }) => {
       }
     },
   });
+
+  useEffect(() => {
+    subtotal.current = 0;
+    formik.values.deliveries.map((del) => {
+      subtotal.current =
+        subtotal.current +
+        calculateAmountForDeliveryNew(del, "freight+lr+invoice");
+    });
+  }, [formik.values.deliveries]);
+
+  console.log(subtotal.current);
 
   return (
     <form onSubmit={formik.handleSubmit}>

@@ -15,11 +15,9 @@ import {
 import { DistanceMatrixService } from "@react-google-maps/api";
 import { Trash as TrashIcon } from "../../../icons/trash";
 import { Plus as PlusIcon } from "../../../icons/plus";
-import GoogleMaps from "../order/google-places-autocomplete";
-import { display } from "@mui/system";
 import moment from "moment";
 import {
-  calculateAmountForDelivery,
+  calculateAmountForDeliveryNew,
   dataFormatter,
 } from "../../../utils/amount-calculation";
 
@@ -306,9 +304,9 @@ const DeliveryDetails = ({ sx, formik, drawer = false }) => {
                                   label="Amount"
                                   fullWidth
                                   value={dataFormatter(
-                                    calculateAmountForDelivery(
+                                    calculateAmountForDeliveryNew(
                                       formik.values.deliveries[index],
-                                      "sale"
+                                      "freight+lr"
                                     ),
                                     "currency"
                                   )}

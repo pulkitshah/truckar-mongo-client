@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useEffect } from "react";
 import { useRouter } from "next/router";
 import { v4 as uuidv4 } from "uuid";
 import toast from "react-hot-toast";
@@ -26,6 +26,7 @@ import { invoiceFormats } from "../invoice/InvoicePDFs";
 import { useDispatch } from "../../../store";
 import { invoiceApi } from "../../../api/invoice-api";
 import TaxForm from "./tax-form";
+import { calculateAmountForDeliveryNew } from "../../../utils/amount-calculation";
 
 export const InvoiceEditForm = ({
   deliveries,
@@ -39,6 +40,7 @@ export const InvoiceEditForm = ({
   const [invoiceFormat, setInvoiceFormat] = React.useState(
     invoice.invoiceFormat
   );
+  const subtotal = useRef(0);
 
   console.log(invoice);
 
@@ -66,6 +68,7 @@ export const InvoiceEditForm = ({
           billingAddress: values.billingAddress,
           deliveries: values.deliveries,
           taxes: values.taxes,
+          subtotal: subtotal.current,
           account: account._id,
           _version: invoice._version,
         };
@@ -88,6 +91,15 @@ export const InvoiceEditForm = ({
       }
     },
   });
+
+  useEffect(() => {
+    subtotal.current = 0;
+    formik.values.deliveries.map((del) => {
+      subtotal.current =
+        subtotal.current +
+        calculateAmountForDeliveryNew(del, "freight+lr+invoice");
+    });
+  }, [formik.values.deliveries]);
 
   console.log(formik.values);
   return (

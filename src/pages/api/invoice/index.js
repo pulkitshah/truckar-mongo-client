@@ -222,6 +222,9 @@ export const lookups = [
         $first: "$billingAddress",
       },
       deliveries: { $push: "$deliveries" },
+      subtotal: {
+        $first: "$subtotal",
+      },
       taxes: {
         $first: "$taxes",
       },

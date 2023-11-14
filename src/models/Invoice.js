@@ -40,6 +40,9 @@ const invoiceSchema = new mongoose.Schema({
       },
     },
   ],
+  subtotal: {
+    type: Number,
+  },
   taxes: {
     type: Array,
   },
