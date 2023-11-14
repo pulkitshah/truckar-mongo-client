@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import dbConnect from "../../../lib/dbConnect";
 import Invoice from "../../../models/Invoice";
 import auth from "../../../auth";
+import Order from "../../../models/Order";
 
 export const lookups = [
   {
@@ -247,7 +248,7 @@ export default async function handler(req, res) {
             (update) => (invoiceFields[update] = req.body[update])
           );
 
-          console.log(invoiceFields);
+          // console.log(invoiceFields);
 
           invoiceFields.deliveries = invoiceFields.deliveries.map(
             (delivery) => ({
@@ -262,6 +263,25 @@ export default async function handler(req, res) {
             // Create
             const invoice = new Invoice(invoiceFields);
             await invoice.save();
+
+            invoiceFields.deliveries.map(async (delivery) => {
+              const order = await Order.findOne({
+                _id: delivery.order,
+              });
+
+              order.deliveries = order.deliveries.map((del) => {
+                if (del._id === delivery.delivery._id) {
+                  del.invoices = [
+                    ...del.invoices,
+                    `${req.body.organisation.initials}-${invoiceFields.invoiceNo}`,
+                  ];
+                  return del;
+                } else {
+                  return del;
+                }
+              });
+              await order.save();
+            });
             res.send(invoice);
           } catch (error) {
             console.log(error.message);
@@ -281,11 +301,75 @@ export default async function handler(req, res) {
         try {
           const invoice = await Invoice.findOne({
             _id: req.body._id,
-          });
+          }).populate("organisation");
 
           if (!invoice) {
             return res.status(404).send("No invoice to update");
           }
+
+          invoice.deliveries.map(async (invoiceDel) => {
+            const doesDeliveryExist = req.body.deliveries.find(
+              (reqDelivery) => {
+                return (
+                  reqDelivery._id === invoiceDel.order.toString() &&
+                  reqDelivery.delivery._id === invoiceDel.delivery
+                );
+              }
+            );
+
+            if (!doesDeliveryExist) {
+              const order = await Order.findOne({
+                _id: invoiceDel.order,
+              });
+
+              order.deliveries = order.deliveries.map((orderDel) => {
+                if (orderDel._id === invoiceDel.delivery) {
+                  const index = orderDel.invoices.indexOf(
+                    `${invoice.organisation.initials}-${invoice.invoiceNo}`
+                  );
+
+                  if (index !== -1) {
+                    orderDel.invoices.splice(index, 1);
+                  }
+                  return orderDel;
+                } else {
+                  return orderDel;
+                }
+              });
+
+              await order.save();
+            }
+          });
+
+          req.body.deliveries.map(async (reqDelivery) => {
+            const doesDeliveryNotExist = invoice.deliveries.find(
+              (invoiceDel) => {
+                return (
+                  reqDelivery._id === invoiceDel.order.toString() &&
+                  reqDelivery.delivery._id === invoiceDel.delivery
+                );
+              }
+            );
+
+            if (!doesDeliveryNotExist) {
+              const order = await Order.findOne({
+                _id: reqDelivery._id,
+              });
+
+              order.deliveries = order.deliveries.map((orderDel) => {
+                if (orderDel._id === reqDelivery.delivery._id) {
+                  orderDel.invoices = [
+                    ...orderDel.invoices,
+                    `${req.body.organisation.initials}-${req.body.invoiceNo}`,
+                  ];
+                  return orderDel;
+                } else {
+                  return orderDel;
+                }
+              });
+              await order.save();
+            }
+          });
 
           updates.forEach((update) => (invoice[update] = req.body[update]));
 
@@ -297,8 +381,6 @@ export default async function handler(req, res) {
           }));
           await invoice.save();
 
-          res.send(invoice);
-
           const invoices = await Invoice.aggregate([
             {
               $match: Object.assign({
@@ -308,7 +390,7 @@ export default async function handler(req, res) {
             ...lookups,
           ]);
 
-          res.send(invoice[0]);
+          res.send(invoices[0]);
         } catch (error) {
           console.log(error.message);
           res.status(500).send("Server Error");

@@ -226,7 +226,6 @@ export default async function handler(req, res) {
     case "PATCH":
       auth(req, res, async () => {
         const updates = Object.keys(req.body);
-        console.log(req.body);
         try {
           const order = await Order.findOne({
             _id: req.body._id,

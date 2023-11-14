@@ -118,54 +118,54 @@ export const lookups = [
       preserveNullAndEmptyArrays: true,
     },
   },
-  {
-    $lookup: {
-      from: "invoices",
-      let: {
-        id: "$delivery._id",
-      },
-      pipeline: [
-        {
-          $lookup: {
-            from: "organisations",
-            let: {
-              id: "$organisation",
-            },
-            pipeline: [
-              {
-                $match: {
-                  $expr: {
-                    $eq: ["$_id", "$$id"],
-                  },
-                },
-              },
-            ],
-            as: "organisation",
-          },
-        },
-        {
-          $unwind: {
-            path: "$organisation",
-            preserveNullAndEmptyArrays: true,
-          },
-        },
-        {
-          $unwind: {
-            path: "$deliveries",
-            preserveNullAndEmptyArrays: true,
-          },
-        },
-        {
-          $match: {
-            $expr: {
-              $eq: ["$deliveries.delivery", "$$id"],
-            },
-          },
-        },
-      ],
-      as: "invoice",
-    },
-  },
+  // {
+  //   $lookup: {
+  //     from: "invoices",
+  //     let: {
+  //       id: "$delivery._id",
+  //     },
+  //     pipeline: [
+  //       {
+  //         $lookup: {
+  //           from: "organisations",
+  //           let: {
+  //             id: "$organisation",
+  //           },
+  //           pipeline: [
+  //             {
+  //               $match: {
+  //                 $expr: {
+  //                   $eq: ["$_id", "$$id"],
+  //                 },
+  //               },
+  //             },
+  //           ],
+  //           as: "organisation",
+  //         },
+  //       },
+  //       {
+  //         $unwind: {
+  //           path: "$organisation",
+  //           preserveNullAndEmptyArrays: true,
+  //         },
+  //       },
+  //       {
+  //         $unwind: {
+  //           path: "$deliveries",
+  //           preserveNullAndEmptyArrays: true,
+  //         },
+  //       },
+  //       {
+  //         $match: {
+  //           $expr: {
+  //             $eq: ["$deliveries.delivery", "$$id"],
+  //           },
+  //         },
+  //       },
+  //     ],
+  //     as: "invoice",
+  //   },
+  // },
 ];
 
 export default async function handler(req, res) {

@@ -74,11 +74,11 @@ export const InvoiceEditForm = ({
 
         await invoiceApi.updateInvoice(editedInvoice, dispatch);
 
-        onCancel();
+        // onCancel();
 
         gridApi.refreshInfiniteCache();
         toast.success("Invoice updated!");
-        router.push("/dashboard/invoices");
+        // router.push("/dashboard/invoices");
       } catch (err) {
         console.error(err);
         toast.error("Something went wrong!");

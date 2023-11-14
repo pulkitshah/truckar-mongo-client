@@ -381,14 +381,11 @@ export const deliveriesTable = (account) => {
       width: 120,
       cellRenderer: (params) => {
         if (params.data) {
-          if (params.data.invoice.length) {
-            console.log(params.data.invoice);
-            return params.data.invoice
-              .map(
-                (invoice) =>
-                  `${invoice.organisation.initials}-${invoice.invoiceNo}`
-              )
-              .join(" - ");
+          if (
+            params.data.delivery.invoices &&
+            params.data.delivery.invoices.length
+          ) {
+            return params.data.delivery.invoices.join(" - ");
           } else {
             return (
               <Link
@@ -489,7 +486,6 @@ export const deliveriesTable = (account) => {
       width: 130,
       valueGetter: (params) => {
         if (params.data) {
-          console.log(params.data);
           return params.data.delivery.loading.structured_formatting.main_text;
         }
       },
@@ -913,14 +909,11 @@ export const lrTable = (account) => {
       width: 120,
       cellRenderer: (params) => {
         if (params.data) {
-          if (params.data.invoice.length) {
-            console.log(params.data.invoice);
-            return params.data.invoice
-              .map(
-                (invoice) =>
-                  `${invoice.organisation.initials}-${invoice.invoiceNo}`
-              )
-              .join(" - ");
+          if (
+            params.data.delivery.invoices &&
+            params.data.delivery.invoices.length
+          ) {
+            return params.data.delivery.invoices.join(" - ");
           } else {
             return (
               <Link

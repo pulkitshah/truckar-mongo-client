@@ -83,7 +83,6 @@ export default async function handler(req, res) {
         );
 
         const lrs = await Order.aggregate(query);
-        console.log(query);
         res.json(lrs);
       });
       break;

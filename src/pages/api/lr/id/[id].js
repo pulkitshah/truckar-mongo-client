@@ -11,7 +11,6 @@ export default async function handler(req, res) {
   switch (method) {
     case "GET":
       auth(req, res, async () => {
-        console.log(JSON.parse(req.query.id));
         const { deliveryId, orderId } = JSON.parse(req.query.id);
         try {
           let matches = { _id: new mongoose.Types.ObjectId(orderId) };

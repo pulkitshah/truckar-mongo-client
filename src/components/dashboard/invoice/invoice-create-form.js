@@ -79,7 +79,7 @@ export const InvoiceCreateForm = ({ invoice = {} }) => {
       try {
         console.log(values);
         let newInvoice = {
-          organisation: values.organisation._id,
+          organisation: values.organisation,
           invoiceNo: values.invoiceNo || "",
           invoiceDate: values.invoiceDate.format(),
           customer: values.customer._id,

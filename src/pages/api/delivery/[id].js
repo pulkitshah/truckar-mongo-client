@@ -19,14 +19,6 @@ export default async function handler(req, res) {
           sort = { saleDate: -1, orderNo: -1 },
         } = JSON.parse(req.query.id);
 
-        console.log({
-          account,
-          startRow,
-          endRow,
-          filter,
-          sort,
-        });
-
         let matches = { account: new mongoose.Types.ObjectId(account) };
 
         let query = [
@@ -64,7 +56,6 @@ export default async function handler(req, res) {
         //   // maybe we want to sort by blog title or something
         //   query.push({ $sort: sort });
         // }
-        console.log(query);
         query.push(
           {
             $group: {

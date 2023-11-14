@@ -1,5 +1,5 @@
 import dbConnect from "../../../../lib/dbConnect";
-import Order from "../../../../models/Order";
+import Invoice from "../../../../models/Invoice";
 import auth from "../../../../auth";
 import { getFiscalYearTimestamps } from "../../../../utils/get-fiscal-year";
 
@@ -26,7 +26,6 @@ export default async function handler(req, res) {
           };
 
           const invoice = await Invoice.findOne(query);
-          console.log(invoice);
 
           res.json(invoice);
         } catch (error) {

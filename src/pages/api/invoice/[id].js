@@ -20,14 +20,6 @@ export default async function handler(req, res) {
           sort = { invoiceDate: -1, invoiceNo: -1 },
         } = JSON.parse(req.query.id);
 
-        console.log({
-          account,
-          startRow,
-          endRow,
-          filter,
-          sort,
-        });
-
         // if (!(accountId instanceof mongoose.Types.ObjectId)) {
         //   throw new Error("accountId must be ObjectId");
         // } else if (typeof startRow !== "number") {

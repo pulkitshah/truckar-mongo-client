@@ -25,8 +25,6 @@ export default async function handler(req, res) {
             "deliveries.lr.organisation": organisation,
           };
 
-          console.log(query);
-
           const order = await Order.findOne(query);
 
           res.json(order);

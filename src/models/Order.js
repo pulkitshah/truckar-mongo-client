@@ -54,6 +54,9 @@ const orderSchema = new mongoose.Schema({
       status: {
         type: String,
       },
+      invoices: {
+        type: Array,
+      },
 
       lr: {
         lrFormat: { type: String },

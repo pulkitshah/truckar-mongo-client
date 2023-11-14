@@ -20,15 +20,6 @@ export default async function handler(req, res) {
           sort = { saleDate: -1, orderNo: -1 },
         } = JSON.parse(req.query.id);
 
-        console.log({
-          account,
-          customer,
-          startRow,
-          endRow,
-          filter,
-          sort,
-        });
-
         let matches = {
           account: new mongoose.Types.ObjectId(account),
           customer: new mongoose.Types.ObjectId(customer),
@@ -62,8 +53,6 @@ export default async function handler(req, res) {
         // }
 
         query = [...query, ...lookups];
-
-        console.log(query);
 
         if (sort) {
           // maybe we want to sort by blog title or something

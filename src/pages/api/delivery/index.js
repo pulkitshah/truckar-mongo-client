@@ -254,67 +254,67 @@ export const lookups = [
   //     preserveNullAndEmptyArrays: true,
   //   },
   // },
-  {
-    $lookup: {
-      from: "invoices",
-      let: {
-        id: "$delivery._id",
-      },
-      pipeline: [
-        {
-          $lookup: {
-            from: "organisations",
-            let: {
-              id: "$organisation",
-            },
-            pipeline: [
-              {
-                $match: {
-                  $expr: {
-                    $eq: ["$_id", "$$id"],
-                  },
-                },
-              },
-              {
-                $project: {
-                  initials: 1,
-                  _id: 1,
-                },
-              },
-            ],
-            as: "organisation",
-          },
-        },
-        {
-          $unwind: {
-            path: "$organisation",
-            preserveNullAndEmptyArrays: true,
-          },
-        },
-        {
-          $unwind: {
-            path: "$deliveries",
-            preserveNullAndEmptyArrays: true,
-          },
-        },
-        {
-          $match: {
-            $expr: {
-              $eq: ["$deliveries.delivery", "$$id"],
-            },
-          },
-        },
-        {
-          $project: {
-            organisation: 1,
-            invoiceNo: 1,
-            _id: 1,
-          },
-        },
-      ],
-      as: "invoice",
-    },
-  },
+  // {
+  //   $lookup: {
+  //     from: "invoices",
+  //     let: {
+  //       id: "$delivery._id",
+  //     },
+  //     pipeline: [
+  //       {
+  //         $lookup: {
+  //           from: "organisations",
+  //           let: {
+  //             id: "$organisation",
+  //           },
+  //           pipeline: [
+  //             {
+  //               $match: {
+  //                 $expr: {
+  //                   $eq: ["$_id", "$$id"],
+  //                 },
+  //               },
+  //             },
+  //             {
+  //               $project: {
+  //                 initials: 1,
+  //                 _id: 1,
+  //               },
+  //             },
+  //           ],
+  //           as: "organisation",
+  //         },
+  //       },
+  //       {
+  //         $unwind: {
+  //           path: "$organisation",
+  //           preserveNullAndEmptyArrays: true,
+  //         },
+  //       },
+  //       {
+  //         $unwind: {
+  //           path: "$deliveries",
+  //           preserveNullAndEmptyArrays: true,
+  //         },
+  //       },
+  //       {
+  //         $match: {
+  //           $expr: {
+  //             $eq: ["$deliveries.delivery", "$$id"],
+  //           },
+  //         },
+  //       },
+  //       {
+  //         $project: {
+  //           organisation: 1,
+  //           invoiceNo: 1,
+  //           _id: 1,
+  //         },
+  //       },
+  //     ],
+  //     as: "invoice",
+  //   },
+  // },
 ];
 
 export default async function handler(req, res) {
