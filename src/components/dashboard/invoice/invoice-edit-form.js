@@ -74,7 +74,7 @@ export const InvoiceEditForm = ({
 
         await invoiceApi.updateInvoice(editedInvoice, dispatch);
 
-        // onCancel();
+        onCancel();
 
         gridApi.refreshInfiniteCache();
         toast.success("Invoice updated!");

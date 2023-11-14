@@ -92,24 +92,8 @@ export const InvoiceCreateForm = ({ invoice = {} }) => {
 
         console.log(data);
 
-        // newInvoice.deliveries = values.deliveries.map(async (delivery) => {
-        //   let updatedDelivery = {
-        //     _id: delivery._id,
-        //     invoice: data._id,
-        //     particular: delivery.particular,
-        //     invoiceCharges: delivery.invoiceCharges || [],
-        //     _version: delivery._version,
-        //   };
-
-        //   console.log(updatedDelivery);
-
-        //   console.log(
-        //     await deliveryApi.updateDelivery(updatedDelivery, dispatch)
-        //   );
-        // });
-
         toast.success("Invoice created!");
-        // router.push("/dashboard/invoices");
+        router.push("/dashboard/invoices");
       } catch (err) {
         console.error(err);
         toast.error("Something went wrong!");
