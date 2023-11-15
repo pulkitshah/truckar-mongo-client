@@ -25,6 +25,9 @@ import { createTheme } from "../theme";
 import { createEmotionCache } from "../utils/create-emotion-cache";
 import "../i18n";
 
+import { io } from "socket.io-client";
+let socket;
+
 //Constants
 export const APP_ID = "truckar-estjt";
 export const REACT_APP_GOOGLE_MAPS_API_KEY =
@@ -40,6 +43,23 @@ const clientSideEmotionCache = createEmotionCache();
 
 const App = (props) => {
   const { Component, emotionCache = clientSideEmotionCache, pageProps } = props;
+
+  useEffect(() => socketInitializer(), []);
+
+  const socketInitializer = async () => {
+    await fetch("/api/socket");
+    socket = io();
+
+    socket.on("connect", () => {
+      console.log("connected");
+    });
+
+    socket.emit("input-change", "nicee");
+
+    socket.on("update-input", (msg) => {
+      console.log(msg);
+    });
+  };
 
   // Loading Google Maps API
   try {
