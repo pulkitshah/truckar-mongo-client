@@ -904,21 +904,25 @@ export const lrTable = (account) => {
       },
     },
     {
-      field: "saleBillNo",
+      field: "salesInvoice",
       headerName: "Sale Bill No",
-      width: 120,
+      width: 90,
       cellRenderer: (params) => {
+        console.log(params.data);
         if (params.data) {
-          if (
-            params.data.delivery.invoices &&
-            params.data.delivery.invoices.length
-          ) {
-            return params.data.delivery.invoices.join(" - ");
+          if (params.data.invoice.length) {
+            console.log(params.data.invoice);
+            return params.data.invoice
+              .map(
+                (invoice) =>
+                  `${invoice.organisation.initials}-${invoice.invoiceNo}`
+              )
+              .join(" - ");
           } else {
             return (
               <Link
                 color="primary"
-                href={`/dashboard/invoices/new`}
+                href={`/dashboard/sales/new?deliveryId=${params.data.delivery._id}&orderId=${params.data._id}`}
                 variant="body"
               >
                 Make Invoice
@@ -926,10 +930,37 @@ export const lrTable = (account) => {
             );
           }
         } else {
-          return "";
+          return "-";
         }
       },
     },
+    // {
+    //   field: "saleBillNo",
+    //   headerName: "Sale Bill No",
+    //   width: 120,
+    //   cellRenderer: (params) => {
+    //     if (params.data) {
+    //       if (
+    //         params.data.delivery.invoices &&
+    //         params.data.delivery.invoices.length
+    //       ) {
+    //         return params.data.delivery.invoices.join(" - ");
+    //       } else {
+    //         return (
+    //           <Link
+    //             color="primary"
+    //             href={`/dashboard/invoices/new`}
+    //             variant="body"
+    //           >
+    //             Make Invoice
+    //           </Link>
+    //         );
+    //       }
+    //     } else {
+    //       return "";
+    //     }
+    //   },
+    // },
   ];
 };
 
