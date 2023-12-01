@@ -29,7 +29,7 @@ export default async function handler(req, res) {
         ) {
           driver.otp = null;
           driver.otpCreatedDate = null;
-          // await driver.save();
+          await driver.save();
           res.json(driver);
         }
 

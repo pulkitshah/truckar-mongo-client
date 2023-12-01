@@ -52,10 +52,7 @@ export default async function handler(req, res) {
 
         query = [...query, ...lookups];
 
-        if (sort) {
-          // maybe we want to sort by blog title or something
-          query.push({ $sort: sort });
-        }
+        console.log(query);
 
         query.push(
           {

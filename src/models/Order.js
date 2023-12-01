@@ -143,6 +143,10 @@ const orderSchema = new mongoose.Schema({
   driverArrivalTime: {
     type: Date,
   },
+  status: {
+    type: String,
+    default: "pending",
+  },
   account: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "account",
@@ -161,4 +165,4 @@ orderSchema.set("toJSON", {
   virtuals: true,
 });
 
-module.exports = mongoose.models.order || mongoose.model("order", orderSchema);
+export default mongoose.models.order || mongoose.model("order", orderSchema);

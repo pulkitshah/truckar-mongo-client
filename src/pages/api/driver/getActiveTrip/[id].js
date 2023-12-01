@@ -1,6 +1,8 @@
+import mongoose from "mongoose";
 import dbConnect from "../../../../lib/dbConnect";
 import Driver from "../../../../models/Driver";
 import Order from "../../../../models/Order";
+import { lookups } from "../../order/index";
 
 export default async function handler(req, res) {
   const { method } = req;
@@ -13,13 +15,30 @@ export default async function handler(req, res) {
           _id: req.query.id,
         };
 
-        const driver = await Driver.findOne(query)
-          .populate("currentOrder")
-          .populate("currentOrder.customer");
+        const driver = await Driver.findOne(query);
+
+        let matches = { _id: new mongoose.Types.ObjectId(driver.currentOrder) };
+
+        let orderQuery = [
+          // filter the results by our accountId
+          {
+            $match: Object.assign(matches),
+          },
+        ];
+
+        orderQuery = [...orderQuery, ...lookups];
+
+        const orders = await Order.aggregate(orderQuery);
+
+        if (!orders) {
+          res.status(400).json({
+            errors: [{ msg: "There are no active orders by this driver" }],
+          });
+        }
+
+        res.json(orders[0]);
 
         if (!driver) res.json(null);
-
-        console.log(driver);
 
         const getRoute = (deliveries) => {
           let route = [];

@@ -54,9 +54,11 @@ export const lookups = [
       transporter: { $first: "$transporter" },
       createdDate: { $first: "$createdDate" },
       account: { $first: "$account" },
+      status: { $first: "$status" },
       deliveries: { $push: "$deliveries" },
     },
   },
+  { $sort: { saleDate: -1, orderNo: -1 } },
   {
     $lookup: {
       from: "parties",
