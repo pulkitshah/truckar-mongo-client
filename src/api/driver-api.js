@@ -5,6 +5,31 @@ import { slice } from "../slices/drivers";
 const now = new Date();
 
 class DriverApi {
+  async getOtpToConnectDevice(id) {
+    try {
+      const response = await axios.get(
+        `/api/driver/getOtpToConnectDevice/${id}`
+      );
+      let driver = response.data;
+
+      return {
+        status: response.status,
+        data: Boolean(!driver),
+        error: false,
+      };
+    } catch (err) {
+      console.error("[Driver Api]: ", err);
+      if (err) {
+        return {
+          status: 400,
+          data: err,
+          error:
+            "Order not created, please try again or contact customer support.",
+        };
+      }
+    }
+  }
+
   async validateDuplicateMobile(account, mobile) {
     try {
       const response = await axios.get(

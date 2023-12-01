@@ -21,11 +21,16 @@ import { PropertyListItem } from "../../property-list-item";
 import { driverApi } from "../../../api/driver-api";
 import VehicleAutocomplete from "../autocompletes/vehicle-autocomplete/vehicle-autocomplete";
 import { useAuth } from "../../../hooks/use-auth";
+import GoogleMaps from "./google-maps";
 
 const DriverPreview = (props) => {
   const { lgUp, onEdit, driver } = props;
   const align = lgUp ? "horizontal" : "vertical";
+  console.log(driver);
 
+  const handleConnect = () => {
+    driverApi.getOtpToConnectDevice(driver._id);
+  };
   return (
     <>
       <Box
@@ -78,7 +83,49 @@ const DriverPreview = (props) => {
           label="Mobile"
           value={driver.mobile}
         />
+
+        {driver.vehicle && (
+          <PropertyListItem
+            align={align}
+            disableGutters
+            label="Vehicle"
+            value={driver.vehicle.vehicleNumber}
+          />
+        )}
       </PropertyList>
+      <Divider sx={{ my: 3 }} />
+
+      <Box
+        sx={{
+          alignItems: "center",
+          borderRadius: 1,
+          display: "flex",
+          flexWrap: "wrap",
+          justifyContent: "space-between",
+        }}
+      >
+        <Typography sx={{ mt: 3 }} variant="h6">
+          Tracking Details
+        </Typography>
+        <Box
+          sx={{
+            alignItems: "center",
+            display: "flex",
+            flexWrap: "wrap",
+            mt: 3,
+            m: -1,
+            "& > button": {
+              m: 1,
+            },
+          }}
+        >
+          <Button onClick={handleConnect} size="small" sx={{ pt: 3 }}>
+            Connect
+          </Button>
+        </Box>
+
+        <GoogleMaps position={{ lat: driver.lat, lng: driver.long }} />
+      </Box>
     </>
   );
 };
