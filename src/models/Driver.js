@@ -15,6 +15,28 @@ const driverSchema = new mongoose.Schema({
     type: Schema.Types.ObjectId,
     ref: "vehicle",
   },
+  otp: {
+    type: Number,
+    trim: true,
+  },
+  otpCreatedDate: {
+    type: Date,
+  },
+  locationUpdatedDate: {
+    type: Date,
+  },
+  lat: {
+    type: Number,
+    trim: true,
+  },
+  long: {
+    type: Number,
+    trim: true,
+  },
+  currentOrder: {
+    type: Schema.Types.ObjectId,
+    ref: "order",
+  },
   organisation: {
     type: Schema.Types.ObjectId,
     ref: "organisation",
@@ -37,5 +59,7 @@ driverSchema.set("toJSON", {
   virtuals: true,
 });
 
-module.exports =
-  mongoose.models.driver || mongoose.model("driver", driverSchema);
+// module.exports =
+//   mongoose.models.driver || mongoose.model("driver", driverSchema);
+
+export default mongoose.models.driver || mongoose.model("driver", driverSchema);
