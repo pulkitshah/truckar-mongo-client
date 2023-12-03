@@ -4,6 +4,7 @@ import * as Yup from "yup";
 import { Formik, useFormik, FormikProvider, FieldArray, getIn } from "formik";
 import { v4 as uuidv4 } from "uuid";
 import toast from "react-hot-toast";
+import { socket } from "../../../sockets/index";
 
 import {
   Avatar,
@@ -106,6 +107,30 @@ const OrderPreview = (props) => {
   const [driverMobile, setDriverMobile] = React.useState(
     order.driverMobile || ""
   );
+  const [position, setPosition] = useState({
+    lat: order.driver.lat,
+    lng: order.driver.long,
+    locationUpdatedDate: order.driver.locationUpdatedDate,
+  });
+
+  useEffect(() => {
+    setPosition({
+      lat: order.driver.lat,
+      lng: order.driver.long,
+      locationUpdatedDate: order.driver.locationUpdatedDate,
+    });
+
+    socket.on(`${order.driver._id}-LOCATION_UPDATE`, (driver) => {
+      setPosition({
+        lat: driver.lat,
+        lng: driver.long,
+        locationUpdatedDate: driver.locationUpdatedDate,
+      });
+    });
+    return () => {
+      socket.off(`${order.driver._id}-LOCATION_UPDATE`);
+    };
+  }, [order]);
 
   useEffect(() => {
     setDriverArrivalTime(order.driverArrivalTime);
@@ -397,18 +422,19 @@ const OrderPreview = (props) => {
                 renderInput={(params) => <TextField fullWidth {...params} />}
               />
             </PropertyListItem>
-            {order.driver.lat && (
-              <>
-                <GoogleMaps
-                  position={{ lat: order.driver.lat, lng: order.driver.long }}
-                />
-                <Typography sx={{ mt: 1 }} variant="caption">
-                  {`Location updated ${moment(
-                    order.driver.locationUpdatedDate
-                  ).fromNow()}`}
-                </Typography>
-              </>
-            )}
+
+            {order.driver &&
+              order.driver.currentOrder === order._id &&
+              order.driver.lat && (
+                <>
+                  <GoogleMaps position={position} />
+                  <Typography sx={{ mt: 1 }} variant="caption">
+                    {`Location updated ${moment(
+                      order.driver.locationUpdatedDate
+                    ).fromNow()}`}
+                  </Typography>
+                </>
+              )}
           </>
         )}
       </PropertyList>

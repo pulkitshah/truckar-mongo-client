@@ -143,6 +143,7 @@ export const lookups = [
             lat: 1,
             long: 1,
             locationUpdatedDate: 1,
+            currentOrder: 1,
           },
         },
       ],
