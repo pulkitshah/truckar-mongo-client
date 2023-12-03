@@ -396,6 +396,7 @@ const OrderPreview = (props) => {
               </PropertyListItem>
               <Box>
                 <Button
+                  disabled={order.driver.currentOrder === order._id}
                   onClick={() => {
                     handleActivateTrip(order);
                   }}
@@ -423,18 +424,16 @@ const OrderPreview = (props) => {
               />
             </PropertyListItem>
 
-            {order.driver &&
-              order.driver.currentOrder === order._id &&
-              order.driver.lat && (
-                <>
-                  <GoogleMaps position={position} />
-                  <Typography sx={{ mt: 1 }} variant="caption">
-                    {`Location updated ${moment(
-                      order.driver.locationUpdatedDate
-                    ).fromNow()}`}
-                  </Typography>
-                </>
-              )}
+            {order.driver.currentOrder === order._id && order.driver.lat && (
+              <>
+                <GoogleMaps position={position} />
+                <Typography sx={{ mt: 1 }} variant="caption">
+                  {`Location updated ${moment(
+                    order.driver.locationUpdatedDate
+                  ).fromNow()}`}
+                </Typography>
+              </>
+            )}
           </>
         )}
       </PropertyList>

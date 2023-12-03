@@ -136,6 +136,8 @@ export const AccountCreateForm = (props) => {
     },
     onSubmit: async (values, helpers) => {
       try {
+        console.log(values);
+
         let response = await accountApi.createAccount(values, dispatch);
         props.accountRef.current = response.data;
 

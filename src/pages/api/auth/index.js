@@ -72,26 +72,29 @@ export default async function handler(req, res) {
     case "PATCH":
       const updates = Object.keys(req.body);
 
-      try {
-        const user = await User.findOne({
-          _id: req.user.id,
-        });
+      console.log(req.body);
+      auth(req, res, async () => {
+        try {
+          const user = await User.findOne({
+            _id: req.user._id,
+          });
 
-        updates.forEach((update) => (user[update] = req.body[update]));
+          updates.forEach((update) => (user[update] = req.body[update]));
 
-        if (req.body.password) {
-          // Encrypt Password
-          const salt = await bcrypt.genSalt(10);
-          user.password = await bcrypt.hash(req.body.password, salt);
+          if (req.body.password) {
+            // Encrypt Password
+            const salt = await bcrypt.genSalt(10);
+            user.password = await bcrypt.hash(req.body.password, salt);
+          }
+
+          await user.save();
+
+          res.send(user);
+        } catch (error) {
+          console.log(error);
+          // res.status(400).send(error);
         }
-
-        await user.save();
-
-        res.send(user);
-      } catch (error) {
-        console.log(error);
-        // res.status(400).send(error);
-      }
+      });
       break;
 
     default:

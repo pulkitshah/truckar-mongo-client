@@ -78,7 +78,7 @@ class AuthApi {
 
   async update(editedUser, dispatch) {
     //////////////////////// API ////////////////////////
-
+    console.log(editedUser);
     const response = await axios.patch(`/api/auth/`, editedUser);
 
     return {

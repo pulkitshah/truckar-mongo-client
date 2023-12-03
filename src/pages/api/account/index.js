@@ -12,33 +12,40 @@ export default async function handler(req, res) {
 
   switch (method) {
     case "POST":
-      try {
-        // Get fields
-        const accountFields = {};
-        accountFields.user = req.user.id;
-
-        if (req.body.name) accountFields.name = req.body.name;
-        if (req.body.orderExpensesSettings)
-          accountFields.orderExpensesSettings = req.body.orderExpensesSettings;
-        if (req.body.lrSettings) accountFields.lrSettings = req.body.lrSettings;
-        if (req.body.taxOptions) accountFields.taxOptions = req.body.taxOptions;
-        if (req.body.lrFormat) accountFields.lrFormat = req.body.lrFormat;
-        if (req.body.invoiceFormat)
-          accountFields.invoiceFormat = req.body.invoiceFormat;
-
+      auth(req, res, async () => {
         try {
-          // Create
-          account = new Account(accountFields);
-          await account.save();
-          res.send(account);
+          // Get fields
+          const accountFields = {};
+          accountFields.user = req.user._id;
+
+          console.log(accountFields);
+
+          if (req.body.name) accountFields.name = req.body.name;
+          if (req.body.orderExpensesSettings)
+            accountFields.orderExpensesSettings =
+              req.body.orderExpensesSettings;
+          if (req.body.lrSettings)
+            accountFields.lrSettings = req.body.lrSettings;
+          if (req.body.taxOptions)
+            accountFields.taxOptions = req.body.taxOptions;
+          if (req.body.lrFormat) accountFields.lrFormat = req.body.lrFormat;
+          if (req.body.invoiceFormat)
+            accountFields.invoiceFormat = req.body.invoiceFormat;
+
+          try {
+            // Create
+            const account = new Account(accountFields);
+            await account.save();
+            res.send(account);
+          } catch (error) {
+            console.log(error.message);
+            res.status(500).send("Server Error");
+          }
         } catch (error) {
           console.log(error.message);
           res.status(500).send("Server Error");
         }
-      } catch (error) {
-        console.log(error.message);
-        res.status(500).send("Server Error");
-      }
+      });
       break;
 
     default:
