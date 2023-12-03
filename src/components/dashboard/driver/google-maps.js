@@ -21,7 +21,7 @@ const GoogleMaps = ({ sx, position }) => {
         maxHeight: "16rem",
       }}
       center={position}
-      zoom={13}
+      zoom={15}
     >
       <MarkerF position={positionState} />
     </GoogleMap>

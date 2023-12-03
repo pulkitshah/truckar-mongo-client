@@ -1,6 +1,7 @@
 import dbConnect from "../../../../lib/dbConnect";
 import Driver from "../../../../models/Driver";
 import moment from "moment/moment";
+import { emitDriverLocationUpdate } from "../../socket/emit";
 
 export default async function handler(req, res) {
   const { method } = req;
@@ -22,6 +23,8 @@ export default async function handler(req, res) {
         driver.locationUpdatedDate = moment();
 
         await driver.save();
+        // console.log("welcome");
+        emitDriverLocationUpdate(res, driver);
         res.json(driver);
       } catch (error) {
         console.log(error.message);

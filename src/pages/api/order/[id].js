@@ -52,8 +52,6 @@ export default async function handler(req, res) {
 
         query = [...query, ...lookups];
 
-        console.log(query);
-
         query.push(
           {
             $group: {

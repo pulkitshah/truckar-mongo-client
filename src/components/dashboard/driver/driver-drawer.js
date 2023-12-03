@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext, useCallback } from "react";
 import PropTypes from "prop-types";
 import { useFormik } from "formik";
 import toast from "react-hot-toast";
@@ -31,17 +31,36 @@ import VehicleAutocomplete from "../autocompletes/vehicle-autocomplete/vehicle-a
 import { useAuth } from "../../../hooks/use-auth";
 import GoogleMaps from "./google-maps";
 import moment from "moment";
+import { socket } from "../../../sockets/index";
 
 const DriverPreview = (props) => {
   const { lgUp, onEdit, driver } = props;
   const [open, toggleOpen] = useState(false);
   const [otp, setOtp] = useState();
   const align = lgUp ? "horizontal" : "vertical";
-  console.log(driver);
+  const [position, setPosition] = useState({
+    lat: driver.lat,
+    lng: driver.long,
+    locationUpdatedDate: driver.locationUpdatedDate,
+  });
+
+  useEffect(() => {
+    setPosition({
+      lat: driver.lat,
+      lng: driver.long,
+      locationUpdatedDate: driver.locationUpdatedDate,
+    });
+
+    socket.on(`${driver._id}-LOCATION_UPDATE`, (driver) => {
+      setPosition({ lat: driver.lat, lng: driver.long });
+    });
+    return () => {
+      socket.off(`${driver._id}-LOCATION_UPDATE`);
+    };
+  }, [driver]);
 
   const handleConnect = async () => {
     const d = await driverApi.getOtpToConnectDevice(driver._id);
-    console.log(d.data);
     setOtp(d.data.otp);
     toggleOpen(true);
   };
@@ -139,9 +158,12 @@ const DriverPreview = (props) => {
           </Button>
         </Box>
 
-        <GoogleMaps position={{ lat: driver.lat, lng: driver.long }} />
+        <GoogleMaps position={position} />
         <Typography sx={{ mt: 1 }} variant="caption">
-          {`Location updated ${moment(driver.locationUpdatedDate).fromNow()}`}
+          {position.lat &&
+            `Location updated ${moment(
+              position.locationUpdatedDate
+            ).fromNow()}`}
         </Typography>
       </Box>
       <Dialog

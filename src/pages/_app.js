@@ -18,6 +18,7 @@ import {
   SettingsProvider,
 } from "../contexts/settings-context";
 import { AuthConsumer, AuthProvider } from "../contexts/jwt-context";
+import { SocketConsumer, SocketProvider } from "../contexts/socket-context";
 import { gtmConfig } from "../config";
 import { gtm } from "../lib/gtm";
 import { store } from "../store";
@@ -26,7 +27,6 @@ import { createEmotionCache } from "../utils/create-emotion-cache";
 import "../i18n";
 
 import { io } from "socket.io-client";
-let socket;
 
 //Constants
 export const APP_ID = "truckar-estjt";
@@ -46,20 +46,40 @@ const App = (props) => {
 
   // useEffect(() => socketInitializer(), []);
 
-  // const socketInitializer = async () => {
-  //   await fetch("/api/socket");
-  //   socket = io();
+  const socketInitializer = async () => {
+    const socket = io(`:${4000 + 1}`, {
+      path: "/api/socket",
+      addTrailingSlash: false,
+    });
 
-  //   socket.on("connect", () => {
-  //     console.log("connected");
-  //   });
+    socket.on("connect", () => {
+      console.log("Connected");
+    });
 
-  //   socket.emit("input-change", "nicee");
+    socket.on("disconnect", () => {
+      console.log("Disconnected");
+    });
 
-  //   socket.on("update-input", (msg) => {
-  //     console.log(msg);
-  //   });
-  // };
+    socket.on("connect_error", async (err) => {
+      console.log(`connect_error due to ${err.message}`);
+      await fetch("/api/socket");
+    });
+
+    return socket;
+
+    // console.log(await fetch("/api/socket"));
+    // socket = io();
+
+    // socket.on("connect", () => {
+    //   console.log("connected");
+    // });
+
+    // socket.emit("input-change", "nicee");
+
+    // socket.on("update-input", (msg) => {
+    //   console.log(msg);
+    // });
+  };
 
   // Loading Google Maps API
   try {
@@ -93,34 +113,36 @@ const App = (props) => {
       <ReduxProvider store={store}>
         <LocalizationProvider dateAdapter={AdapterMoment}>
           <AuthProvider appId={APP_ID}>
-            <SettingsProvider>
-              <SettingsConsumer>
-                {({ settings }) => (
-                  <ThemeProvider
-                    theme={createTheme({
-                      direction: settings.direction,
-                      responsiveFontSizes: settings.responsiveFontSizes,
-                      mode: settings.theme,
-                    })}
-                  >
-                    <RTL direction={settings.direction}>
-                      <CssBaseline />
-                      <Toaster position="top-center" />
-                      {/* <SettingsButton /> */}
-                      <AuthConsumer>
-                        {(auth) =>
-                          !auth.isInitialized ? (
-                            <SplashScreen />
-                          ) : (
-                            getLayout(<Component {...pageProps} />)
-                          )
-                        }
-                      </AuthConsumer>
-                    </RTL>
-                  </ThemeProvider>
-                )}
-              </SettingsConsumer>
-            </SettingsProvider>
+            <SocketProvider>
+              <SettingsProvider>
+                <SettingsConsumer>
+                  {({ settings }) => (
+                    <ThemeProvider
+                      theme={createTheme({
+                        direction: settings.direction,
+                        responsiveFontSizes: settings.responsiveFontSizes,
+                        mode: settings.theme,
+                      })}
+                    >
+                      <RTL direction={settings.direction}>
+                        <CssBaseline />
+                        <Toaster position="top-center" />
+                        {/* <SettingsButton /> */}
+                        <AuthConsumer>
+                          {(auth) =>
+                            !auth.isInitialized ? (
+                              <SplashScreen />
+                            ) : (
+                              getLayout(<Component {...pageProps} />)
+                            )
+                          }
+                        </AuthConsumer>
+                      </RTL>
+                    </ThemeProvider>
+                  )}
+                </SettingsConsumer>
+              </SettingsProvider>
+            </SocketProvider>
             {/* </RealmApolloProvider> */}
           </AuthProvider>
         </LocalizationProvider>
