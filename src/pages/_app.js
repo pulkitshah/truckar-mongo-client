@@ -44,22 +44,22 @@ const clientSideEmotionCache = createEmotionCache();
 const App = (props) => {
   const { Component, emotionCache = clientSideEmotionCache, pageProps } = props;
 
-  useEffect(() => socketInitializer(), []);
+  // useEffect(() => socketInitializer(), []);
 
-  const socketInitializer = async () => {
-    await fetch("/api/socket");
-    socket = io();
+  // const socketInitializer = async () => {
+  //   await fetch("/api/socket");
+  //   socket = io();
 
-    socket.on("connect", () => {
-      console.log("connected");
-    });
+  //   socket.on("connect", () => {
+  //     console.log("connected");
+  //   });
 
-    socket.emit("input-change", "nicee");
+  //   socket.emit("input-change", "nicee");
 
-    socket.on("update-input", (msg) => {
-      console.log(msg);
-    });
-  };
+  //   socket.on("update-input", (msg) => {
+  //     console.log(msg);
+  //   });
+  // };
 
   // Loading Google Maps API
   try {

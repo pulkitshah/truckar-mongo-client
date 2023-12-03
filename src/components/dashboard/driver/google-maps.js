@@ -1,34 +1,14 @@
-import React, { useState } from "react";
-import {
-  GoogleMap,
-  MarkerF,
-  DirectionsService,
-  DirectionsRenderer,
-} from "@react-google-maps/api";
+import React, { useRef, useEffect, useState } from "react";
+import { GoogleMap, MarkerF } from "@react-google-maps/api";
 
 const GoogleMaps = ({ sx, position }) => {
-  const [googleResponse, setResponse] = useState(null);
-  const [totalDistance, setTotalDistance] = useState(0);
+  const [positionState, setPosition] = useState(position);
 
-  let directionsCallback = (response) => {
-    if (response !== null) {
-      if (response.status === "OK") {
-        if (JSON.stringify(googleResponse) === JSON.stringify(response)) {
-          return;
-        } else {
-          setTotalDistance(0);
-          setResponse(response);
+  useEffect(() => {
+    setPosition(position);
+  }, [position]);
 
-          response.routes[0].legs.map((leg) => {
-            setTotalDistance(totalDistance + leg.distance.value);
-          });
-        }
-      } else {
-        console.log("response: ");
-      }
-    }
-  };
-  // console.log(totalDistance);
+  if (!position.lat) return "Please connect device to load maps";
 
   return (
     <GoogleMap
@@ -43,9 +23,9 @@ const GoogleMaps = ({ sx, position }) => {
       center={position}
       zoom={13}
     >
-      <MarkerF position={position} />
+      <MarkerF position={positionState} />
     </GoogleMap>
   );
 };
 
-export default React.memo(GoogleMaps);
+export default GoogleMaps;

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import * as Yup from "yup";
 import { Formik, useFormik, FormikProvider, FieldArray, getIn } from "formik";
@@ -45,7 +45,7 @@ import PartyAutocomplete from "../autocompletes/party-autocomplete/party-autocom
 import VehicleAutocomplete from "../autocompletes/vehicle-autocomplete/vehicle-autocomplete";
 import DriverAutocomplete from "../autocompletes/driver-autocomplete/driver-autocomplete";
 import SaleTypeAutocomplete from "../autocompletes/saleType-autocomplete/saleType-autocomplete";
-import GoogleMaps from "./google-maps";
+import GoogleMaps from "../driver/google-maps";
 import { orderApi } from "../../../api/order-api";
 import { deliveryApi } from "../../../api/delivery-api";
 
@@ -54,7 +54,9 @@ import { dataFormatter } from "../../../utils/amount-calculation";
 import {
   sendOrderConfirmationMessageToOwner,
   sendOrderConfirmationMessageToTransporter,
+  sendOrderConfirmationMessageToDriver,
 } from "../../../utils/whatsapp";
+import { driverApi } from "../../../api/driver-api";
 
 const statusOptions = [
   {
@@ -97,7 +99,24 @@ const OrderPreview = (props) => {
   const align = lgUp ? "horizontal" : "vertical";
   const dispatch = useDispatch();
   const [open, toggleOpen] = React.useState(false);
-  console.log(order);
+  const [driverArrivalTime, setDriverArrivalTime] = React.useState(
+    order.driverArrivalTime || ""
+  );
+  const [driverName, setDriverName] = React.useState(order.driverName || "");
+  const [driverMobile, setDriverMobile] = React.useState(
+    order.driverMobile || ""
+  );
+
+  useEffect(() => {
+    setDriverArrivalTime(order.driverArrivalTime);
+    setDriverName(order.driverName);
+  }, [order]);
+
+  const handleSetDriverArrivalTime = async (date) => {
+    await orderApi.updateOrder({ _id: order._id, driverArrivalTime: date });
+    setDriverArrivalTime(date);
+    gridApi.refreshInfiniteCache();
+  };
 
   const formik = useFormik({
     enableReinitialize: true,
@@ -128,6 +147,11 @@ const OrderPreview = (props) => {
       }
     },
   });
+
+  const handleActivateTrip = (order) => {
+    driverApi.updateDriver({ _id: order.driver._id, currentOrder: order._id });
+    toast.success("Trip Activated for Driver");
+  };
 
   return (
     <>
@@ -284,14 +308,19 @@ const OrderPreview = (props) => {
                 justifyContent: "space-between",
               }}
             >
-              <PropertyListItem align={align} disableGutters label="Driver">
+              <PropertyListItem
+                align={align}
+                disableGutters
+                label="Driver Details"
+              >
                 <Typography color="primary" variant="body2">
-                  {order.driverName}
+                  {driverName}
                 </Typography>
                 <Typography color="textSecondary" variant="body2">
-                  {order.driverMobile}
+                  {driverMobile}
                 </Typography>
               </PropertyListItem>
+
               <Button
                 onClick={() => {
                   toggleOpen(true);
@@ -302,6 +331,23 @@ const OrderPreview = (props) => {
                 Update
               </Button>
             </Box>
+            <PropertyListItem
+              align={align}
+              disableGutters
+              label="Driver Arrival Time"
+            >
+              <DateTimePicker
+                sx={{ my: 2 }}
+                _id="driverArrivalTime"
+                name="driverArrivalTime"
+                label="Driver Arrival Time"
+                inputFormat="DD/MM/YYYY hh:mm a"
+                showTodayButton={true}
+                value={driverArrivalTime}
+                onChange={(date) => handleSetDriverArrivalTime(date)}
+                renderInput={(params) => <TextField fullWidth {...params} />}
+              />
+            </PropertyListItem>
           </>
         )}
         {order.driver && (
@@ -323,17 +369,46 @@ const OrderPreview = (props) => {
                   {order.driver.mobile}
                 </Typography>
               </PropertyListItem>
-              <Button
-                disabled={true}
-                onClick={() => {
-                  sendOrderConfirmationMessageToOwner(order, account);
-                }}
-                size="small"
-                sx={{ pt: 3 }}
-              >
-                Whatsapp
-              </Button>
+              <Box>
+                <Button
+                  onClick={() => {
+                    handleActivateTrip(order);
+                  }}
+                  size="small"
+                >
+                  Activate Trip
+                </Button>
+              </Box>
             </Box>
+            <PropertyListItem
+              align={align}
+              disableGutters
+              label="Driver Arrival Time"
+            >
+              <DateTimePicker
+                sx={{ my: 2 }}
+                _id="driverArrivalTime"
+                name="driverArrivalTime"
+                label="Driver Arrival Time"
+                inputFormat="DD/MM/YYYY hh:mm a"
+                showTodayButton={true}
+                value={driverArrivalTime}
+                onChange={(date) => handleSetDriverArrivalTime(date)}
+                renderInput={(params) => <TextField fullWidth {...params} />}
+              />
+            </PropertyListItem>
+            {order.driver.lat && (
+              <>
+                <GoogleMaps
+                  position={{ lat: order.driver.lat, lng: order.driver.long }}
+                />
+                <Typography sx={{ mt: 1 }} variant="caption">
+                  {`Location updated ${moment(
+                    order.driver.locationUpdatedDate
+                  ).fromNow()}`}
+                </Typography>
+              </>
+            )}
           </>
         )}
       </PropertyList>
@@ -570,9 +645,8 @@ const OrderPreview = (props) => {
         <Formik
           initialValues={{
             _id: order._id,
-            driverName: "",
-            driverMobile: "",
-            driverArrivalTime: "",
+            driverName: driverName || "",
+            driverMobile: driverMobile || "",
           }}
           validationSchema={Yup.object().shape({
             name: Yup.string().max(255),
@@ -584,12 +658,13 @@ const OrderPreview = (props) => {
           onSubmit={async (values, { setErrors, setStatus, setSubmitting }) => {
             try {
               setSubmitting(true);
-              console.log(values);
               const response = await orderApi.updateOrder(values);
-              console.log(response.data);
+              setDriverName(response.data.driverName);
+              setDriverMobile(response.data.driverMobile);
 
               toast.success("Driver Details updated!");
-              // toggleOpen(false);
+              gridApi.refreshInfiniteCache();
+              toggleOpen(false);
             } catch (err) {
               console.log(err);
               setStatus({ success: false });
@@ -643,40 +718,8 @@ const OrderPreview = (props) => {
                             event.target.value.replace(/ /g, "")
                           );
                         }}
-                        value={values.mobile}
+                        value={values.driverMobile}
                         variant="outlined"
-                      />
-                    </Grid>
-                    <Grid item xs={12}>
-                      <DateTimePicker
-                        sx={{ my: 2 }}
-                        _id="driverArrivalTime"
-                        name="driverArrivalTime"
-                        label="Driver Arrival Time"
-                        inputFormat="DD/MM/YYYY hh:mm a"
-                        showTodayButton={true}
-                        value={formik.values.driverArrivalTime}
-                        onClick={() => setFieldTouched("end")}
-                        onChange={(date) =>
-                          formik.setFieldValue(
-                            "driverArrivalTime",
-                            moment(date)
-                          )
-                        }
-                        slotProps={{
-                          textField: {
-                            helperText:
-                              formik.touched.driverArrivalTime &&
-                              formik.errors.driverArrivalTime,
-                            error: Boolean(
-                              formik.touched.driverArrivalTime &&
-                                formik.errors.driverArrivalTime
-                            ),
-                          },
-                        }}
-                        renderInput={(params) => (
-                          <TextField fullWidth {...params} />
-                        )}
                       />
                     </Grid>
                   </Grid>

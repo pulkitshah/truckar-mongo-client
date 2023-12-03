@@ -5,8 +5,16 @@ import toast from "react-hot-toast";
 import {
   Box,
   Button,
+  Card,
+  CardContent,
   Divider,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  DialogContentText,
   Drawer,
+  Grid,
   IconButton,
   TextField,
   Typography,
@@ -22,15 +30,22 @@ import { driverApi } from "../../../api/driver-api";
 import VehicleAutocomplete from "../autocompletes/vehicle-autocomplete/vehicle-autocomplete";
 import { useAuth } from "../../../hooks/use-auth";
 import GoogleMaps from "./google-maps";
+import moment from "moment";
 
 const DriverPreview = (props) => {
   const { lgUp, onEdit, driver } = props;
+  const [open, toggleOpen] = useState(false);
+  const [otp, setOtp] = useState();
   const align = lgUp ? "horizontal" : "vertical";
   console.log(driver);
 
-  const handleConnect = () => {
-    driverApi.getOtpToConnectDevice(driver._id);
+  const handleConnect = async () => {
+    const d = await driverApi.getOtpToConnectDevice(driver._id);
+    console.log(d.data);
+    setOtp(d.data.otp);
+    toggleOpen(true);
   };
+
   return (
     <>
       <Box
@@ -93,7 +108,7 @@ const DriverPreview = (props) => {
           />
         )}
       </PropertyList>
-      <Divider sx={{ my: 3 }} />
+      <Divider sx={{ my: 2 }} />
 
       <Box
         sx={{
@@ -104,7 +119,7 @@ const DriverPreview = (props) => {
           justifyContent: "space-between",
         }}
       >
-        <Typography sx={{ mt: 3 }} variant="h6">
+        <Typography sx={{ mt: 2 }} variant="h6">
           Tracking Details
         </Typography>
         <Box
@@ -125,7 +140,40 @@ const DriverPreview = (props) => {
         </Box>
 
         <GoogleMaps position={{ lat: driver.lat, lng: driver.long }} />
+        <Typography sx={{ mt: 1 }} variant="caption">
+          {`Location updated ${moment(driver.locationUpdatedDate).fromNow()}`}
+        </Typography>
       </Box>
+      <Dialog
+        open={open}
+        onClose={() => toggleOpen(false)}
+        aria-labelledby="form-dialog-name"
+      >
+        <DialogTitle id="form-dialog-name">
+          Connect Driver Mobile App
+        </DialogTitle>
+
+        <DialogContent>
+          <DialogContentText id="alert-dialog-description">
+            Please share this OTP with the driver. It is also whatsapped to the
+            driver. This OTP will expire after 24 hours.
+          </DialogContentText>
+          <DialogContentText id="alert-dialog-description">
+            <Typography sx={{ mt: 3 }} variant="h6">
+              {otp}
+            </Typography>
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            variant="contained"
+            color="secondary"
+            onClick={() => toggleOpen(false)}
+          >
+            Cancel
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 };

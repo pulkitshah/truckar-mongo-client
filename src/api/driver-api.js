@@ -14,7 +14,7 @@ class DriverApi {
 
       return {
         status: response.status,
-        data: Boolean(!driver),
+        data: driver,
         error: false,
       };
     } catch (err) {

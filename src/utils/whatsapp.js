@@ -170,3 +170,40 @@ export const sendOrderConfirmationMessageToTransporter = async ({
     console.error(error);
   }
 };
+
+export const sendOrderConfirmationMessageToDriver = async ({ order }) => {
+  let template;
+
+  switch (template) {
+    case "driver_activate_trip":
+      options.data = {
+        to: order.driver.mobile.replace("+", ""),
+        type: "template",
+        template: {
+          name: template,
+          component: [
+            {
+              type: "body",
+              parameter: [
+                account.name,
+                order.vehicleNumber,
+                getRouteFromOrder(order.deliveries),
+                `For any enquiry, please contact ${user.name} (${user.mobile})`,
+              ],
+            },
+          ],
+        },
+      };
+      break;
+
+    default:
+      break;
+  }
+  try {
+    console.log(options);
+    const { data } = await axios.request(options);
+    toast.success("Whatsaap message sent successfully.");
+  } catch (error) {
+    console.error(error);
+  }
+};
