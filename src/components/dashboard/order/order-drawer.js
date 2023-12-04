@@ -107,30 +107,31 @@ const OrderPreview = (props) => {
   const [driverMobile, setDriverMobile] = React.useState(
     order.driverMobile || ""
   );
-  const [position, setPosition] = useState({
-    lat: order.driver.lat,
-    lng: order.driver.long,
-    locationUpdatedDate: order.driver.locationUpdatedDate,
-  });
 
-  useEffect(() => {
-    setPosition({
-      lat: order.driver.lat,
-      lng: order.driver.long,
-      locationUpdatedDate: order.driver.locationUpdatedDate,
-    });
+  // const [position, setPosition] = useState({
+  //   lat: order.driver.lat,
+  //   lng: order.driver.long,
+  //   locationUpdatedDate: order.driver.locationUpdatedDate,
+  // });
 
-    socket.on(`${order.driver._id}-LOCATION_UPDATE`, (driver) => {
-      setPosition({
-        lat: driver.lat,
-        lng: driver.long,
-        locationUpdatedDate: driver.locationUpdatedDate,
-      });
-    });
-    return () => {
-      socket.off(`${order.driver._id}-LOCATION_UPDATE`);
-    };
-  }, [order]);
+  // useEffect(() => {
+  //   setPosition({
+  //     lat: order.driver.lat,
+  //     lng: order.driver.long,
+  //     locationUpdatedDate: order.driver.locationUpdatedDate,
+  //   });
+
+  //   socket.on(`${order.driver._id}-LOCATION_UPDATE`, (driver) => {
+  //     setPosition({
+  //       lat: driver.lat,
+  //       lng: driver.long,
+  //       locationUpdatedDate: driver.locationUpdatedDate,
+  //     });
+  //   });
+  //   return () => {
+  //     socket.off(`${order.driver._id}-LOCATION_UPDATE`);
+  //   };
+  // }, [order]);
 
   useEffect(() => {
     setDriverArrivalTime(order.driverArrivalTime);
