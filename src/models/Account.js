@@ -30,5 +30,5 @@ accountSchema.set("toJSON", {
   virtuals: true,
 });
 
-module.exports =
-  mongoose.models.account || mongoose.model("account", accountSchema);
+export default mongoose.models.account ||
+  mongoose.model("account", accountSchema);

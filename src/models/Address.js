@@ -43,5 +43,5 @@ addressSchema.set("toJSON", {
   virtuals: true,
 });
 
-module.exports =
-  mongoose.models.address || mongoose.model("address", addressSchema);
+export default mongoose.models.address ||
+  mongoose.model("address", addressSchema);

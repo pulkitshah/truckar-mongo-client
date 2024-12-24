@@ -38,4 +38,4 @@ partySchema.set("toJSON", {
   virtuals: true,
 });
 
-module.exports = mongoose.models.party || mongoose.model("party", partySchema);
+export default mongoose.models.party || mongoose.model("party", partySchema);

@@ -72,6 +72,5 @@ organisationSchema.set("toJSON", {
   virtuals: true,
 });
 
-module.exports =
-  mongoose.models.organisation ||
+export default mongoose.models.organisation ||
   mongoose.model("organisation", organisationSchema);

@@ -59,7 +59,7 @@ driverSchema.set("toJSON", {
   virtuals: true,
 });
 
-// module.exports =
+// export default
 //   mongoose.models.driver || mongoose.model("driver", driverSchema);
 
 export default mongoose.models.driver || mongoose.model("driver", driverSchema);

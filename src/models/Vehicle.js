@@ -45,5 +45,5 @@ vehicleSchema.set("toJSON", {
   virtuals: true,
 });
 
-module.exports =
-  mongoose.models.vehicle || mongoose.model("vehicle", vehicleSchema);
+export default mongoose.models.vehicle ||
+  mongoose.model("vehicle", vehicleSchema);

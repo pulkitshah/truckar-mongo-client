@@ -60,5 +60,5 @@ invoiceSchema.set("toJSON", {
   virtuals: true,
 });
 
-module.exports =
-  mongoose.models.invoice || mongoose.model("invoice", invoiceSchema);
+export default mongoose.models.invoice ||
+  mongoose.model("invoice", invoiceSchema);

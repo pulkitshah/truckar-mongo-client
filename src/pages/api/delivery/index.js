@@ -145,15 +145,20 @@ export const lookups = [
   //     preserveNullAndEmptyArrays: true,
   //   },
   // },
-  { $unwind: "$deliveries" },
+  {
+    $addFields: {
+      delivery: "$deliveries",
+    },
+  },
+  { $unwind: "$delivery" },
   {
     $lookup: {
       from: "organisations",
       let: {
         id: {
-          $toObjectId: "$deliveries.lr.organisation",
+          $toObjectId: "$delivery.lr.organisation",
         },
-        deliveries: "$deliveries",
+        deliveries: "$delivery",
       },
 
       pipeline: [
@@ -163,12 +168,12 @@ export const lookups = [
           },
         },
       ],
-      as: "deliveries.lr.organisation",
+      as: "delivery.lr.organisation",
     },
   },
   {
     $unwind: {
-      path: "$deliveries.lr.organisation",
+      path: "$delivery.lr.organisation",
       preserveNullAndEmptyArrays: true,
     },
   },
@@ -197,12 +202,6 @@ export const lookups = [
   //   },
   // },
   { $sort: { saleDate: -1, orderNo: -1 } },
-  {
-    $addFields: {
-      delivery: "$deliveries",
-    },
-  },
-  { $unwind: "$delivery" },
 ];
 
 export default async function handler(req, res) {
