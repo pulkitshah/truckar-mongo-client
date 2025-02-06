@@ -5,6 +5,7 @@ import Organisation from "../../../models/Organisation";
 import auth from "../../../auth";
 
 export const lookups = [
+  { $sort: { saleDate: -1, orderNo: -1 } },
   {
     $lookup: {
       from: "parties",
@@ -201,7 +202,6 @@ export const lookups = [
   //     deliveries: { $push: "$deliveries" },
   //   },
   // },
-  { $sort: { saleDate: -1, orderNo: -1 } },
 ];
 
 export default async function handler(req, res) {

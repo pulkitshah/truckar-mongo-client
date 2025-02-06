@@ -82,7 +82,7 @@ export default async function handler(req, res) {
           }
         );
 
-        const lrs = await Order.aggregate(query);
+        const lrs = await Order.aggregate(query, { allowDiskUse: true });
         res.json(lrs);
       });
       break;

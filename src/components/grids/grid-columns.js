@@ -906,7 +906,7 @@ export const lrTable = (account) => {
     {
       field: "salesInvoice",
       headerName: "Sale Bill No",
-      width: 90,
+      width: 160,
       cellRenderer: (params) => {
         console.log(params.data);
         if (params.data) {

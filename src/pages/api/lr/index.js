@@ -5,6 +5,7 @@ import Organisation from "../../../models/Organisation";
 import auth from "../../../auth";
 
 export const lookups = [
+  { $sort: { saleDate: -1, orderNo: -1 } },
   {
     $match: {
       "deliveries.lr": {
