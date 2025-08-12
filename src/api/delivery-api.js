@@ -108,8 +108,9 @@ class DeliveryApi {
         `/api/delivery/deliveriesbycustomer/${params}`
       );
 
-      let deliveries = response.data[0].rows;
-      let count = response.data[0].count;
+      let deliveries = response.data.length ? response.data : [];
+      let count = response.data.length ? response.data[0].count : 0;
+
       return {
         status: response.status,
         data: deliveries,
