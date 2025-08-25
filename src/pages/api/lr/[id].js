@@ -34,6 +34,14 @@ export default async function handler(req, res) {
           {
             $match: Object.assign(matches),
           },
+          { $sort: { saleDate: -1, orderNo: -1 } },
+          {
+            $match: {
+              "deliveries.lr": {
+                $exists: true,
+              },
+            },
+          },
         ];
 
         if (filter.organisation) {
@@ -47,8 +55,6 @@ export default async function handler(req, res) {
             },
           });
         }
-
-        query = [...query, ...lookups];
 
         // filter according to filterModel object
         if (filter.lrNo) {
@@ -65,19 +71,190 @@ export default async function handler(req, res) {
 
         query.push(
           {
-            $group: {
-              _id: null,
-              // get a count of every result that matches until now
-              count: { $sum: 1 },
-              // keep our results for the next operation
-              results: { $push: "$$ROOT" },
+            $facet: {
+              rows: [
+                {
+                  $skip: startRow,
+                },
+                {
+                  $limit: endRow - startRow,
+                },
+                {
+                  $lookup: {
+                    from: "parties",
+                    let: {
+                      id: "$customer",
+                    },
+                    pipeline: [
+                      {
+                        $match: {
+                          $expr: {
+                            $eq: ["$_id", "$$id"],
+                          },
+                        },
+                      },
+                      {
+                        $project: {
+                          name: 1,
+                          city: 1,
+                          mobile: 1,
+                          // isTransporter: 1,
+                          _id: 1,
+                        },
+                      },
+                    ],
+                    as: "customer",
+                  },
+                },
+                { $unwind: "$customer" },
+                {
+                  $addFields: {
+                    delivery: "$deliveries",
+                  },
+                },
+                { $unwind: "$delivery" },
+                {
+                  $lookup: {
+                    from: "addresses",
+                    let: {
+                      id: { $toObjectId: "$delivery.lr.consignor" },
+                    },
+                    pipeline: [
+                      {
+                        $match: {
+                          $expr: {
+                            $eq: ["$_id", "$$id"],
+                          },
+                        },
+                      },
+                    ],
+                    as: "delivery.lr.consignor",
+                  },
+                },
+                {
+                  $unwind: {
+                    path: "$delivery.lr.consignor",
+                    preserveNullAndEmptyArrays: true,
+                  },
+                },
+                {
+                  $lookup: {
+                    from: "addresses",
+                    let: {
+                      id: { $toObjectId: "$delivery.lr.consignee" },
+                    },
+                    pipeline: [
+                      {
+                        $match: {
+                          $expr: {
+                            $eq: ["$_id", "$$id"],
+                          },
+                        },
+                      },
+                    ],
+                    as: "delivery.lr.consignee",
+                  },
+                },
+                {
+                  $unwind: {
+                    path: "$delivery.lr.consignee",
+                    preserveNullAndEmptyArrays: true,
+                  },
+                },
+                {
+                  $lookup: {
+                    from: "organisations",
+                    let: {
+                      id: { $toObjectId: "$delivery.lr.organisation" },
+                    },
+                    pipeline: [
+                      {
+                        $match: {
+                          $expr: {
+                            $eq: ["$_id", "$$id"],
+                          },
+                        },
+                      },
+                    ],
+                    as: "delivery.lr.organisation",
+                  },
+                },
+                {
+                  $unwind: {
+                    path: "$delivery.lr.organisation",
+                    preserveNullAndEmptyArrays: true,
+                  },
+                },
+                {
+                  $lookup: {
+                    from: "invoices",
+                    let: {
+                      id: "$delivery._id",
+                    },
+                    pipeline: [
+                      {
+                        $lookup: {
+                          from: "organisations",
+                          let: {
+                            id: "$organisation",
+                          },
+                          pipeline: [
+                            {
+                              $match: {
+                                $expr: {
+                                  $eq: ["$_id", "$$id"],
+                                },
+                              },
+                            },
+                          ],
+                          as: "organisation",
+                        },
+                      },
+                      {
+                        $unwind: {
+                          path: "$organisation",
+                          preserveNullAndEmptyArrays: true,
+                        },
+                      },
+                      {
+                        $unwind: {
+                          path: "$deliveries",
+                          preserveNullAndEmptyArrays: true,
+                        },
+                      },
+                      {
+                        $match: {
+                          $expr: {
+                            $eq: ["$deliveries.delivery", "$$id"],
+                          },
+                        },
+                      },
+                    ],
+                    as: "invoice",
+                  },
+                },
+              ],
+              count: [
+                {
+                  $group: {
+                    _id: null,
+                    Total: { $sum: 1 },
+                  },
+                },
+              ],
             },
           },
-          // and finally trim the results to within the range given by start/endRow
           {
-            $project: {
-              count: 1,
-              rows: { $slice: ["$results", startRow, endRow] },
+            $unwind: "$rows",
+          },
+          {
+            $addFields: {
+              "rows.count": { $arrayElemAt: ["$count.Total", 0] },
+            },
+          },
+          {
+            $replaceRoot: {
+              newRoot: "$rows",
             },
           }
         );

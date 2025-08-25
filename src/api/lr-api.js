@@ -4,8 +4,10 @@ class LrApi {
   async getLrsByAccount(params) {
     try {
       const response = await axios.get(`/api/lr/${params}`);
-      let lrs = response.data[0].rows;
-      let count = response.data[0].count;
+
+      let lrs = response.data.length ? response.data : [];
+      let count = response.data.length ? response.data[0].count : 0;
+
       return {
         status: response.status,
         data: lrs,
