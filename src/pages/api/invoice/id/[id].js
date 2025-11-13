@@ -23,7 +23,7 @@ export default async function handler(req, res) {
 
           query = [...query, ...lookups];
 
-          const invoices = await Invoice.aggregate(query);
+          const invoices = await Invoice.aggregate(query, { allowDiskUse: true });
 
           if (!invoices) {
             res.status(400).json({

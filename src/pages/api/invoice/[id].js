@@ -3,7 +3,7 @@ import dbConnect from "../../../lib/dbConnect";
 import Invoice from "../../../models/Invoice";
 import auth from "../../../auth";
 import createFilterAggPipeline from "../../../utils/get-aggregation-pipeline";
-import { basicLookups } from ".";
+import { gridLookups } from ".";
 
 export default async function handler(req, res) {
   const { method } = req;
@@ -69,7 +69,7 @@ export default async function handler(req, res) {
             paginatedResults: [
               { $skip: startRow },
               { $limit: endRow - startRow },
-              ...basicLookups
+              ...gridLookups
             ]
           }
         });

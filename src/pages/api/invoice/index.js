@@ -4,28 +4,8 @@ import Invoice from "../../../models/Invoice";
 import auth from "../../../auth";
 import Order from "../../../models/Order";
 
-// Simplified lookups that only fetch essential data
-export const basicLookups = [
-  {
-    $lookup: {
-      from: "addresses",
-      let: { id: "$billingAddress" },
-      pipeline: [
-        {
-          $match: {
-            $expr: { $eq: ["$_id", "$$id"] },
-          },
-        },
-      ],
-      as: "billingAddress",
-    },
-  },
-  {
-    $unwind: {
-      path: "$billingAddress",
-      preserveNullAndEmptyArrays: true,
-    },
-  },
+// Light lookups for grid view - only essential data for listing
+export const gridLookups = [
   {
     $lookup: {
       from: "organisations",
@@ -83,45 +63,170 @@ export const basicLookups = [
   },
 ];
 
-// Full lookups for detailed view (only used when fetching specific invoice)
-export const lookups = [
-  ...basicLookups,
-  
-  // Only add delivery/order data for single invoice fetches
+// Complete lookups for drawer/detail view - full data structure for compatibility
+export const basicLookups = [
   {
     $lookup: {
-      from: "orders",
-      let: { 
-        deliveryOrders: {
-          $map: {
-            input: "$deliveries",
-            as: "del",
-            in: "$$del.order"
-          }
-        }
-      },
+      from: "addresses",
+      let: { id: "$billingAddress" },
       pipeline: [
         {
           $match: {
-            $expr: {
-              $in: ["$_id", "$$deliveryOrders"]
-            }
-          }
+            $expr: { $eq: ["$_id", "$$id"] },
+          },
+        },
+      ],
+      as: "billingAddress",
+    },
+  },
+  {
+    $unwind: {
+      path: "$billingAddress",
+      preserveNullAndEmptyArrays: true,
+    },
+  },
+  {
+    $lookup: {
+      from: "organisations",
+      let: { id: "$organisation" },
+      pipeline: [
+        {
+          $match: {
+            $expr: { $eq: ["$_id", "$$id"] },
+          },
+        },
+      ],
+      as: "organisation",
+    },
+  },
+  {
+    $unwind: {
+      path: "$organisation",
+      preserveNullAndEmptyArrays: true,
+    },
+  },
+  {
+    $lookup: {
+      from: "parties",
+      let: { id: "$customer" },
+      pipeline: [
+        {
+          $match: {
+            $expr: { $eq: ["$_id", "$$id"] },
+          },
         },
         {
           $project: {
+            name: 1,
+            city: 1,
+            mobile: 1,
+            isTransporter: 1,
             _id: 1,
-            orderNo: 1,
-            saleDate: 1,
-            vehicleNumber: 1,
-            deliveries: 1,
-          }
-        }
+          },
+        },
       ],
-      as: "orderData",
+      as: "customer",
+    },
+  },
+  {
+    $unwind: {
+      path: "$customer",
+      preserveNullAndEmptyArrays: true,
+    },
+  },
+];
+
+// Full lookups for detailed view - simplified approach
+export const lookups = [
+  ...basicLookups,
+  
+  // First, collect all unique order IDs from deliveries
+  {
+    $addFields: {
+      orderIds: {
+        $map: {
+          input: "$deliveries",
+          as: "delivery",
+          in: { $toObjectId: "$$delivery.order" }
+        }
+      }
+    }
+  },
+  
+  // Lookup all orders at once
+  {
+    $lookup: {
+      from: "orders",
+      let: { orderIds: "$orderIds" },
+      pipeline: [
+        {
+          $match: {
+            $expr: { $in: ["$_id", "$$orderIds"] }
+          }
+        },
+        // Process order deliveries with organisation lookup
+        {
+          $unwind: {
+            path: "$deliveries",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
+          $lookup: {
+            from: "organisations",
+            let: {
+              id: {
+                $toObjectId: "$deliveries.lr.organisation",
+              },
+            },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $eq: ["$_id", "$$id"],
+                  },
+                },
+              },
+            ],
+            as: "deliveries.lr.organisation",
+          },
+        },
+        {
+          $unwind: {
+            path: "$deliveries.lr.organisation",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
+          $group: {
+            _id: "$_id",
+            orderNo: { $first: "$orderNo" },
+            saleDate: { $first: "$saleDate" },
+            createdDate: { $first: "$createdDate" },
+            customer: { $first: "$customer" },
+            vehicleNumber: { $first: "$vehicleNumber" },
+            vehicle: { $first: "$vehicle" },
+            driver: { $first: "$driver" },
+            deliveries: { $push: "$deliveries" },
+            orderExpenses: { $first: "$orderExpenses" },
+            transporter: { $first: "$transporter" },
+            saleType: { $first: "$saleType" },
+            saleRate: { $first: "$saleRate" },
+            minimumSaleGuarantee: { $first: "$minimumSaleGuarantee" },
+            saleAdvance: { $first: "$saleAdvance" },
+            purchaseType: { $first: "$purchaseType" },
+            purchaseRate: { $first: "$purchaseRate" },
+            minimumPurchaseGuarantee: { $first: "$minimumPurchaseGuarantee" },
+            purchaseAdvance: { $first: "$purchaseAdvance" },
+            account: { $first: "$account" },
+          },
+        },
+      ],
+      as: "ordersData",
     },
   },
   
+  // Now merge the order data back into each delivery
   {
     $addFields: {
       deliveries: {
@@ -136,9 +241,9 @@ export const lookups = [
                   $arrayElemAt: [
                     {
                       $filter: {
-                        input: "$orderData",
+                        input: "$ordersData",
                         as: "order",
-                        cond: { $eq: ["$$order._id", "$$delivery.order"] }
+                        cond: { $eq: ["$$order._id", { $toObjectId: "$$delivery.order" }] }
                       }
                     },
                     0
@@ -152,9 +257,11 @@ export const lookups = [
     }
   },
   
+  // Clean up temporary fields
   {
     $project: {
-      orderData: 0
+      orderIds: 0,
+      ordersData: 0
     }
   }
 ];

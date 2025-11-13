@@ -21,14 +21,28 @@ import {
 export const DeliveryCard = (props) => {
   const { invoiceDelivery, index, ...other } = props;
 
+
   const delivery = {
     ...invoiceDelivery.order,
-    delivery: invoiceDelivery.order.deliveries.find(
+    delivery: invoiceDelivery.order.deliveries?.find(
       (e) => e._id === invoiceDelivery.delivery
     ),
     invoiceCharges: invoiceDelivery.invoiceCharges,
     particular: invoiceDelivery.particular,
   };
+
+  // If deliveries array is missing or delivery not found, return error message
+  if (!delivery.delivery) {
+    return (
+      <Card sx={{ mt: 3 }} variant="outlined" key={index}>
+        <CardContent>
+          <Typography color="error" variant="body2">
+            Error: Delivery data not found. Order: {invoiceDelivery.order?.orderNo || 'Unknown'}
+          </Typography>
+        </CardContent>
+      </Card>
+    );
+  }
 
   const mdDown = useMediaQuery((theme) => theme.breakpoints.down("md"));
 
@@ -59,7 +73,7 @@ export const DeliveryCard = (props) => {
                 <Box>
                   <Typography variant="body2">LR No</Typography>
                   <Typography sx={{ mb: 3 }} variant="body2">
-                    {Object.keys(delivery.delivery.lr).length
+                    {delivery.delivery.lr && Object.keys(delivery.delivery.lr).length && delivery.delivery.lr.organisation
                       ? `${delivery.delivery.lr.organisation.initials} - ${delivery.delivery.lr.lrNo}`
                       : "N/A"}
                   </Typography>
@@ -76,8 +90,7 @@ export const DeliveryCard = (props) => {
                       <Typography variant="body2">From</Typography>
                       <Typography sx={{ mb: 3 }} variant="body2">
                         {
-                          delivery.delivery.loading.structured_formatting
-                            .main_text
+                          delivery.delivery.loading?.structured_formatting?.main_text || 'Loading location not available'
                         }
                       </Typography>
                     </Box>
@@ -85,8 +98,7 @@ export const DeliveryCard = (props) => {
                       <Typography variant="body2">To</Typography>
                       <Typography sx={{ mb: 3 }} variant="body2">
                         {
-                          delivery.delivery.unloading.structured_formatting
-                            .main_text
+                          delivery.delivery.unloading?.structured_formatting?.main_text || 'Unloading location not available'
                         }
                       </Typography>
                     </Box>
@@ -94,7 +106,7 @@ export const DeliveryCard = (props) => {
                       <Typography variant="body2">Bill Quantity</Typography>
                       {delivery.delivery.billQuantity ? (
                         <Typography sx={{ mb: 3 }} variant="body2">
-                          {`${delivery.delivery.billQuantity} ${delivery.saleType.unit}`}
+                          {`${delivery.delivery.billQuantity} ${delivery.saleType?.unit || ''}`}
                         </Typography>
                       ) : (
                         <Typography sx={{ mb: 3 }} variant="body2">
@@ -119,8 +131,7 @@ export const DeliveryCard = (props) => {
                       <Typography variant="body2">From</Typography>
                       <Typography sx={{ mb: 3 }} variant="body2">
                         {
-                          delivery.delivery.loading.structured_formatting
-                            .main_text
+                          delivery.delivery.loading?.structured_formatting?.main_text || 'Loading location not available'
                         }
                       </Typography>
                     </Box>
@@ -128,8 +139,7 @@ export const DeliveryCard = (props) => {
                       <Typography variant="body2">To</Typography>
                       <Typography sx={{ mb: 3 }} variant="body2">
                         {
-                          delivery.delivery.unloading.structured_formatting
-                            .main_text
+                          delivery.delivery.unloading?.structured_formatting?.main_text || 'Unloading location not available'
                         }
                       </Typography>
                     </Box>
@@ -138,7 +148,7 @@ export const DeliveryCard = (props) => {
                       <Typography sx={{ mb: 3 }} variant="body2">
                         {delivery.delivery.billQuantity ? (
                           <Typography sx={{ mb: 3 }} variant="body2">
-                            {`${delivery.delivery.billQuantity} ${delivery.saleType.unit}`}
+                            {`${delivery.delivery.billQuantity} ${delivery.saleType?.unit || ''}`}
                           </Typography>
                         ) : (
                           <Typography sx={{ mb: 3 }} variant="body2">

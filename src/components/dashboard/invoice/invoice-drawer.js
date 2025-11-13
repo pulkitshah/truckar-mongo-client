@@ -148,7 +148,7 @@ const InvoicePreview = (props) => {
               {invoice.customer.mobile}
             </Typography>
             <Typography color="textSecondary" variant="body2">
-              {invoice.customer.city.description}
+              {invoice.customer.city?.description || 'No city available'}
             </Typography>
           </PropertyListItem>
         )}
@@ -169,7 +169,7 @@ const InvoicePreview = (props) => {
               {invoice.billingAddress.billingAddressLine2}
             </Typography>
             <Typography color="textSecondary" variant="body2">
-              {invoice.billingAddress.city.description}
+              {invoice.billingAddress.city?.description || 'No city available'}
             </Typography>
             <Typography color="textSecondary" variant="body2">
               {invoice.billingAddress.pan &&
