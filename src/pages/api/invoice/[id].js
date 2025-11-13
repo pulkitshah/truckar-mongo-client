@@ -3,7 +3,7 @@ import dbConnect from "../../../lib/dbConnect";
 import Invoice from "../../../models/Invoice";
 import auth from "../../../auth";
 import createFilterAggPipeline from "../../../utils/get-aggregation-pipeline";
-import { lookups } from ".";
+import { basicLookups } from ".";
 
 export default async function handler(req, res) {
   const { method } = req;
@@ -30,14 +30,15 @@ export default async function handler(req, res) {
 
         let matches = { account: new mongoose.Types.ObjectId(account) };
 
+        // Build the query with early filtering and sorting
         let query = [
-          // filter the results by our accountId
+          // filter the results by our accountId first
           {
             $match: Object.assign(matches),
           },
         ];
 
-        // filter according to filterModel object
+        // Add filters before any lookups
         if (filter.invoiceNo) {
           const invoiceNoQuery = createFilterAggPipeline({
             invoiceNo: filter.invoiceNo,
@@ -52,40 +53,36 @@ export default async function handler(req, res) {
           query.push(organisationQuery[0]);
         }
 
-        // if (filter.vehicleNumber) {
-        //   const vehicleNumberQuery = createFilterAggPipeline({
-        //     vehicleNumber: filter.vehicleNumber,
-        //   });
-        //   query.push(vehicleNumberQuery[0]);
-        // }
-
-        query = [...query, ...lookups];
-
+        // Add sorting immediately after filtering, before lookups
         if (sort) {
-          // maybe we want to sort by blog title or something
           query.push({ $sort: sort });
         }
 
-        query.push(
-          {
-            $group: {
-              _id: null,
-              // get a count of every result that matches until now
-              count: { $sum: 1 },
-              // keep our results for the next operation
-              results: { $push: "$$ROOT" },
-            },
-          },
-          // and finally trim the results to within the range given by start/endRow
-          {
-            $project: {
-              count: 1,
-              rows: { $slice: ["$results", startRow, endRow] },
-            },
+        // Use facet to get both count and paginated results efficiently
+        query.push({
+          $facet: {
+            // Get total count without additional processing
+            totalCount: [
+              { $count: "count" }
+            ],
+            // Get paginated results with minimal lookups
+            paginatedResults: [
+              { $skip: startRow },
+              { $limit: endRow - startRow },
+              ...basicLookups
+            ]
           }
-        );
+        });
 
-        const invoices = await Invoice.aggregate(query);
+        // Reshape the result
+        query.push({
+          $project: {
+            count: { $arrayElemAt: ["$totalCount.count", 0] },
+            rows: "$paginatedResults"
+          }
+        });
+
+        const invoices = await Invoice.aggregate(query, { allowDiskUse: true });
         res.json(invoices);
       });
       break;

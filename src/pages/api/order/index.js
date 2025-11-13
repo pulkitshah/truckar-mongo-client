@@ -5,75 +5,18 @@ import Organisation from "../../../models/Organisation";
 import auth from "../../../auth";
 
 export const lookups = [
-  { $unwind: "$deliveries" },
+  // Sort early to take advantage of indexes and reduce memory usage
+  { $sort: { saleDate: -1, orderNo: -1 } },
+  
+  // Lookup customer data
   {
     $lookup: {
-      from: "organisations",
-      let: {
-        id: {
-          $toObjectId: "$deliveries.lr.organisation",
-        },
-        deliveries: "$deliveries",
-      },
-
+      from: "parties",
+      let: { id: "$customer" },
       pipeline: [
         {
           $match: {
             $expr: { $eq: ["$_id", "$$id"] },
-          },
-        },
-      ],
-      as: "deliveries.lr.organisation",
-    },
-  },
-  {
-    $unwind: {
-      path: "$deliveries.lr.organisation",
-      preserveNullAndEmptyArrays: true,
-    },
-  },
-  {
-    $group: {
-      _id: "$_id",
-      orderNo: { $first: "$orderNo" },
-      saleDate: { $first: "$saleDate" },
-      customer: { $first: "$customer" },
-      vehicleNumber: { $first: "$vehicleNumber" },
-      vehicle: { $first: "$vehicle" },
-      driver: { $first: "$driver" },
-      driverName: { $first: "$driverName" },
-      driverMobile: { $first: "$driverMobile" },
-      driverArrivalTime: { $first: "$driverArrivalTime" },
-      orderExpenses: { $first: "$orderExpenses" },
-      saleType: { $first: "$saleType" },
-      saleRate: { $first: "$saleRate" },
-      minimumSaleGuarantee: { $first: "$minimumSaleGuarantee" },
-      saleAdvance: { $first: "$saleAdvance" },
-      purchaseType: { $first: "$purchaseType" },
-      purchaseRate: { $first: "$purchaseRate" },
-      minimumPurchaseGuarantee: { $first: "$minimumPurchaseGuarantee" },
-      purchaseAdvance: { $first: "$purchaseAdvance" },
-      purchaseRemarks: { $first: "$purchaseRemarks" },
-      transporter: { $first: "$transporter" },
-      createdDate: { $first: "$createdDate" },
-      account: { $first: "$account" },
-      status: { $first: "$status" },
-      deliveries: { $push: "$deliveries" },
-    },
-  },
-  { $sort: { saleDate: -1, orderNo: -1 } },
-  {
-    $lookup: {
-      from: "parties",
-      let: {
-        id: "$customer",
-      },
-      pipeline: [
-        {
-          $match: {
-            $expr: {
-              $eq: ["$_id", "$$id"],
-            },
           },
         },
         {
@@ -90,12 +33,12 @@ export const lookups = [
     },
   },
   { $unwind: "$customer" },
+  
+  // Lookup transporter data
   {
     $lookup: {
       from: "parties",
-      let: {
-        id: "$transporter",
-      },
+      let: { id: "$transporter" },
       pipeline: [
         {
           $match: {
@@ -121,18 +64,16 @@ export const lookups = [
       preserveNullAndEmptyArrays: true,
     },
   },
+  
+  // Lookup driver data
   {
     $lookup: {
       from: "drivers",
-      let: {
-        id: "$driver",
-      },
+      let: { id: "$driver" },
       pipeline: [
         {
           $match: {
-            $expr: {
-              $eq: ["$_id", "$$id"],
-            },
+            $expr: { $eq: ["$_id", "$$id"] },
           },
         },
         {
@@ -156,32 +97,26 @@ export const lookups = [
       preserveNullAndEmptyArrays: true,
     },
   },
+  
+  // Lookup vehicle with nested organisation lookup
   {
     $lookup: {
       from: "vehicles",
-      let: {
-        id: "$vehicle",
-      },
+      let: { id: "$vehicle" },
       pipeline: [
         {
           $match: {
-            $expr: {
-              $eq: ["$_id", "$$id"],
-            },
+            $expr: { $eq: ["$_id", "$$id"] },
           },
         },
         {
           $lookup: {
             from: "organisations",
-            let: {
-              id: "$organisation",
-            },
+            let: { id: "$organisation" },
             pipeline: [
               {
                 $match: {
-                  $expr: {
-                    $eq: ["$_id", "$$id"],
-                  },
+                  $expr: { $eq: ["$_id", "$$id"] },
                 },
               },
             ],
@@ -202,6 +137,39 @@ export const lookups = [
     $unwind: {
       path: "$vehicle",
       preserveNullAndEmptyArrays: true,
+    },
+  },
+  
+  // Process deliveries with organisation lookup using addFields instead of unwind/group
+  {
+    $addFields: {
+      deliveries: {
+        $map: {
+          input: "$deliveries",
+          as: "delivery",
+          in: {
+            $mergeObjects: [
+              "$$delivery",
+              {
+                lr: {
+                  $mergeObjects: [
+                    "$$delivery.lr",
+                    {
+                      organisation: {
+                        $cond: {
+                          if: { $ne: ["$$delivery.lr.organisation", null] },
+                          then: "$$delivery.lr.organisation",
+                          else: null
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      }
     },
   },
 ];
@@ -265,7 +233,7 @@ export default async function handler(req, res) {
               }),
             },
             ...lookups,
-          ]);
+          ], { allowDiskUse: true });
 
           res.send(orders[0]);
         } catch (error) {

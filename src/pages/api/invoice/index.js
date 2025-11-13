@@ -4,19 +4,16 @@ import Invoice from "../../../models/Invoice";
 import auth from "../../../auth";
 import Order from "../../../models/Order";
 
-export const lookups = [
+// Simplified lookups that only fetch essential data
+export const basicLookups = [
   {
     $lookup: {
       from: "addresses",
-      let: {
-        id: "$billingAddress",
-      },
+      let: { id: "$billingAddress" },
       pipeline: [
         {
           $match: {
-            $expr: {
-              $eq: ["$_id", "$$id"],
-            },
+            $expr: { $eq: ["$_id", "$$id"] },
           },
         },
       ],
@@ -32,15 +29,18 @@ export const lookups = [
   {
     $lookup: {
       from: "organisations",
-      let: {
-        id: "$organisation",
-      },
+      let: { id: "$organisation" },
       pipeline: [
         {
           $match: {
-            $expr: {
-              $eq: ["$_id", "$$id"],
-            },
+            $expr: { $eq: ["$_id", "$$id"] },
+          },
+        },
+        {
+          $project: {
+            name: 1,
+            initials: 1,
+            _id: 1,
           },
         },
       ],
@@ -56,15 +56,19 @@ export const lookups = [
   {
     $lookup: {
       from: "parties",
-      let: {
-        id: "$customer",
-      },
+      let: { id: "$customer" },
       pipeline: [
         {
           $match: {
-            $expr: {
-              $eq: ["$_id", "$$id"],
-            },
+            $expr: { $eq: ["$_id", "$$id"] },
+          },
+        },
+        {
+          $project: {
+            name: 1,
+            city: 1,
+            mobile: 1,
+            _id: 1,
           },
         },
       ],
@@ -77,162 +81,82 @@ export const lookups = [
       preserveNullAndEmptyArrays: true,
     },
   },
-  {
-    $unwind: {
-      path: "$deliveries",
-      preserveNullAndEmptyArrays: true,
-    },
-  },
+];
+
+// Full lookups for detailed view (only used when fetching specific invoice)
+export const lookups = [
+  ...basicLookups,
+  
+  // Only add delivery/order data for single invoice fetches
   {
     $lookup: {
       from: "orders",
-      let: {
-        id: "$deliveries.order",
+      let: { 
+        deliveryOrders: {
+          $map: {
+            input: "$deliveries",
+            as: "del",
+            in: "$$del.order"
+          }
+        }
       },
       pipeline: [
         {
           $match: {
             $expr: {
-              $eq: ["$_id", "$$id"],
-            },
-          },
+              $in: ["$_id", "$$deliveryOrders"]
+            }
+          }
         },
         {
-          $unwind: {
-            path: "$deliveries",
-            preserveNullAndEmptyArrays: true,
-          },
-        },
-        {
-          $lookup: {
-            from: "organisations",
-            let: {
-              id: {
-                $toObjectId: "$deliveries.lr.organisation",
-              },
-            },
-            pipeline: [
-              {
-                $match: {
-                  $expr: {
-                    $eq: ["$_id", "$$id"],
-                  },
-                },
-              },
-            ],
-            as: "deliveries.lr.organisation",
-          },
-        },
-        {
-          $unwind: {
-            path: "$deliveries.lr.organisation",
-            preserveNullAndEmptyArrays: true,
-          },
-        },
-
-        {
-          $group: {
-            _id: "$_id",
-            orderNo: {
-              $first: "$orderNo",
-            },
-            saleDate: {
-              $first: "$saleDate",
-            },
-            createdDate: {
-              $first: "$createdDate",
-            },
-            customer: {
-              $first: "$customer",
-            },
-            vehicleNumber: {
-              $first: "$vehicleNumber",
-            },
-            vehicle: {
-              $first: "$vehicle",
-            },
-            driver: {
-              $first: "$driver",
-            },
-            deliveries: { $push: "$deliveries" },
-            orderExpenses: {
-              $first: "$orderExpenses",
-            },
-            transporter: {
-              $first: "$transporter",
-            },
-            saleType: {
-              $first: "$saleType",
-            },
-            saleRate: {
-              $first: "$saleRate",
-            },
-            minimumSaleGuarantee: {
-              $first: "$minimumSaleGuarantee",
-            },
-            saleAdvance: {
-              $first: "$saleAdvance",
-            },
-            purchaseType: {
-              $first: "$purchaseType",
-            },
-            purchaseRate: {
-              $first: "$purchaseRate",
-            },
-            minimumPurchaseGuarantee: {
-              $first: "$minimumPurchaseGuarantee",
-            },
-            purchaseAdvance: {
-              $first: "$purchaseAdvance",
-            },
-            account: {
-              $first: "$account",
-            },
-          },
-        },
+          $project: {
+            _id: 1,
+            orderNo: 1,
+            saleDate: 1,
+            vehicleNumber: 1,
+            deliveries: 1,
+          }
+        }
       ],
-      as: "deliveries.order",
+      as: "orderData",
     },
   },
+  
   {
-    $unwind: {
-      path: "$deliveries.order",
-      preserveNullAndEmptyArrays: true,
-    },
+    $addFields: {
+      deliveries: {
+        $map: {
+          input: "$deliveries",
+          as: "delivery",
+          in: {
+            $mergeObjects: [
+              "$$delivery",
+              {
+                order: {
+                  $arrayElemAt: [
+                    {
+                      $filter: {
+                        input: "$orderData",
+                        as: "order",
+                        cond: { $eq: ["$$order._id", "$$delivery.order"] }
+                      }
+                    },
+                    0
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
   },
+  
   {
-    $group: {
-      _id: "$_id",
-      invoiceFormat: {
-        $first: "$invoiceFormat",
-      },
-      invoiceNo: {
-        $first: "$invoiceNo",
-      },
-      invoiceDate: {
-        $first: "$invoiceDate",
-      },
-      customer: {
-        $first: "$customer",
-      },
-      organisation: {
-        $first: "$organisation",
-      },
-      billingAddress: {
-        $first: "$billingAddress",
-      },
-      deliveries: { $push: "$deliveries" },
-      subtotal: {
-        $first: "$subtotal",
-      },
-      taxes: {
-        $first: "$taxes",
-      },
-      account: {
-        $first: "$account",
-      },
-    },
-  },
+    $project: {
+      orderData: 0
+    }
+  }
 ];
 
 export default async function handler(req, res) {
@@ -391,7 +315,7 @@ export default async function handler(req, res) {
               }),
             },
             ...lookups,
-          ]);
+          ], { allowDiskUse: true });
 
           res.send(invoices[0]);
         } catch (error) {
