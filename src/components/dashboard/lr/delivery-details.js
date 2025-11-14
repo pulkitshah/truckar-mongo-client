@@ -24,17 +24,18 @@ const DeliveryForm = ({ sx, formik, order, user, ...rest }) => {
             <React.Fragment>
               {formik.values.deliveries.length > 0 &&
                 formik.values.deliveries.map((delivery, index) => {
+                  const itemKey =
+                    delivery?.id || delivery?._id || delivery?.key || index;
                   return (
-                    <React.Fragment>
+                    <React.Fragment key={itemKey}>
                       {index > 0 && <Divider sx={{ mb: 2 }} />}
                       <Grid
                         container
                         spacing={1}
                         className="row"
-                        key={index}
                         sx={{ my: 2 }}
                       >
-                        <Grid item xs={12} className="col" key={index}>
+                        <Grid item xs={12} className="col">
                           <Card sx={{ p: 2, my: 3 }}>
                             <Grid container justify="space-between" spacing={3}>
                               <Grid item textAlign={"center"} xs={4}>
@@ -79,7 +80,7 @@ const DeliveryForm = ({ sx, formik, order, user, ...rest }) => {
                             </Grid>
                           </Card>
                         </Grid>
-                        <Grid item md={6} xs={12} className="col" key={index}>
+                        <Grid item md={6} xs={12} className="col">
                           <AddressAutocomplete
                             type={"consignor"}
                             partyId={order.customer._id}

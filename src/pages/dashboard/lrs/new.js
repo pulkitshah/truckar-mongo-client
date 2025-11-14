@@ -19,18 +19,31 @@ const LrCreate = () => {
   useEffect(() => {
     gtm.push({ event: "page_view" });
   }, []);
-  const { deliveryId, orderId } = router.query;
+  const { deliveryId, orderId: rawOrderId } = router.query;
+  const orderId = Array.isArray(rawOrderId) ? rawOrderId[0] : rawOrderId;
 
   const getOrder = useCallback(async () => {
+    // Avoid fetching until router is ready and we have an orderId
+    if (!router.isReady || !orderId) {
+      return;
+    }
     try {
       const response = await orderApi.getOrderById(orderId);
       if (isMounted()) {
-        setOrder(response.data);
+        let next = response && !response.error ? response.data : null;
+        // Normalize common API shapes
+        if (Array.isArray(next)) {
+          next = next[0] || null;
+        }
+        // Only set when it looks like an order object
+        if (next && typeof next === "object") {
+          setOrder(next);
+        }
       }
     } catch (err) {
       console.error(err);
     }
-  }, [isMounted]);
+  }, [isMounted, orderId, router.isReady]);
 
   useEffect(() => {
     getOrder();

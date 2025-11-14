@@ -30,6 +30,11 @@ const GoogleMaps = ({ sx, addresses }) => {
   };
   // console.log(totalDistance);
 
+  // Guard against SSR or script not yet loaded
+  if (typeof window === "undefined" || !window.google || !window.google.maps) {
+    return null;
+  }
+
   return (
     <GoogleMap
       sx={sx}
