@@ -5,9 +5,6 @@ import Organisation from "../../../models/Organisation";
 import auth from "../../../auth";
 
 export const lookups = [
-  // Sort early to take advantage of indexes and reduce memory usage
-  { $sort: { saleDate: -1, orderNo: -1 } },
-  
   // Lookup customer data
   {
     $lookup: {
@@ -33,7 +30,7 @@ export const lookups = [
     },
   },
   { $unwind: "$customer" },
-  
+
   // Lookup transporter data
   {
     $lookup: {
@@ -64,7 +61,7 @@ export const lookups = [
       preserveNullAndEmptyArrays: true,
     },
   },
-  
+
   // Lookup driver data
   {
     $lookup: {
@@ -97,7 +94,7 @@ export const lookups = [
       preserveNullAndEmptyArrays: true,
     },
   },
-  
+
   // Lookup vehicle with nested organisation lookup
   {
     $lookup: {
@@ -139,7 +136,7 @@ export const lookups = [
       preserveNullAndEmptyArrays: true,
     },
   },
-  
+
   // Process deliveries with organisation lookup using addFields instead of unwind/group
   {
     $addFields: {
@@ -159,17 +156,17 @@ export const lookups = [
                         $cond: {
                           if: { $ne: ["$$delivery.lr.organisation", null] },
                           then: "$$delivery.lr.organisation",
-                          else: null
-                        }
-                      }
-                    }
-                  ]
-                }
-              }
-            ]
-          }
-        }
-      }
+                          else: null,
+                        },
+                      },
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        },
+      },
     },
   },
 ];
@@ -226,14 +223,17 @@ export default async function handler(req, res) {
 
           // console.log(order);
 
-          const orders = await Order.aggregate([
-            {
-              $match: Object.assign({
-                _id: new mongoose.Types.ObjectId(req.body._id),
-              }),
-            },
-            ...lookups,
-          ], { allowDiskUse: true });
+          const orders = await Order.aggregate(
+            [
+              {
+                $match: Object.assign({
+                  _id: new mongoose.Types.ObjectId(req.body._id),
+                }),
+              },
+              ...lookups,
+            ],
+            { allowDiskUse: true }
+          );
 
           res.send(orders[0]);
         } catch (error) {

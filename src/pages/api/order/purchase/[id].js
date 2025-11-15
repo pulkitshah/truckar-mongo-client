@@ -16,8 +16,21 @@ export default async function handler(req, res) {
           startRow,
           endRow,
           filter = {},
-          sort = { saleDate: -1, orderNo: -1 },
+          sort = [],
         } = JSON.parse(req.query.id);
+
+        // Convert AG Grid sort model to MongoDB sort format
+        let sortObject = {};
+        if (sort && sort.length > 0) {
+          sort.forEach((sortItem) => {
+            sortObject[sortItem.colId] = sortItem.sort === "asc" ? 1 : -1;
+          });
+        } else {
+          // Default sort
+          sortObject = { saleDate: -1, orderNo: -1 };
+        }
+
+        console.log("Sort object:", sortObject);
 
         let matches = { account: new mongoose.Types.ObjectId(account) };
 
@@ -33,7 +46,6 @@ export default async function handler(req, res) {
               },
             },
           },
-          { $sort: { saleDate: -1, orderNo: -1 } },
         ];
 
         // filter according to filterModel object
@@ -62,12 +74,6 @@ export default async function handler(req, res) {
           {
             $facet: {
               rows: [
-                {
-                  $skip: startRow,
-                },
-                {
-                  $limit: endRow - startRow,
-                },
                 { $unwind: "$deliveries" },
                 {
                   $lookup: {
@@ -126,7 +132,13 @@ export default async function handler(req, res) {
                     deliveries: { $push: "$deliveries" },
                   },
                 },
-                { $sort: { saleDate: -1, orderNo: -1 } },
+                { $sort: sortObject },
+                {
+                  $skip: startRow,
+                },
+                {
+                  $limit: endRow - startRow,
+                },
 
                 {
                   $lookup: {

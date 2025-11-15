@@ -160,6 +160,7 @@ export const orderTable = (account) => {
       field: "orderNo",
       headerName: "Order No",
       width: 100,
+      sortable: true,
       filter: "agNumberColumnFilter",
       filterParams: {
         buttons: ["reset"],
@@ -172,6 +173,7 @@ export const orderTable = (account) => {
       field: "saleDate",
       headerName: "Date",
       width: 120,
+      sortable: true,
       valueGetter: (params) => {
         if (params.data) {
           return moment(params.data.saleDate).format("DD-MM-YY");
@@ -182,6 +184,7 @@ export const orderTable = (account) => {
       field: "customer",
       headerName: "Customer",
       width: 150,
+      sortable: true,
       filter: "agSetColumnFilter",
       filterParams: {
         values: (params) => getPartiesByAccount(params, account),
@@ -204,6 +207,7 @@ export const orderTable = (account) => {
       field: "route",
       headerName: "Route",
       width: 250,
+      sortable: true,
       valueGetter: (params) => {
         if (params.data) {
           let deliveries = params.data.deliveries;
@@ -242,6 +246,7 @@ export const orderTable = (account) => {
       field: "vehicleNumber",
       headerName: "Vehicle Number",
       width: 150,
+      sortable: true,
       filter: "agTextColumnFilter",
       filterParams: {
         buttons: ["reset"],
@@ -254,6 +259,7 @@ export const orderTable = (account) => {
       field: "transporter",
       headerName: "Transporter",
       width: 150,
+      sortable: true,
       valueGetter: (params) => {
         if (params.data) {
           if (params.data.vehicle) {
@@ -268,6 +274,7 @@ export const orderTable = (account) => {
       field: "saleRate",
       headerName: "Sale Rate",
       width: 130,
+      sortable: true,
       valueGetter: (params) => {
         if (params.data) {
           return `Rs. ${params.data.saleRate} / ${getOrderUnit(params.data)}`;
@@ -280,6 +287,7 @@ export const orderTable = (account) => {
       field: "sales",
       headerName: "Sales",
       width: 100,
+      sortable: true,
       valueGetter: (params) => {
         if (params.data) {
           return calculateAmountForOrder(params.data, "sale", false);
@@ -295,6 +303,7 @@ export const orderTable = (account) => {
       field: "expenses",
       headerName: "Expenses",
       width: 100,
+      sortable: true,
       valueGetter: (params) => {
         if (params.data) {
           return calculateAmountForOrder(params.data, "outflow", false);
@@ -310,6 +319,7 @@ export const orderTable = (account) => {
       field: "profit",
       headerName: "Profit",
       width: 100,
+      sortable: true,
       valueGetter: (params) => {
         if (params.data) {
           return (
@@ -333,6 +343,7 @@ export const deliveriesTable = (account) => {
       field: "saleDate",
       headerName: "Sale Date",
       width: 120,
+      sortable: true,
       valueGetter: (params) => {
         // console.log(params.data);
         if (params.data) {
@@ -344,6 +355,7 @@ export const deliveriesTable = (account) => {
       field: "lr",
       headerName: "LR",
       width: 90,
+      sortable: true,
       cellRenderer: (params) => {
         if (params.data) {
           if (Object.keys(params.data.delivery.lr).length) {
@@ -379,6 +391,7 @@ export const deliveriesTable = (account) => {
       field: "salesInvoice",
       headerName: "Sale Bill No",
       width: 120,
+      sortable: true,
       cellRenderer: (params) => {
         if (params.data) {
           if (
@@ -406,6 +419,7 @@ export const deliveriesTable = (account) => {
       field: "orderNo",
       headerName: "Order No",
       width: 120,
+      sortable: true,
       valueGetter: (params) => {
         // console.log(params.data);
         if (params.data) {
@@ -417,6 +431,7 @@ export const deliveriesTable = (account) => {
       field: "vehicleNo",
       headerName: "Vehicle No",
       width: 150,
+      sortable: true,
       valueGetter: (params) => {
         if (params.data) {
           return params.data.vehicleNumber;
@@ -427,6 +442,7 @@ export const deliveriesTable = (account) => {
       field: "transporter",
       headerName: "Transporter",
       width: 200,
+      sortable: true,
       valueGetter: (params) => {
         if (params.data) {
           if (params.data.vehicle) {
@@ -441,6 +457,7 @@ export const deliveriesTable = (account) => {
       field: "customer",
       headerName: "Customer",
       width: 200,
+      sortable: true,
       valueGetter: (params) => {
         if (params.data) {
           return params.data.customer.name;
@@ -484,6 +501,7 @@ export const deliveriesTable = (account) => {
       field: "loading",
       headerName: "Loading",
       width: 130,
+      sortable: true,
       valueGetter: (params) => {
         if (params.data) {
           return params.data.delivery.loading.structured_formatting.main_text;
@@ -494,6 +512,7 @@ export const deliveriesTable = (account) => {
       field: "unloading",
       headerName: "Unloading",
       width: 130,
+      sortable: true,
       valueGetter: (params) => {
         if (params.data) {
           return params.data.delivery.unloading.structured_formatting.main_text;
@@ -504,6 +523,7 @@ export const deliveriesTable = (account) => {
       field: "saleRate",
       headerName: "Sale Rate",
       width: 130,
+      sortable: true,
       valueGetter: (params) => {
         if (params.data) {
           return `Rs. ${params.data.saleRate} / ${getOrderUnit(params.data)}`;
@@ -516,6 +536,7 @@ export const deliveriesTable = (account) => {
       field: "billQuantity",
       headerName: "Bill Wt",
       width: 120,
+      sortable: true,
       editable: true,
       valueGetter: (params) => {
         if (params.data) {
@@ -538,6 +559,7 @@ export const deliveriesTable = (account) => {
       field: "unloadingQuantity",
       headerName: "Unloading Wt",
       width: 120,
+      sortable: true,
       editable: true,
       valueGetter: (params) => {
         if (params.data) {
@@ -569,6 +591,7 @@ export const lorryRegisterTable = (account) => {
       field: "orderNo",
       headerName: "Order No",
       width: 100,
+      sortable: true,
       filter: "agNumberColumnFilter",
       filterParams: {
         buttons: ["reset"],
@@ -581,6 +604,7 @@ export const lorryRegisterTable = (account) => {
       field: "saleDate",
       headerName: "Date",
       width: 120,
+      sortable: true,
       valueGetter: (params) => {
         if (params.data) {
           return moment(params.data.saleDate).format("DD-MM-YY");
@@ -591,6 +615,7 @@ export const lorryRegisterTable = (account) => {
       field: "vehicleNumber",
       headerName: "Vehicle Number",
       width: 150,
+      sortable: true,
       filter: "agTextColumnFilter",
       filterParams: {
         buttons: ["reset"],
@@ -603,6 +628,7 @@ export const lorryRegisterTable = (account) => {
       field: "expenses",
       headerName: "Purchase Amount",
       width: 150,
+      sortable: true,
       valueGetter: (params) => {
         if (params.data) {
           return calculateAmountForOrder(params.data, "outflow", false);
@@ -618,6 +644,7 @@ export const lorryRegisterTable = (account) => {
       field: "purchaseAdvance",
       headerName: "Purchase Advance",
       width: 150,
+      sortable: true,
       valueGetter: (params) => {
         if (params.data) {
           return `Rs. ${formatNumber(params.data.purchaseAdvance || 0)}`;
@@ -628,6 +655,7 @@ export const lorryRegisterTable = (account) => {
       field: "balance",
       headerName: "Balance",
       width: 100,
+      sortable: true,
       valueGetter: (params) => {
         if (params.data) {
           return (
@@ -646,6 +674,7 @@ export const lorryRegisterTable = (account) => {
       field: "transporter",
       headerName: "Transporter",
       width: 150,
+      sortable: true,
       valueGetter: (params) => {
         if (params.data) {
           if (params.data.vehicle) {
@@ -659,6 +688,7 @@ export const lorryRegisterTable = (account) => {
     {
       field: "purchaseRemarks",
       headerName: "Remarks",
+      sortable: true,
       editable: true,
       width: 150,
       valueSetter: (params) => {

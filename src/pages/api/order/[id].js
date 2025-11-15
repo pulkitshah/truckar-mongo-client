@@ -17,8 +17,21 @@ export default async function handler(req, res) {
           startRow,
           endRow,
           filter = {},
-          sort = { saleDate: -1, orderNo: -1 },
+          sort = [],
         } = JSON.parse(req.query.id);
+
+        // Convert AG Grid sort model to MongoDB sort format
+        let sortObject = {};
+        if (sort && sort.length > 0) {
+          sort.forEach((sortItem) => {
+            sortObject[sortItem.colId] = sortItem.sort === "asc" ? 1 : -1;
+          });
+        } else {
+          // Default sort
+          sortObject = { saleDate: -1, orderNo: -1 };
+        }
+
+        console.log("Sort object:", sortObject);
 
         let matches = { account: new mongoose.Types.ObjectId(account) };
 
@@ -55,24 +68,23 @@ export default async function handler(req, res) {
         query.push({
           $facet: {
             // Get total count without expensive lookups
-            totalCount: [
-              { $count: "count" }
-            ],
+            totalCount: [{ $count: "count" }],
             // Get paginated results with full lookups only for displayed items
             paginatedResults: [
+              { $sort: sortObject },
               { $skip: startRow },
               { $limit: endRow - startRow },
-              ...lookups
-            ]
-          }
+              ...lookups,
+            ],
+          },
         });
 
         // Reshape the result
         query.push({
           $project: {
             count: { $arrayElemAt: ["$totalCount.count", 0] },
-            rows: "$paginatedResults"
-          }
+            rows: "$paginatedResults",
+          },
         });
 
         const orders = await Order.aggregate(query, { allowDiskUse: true });

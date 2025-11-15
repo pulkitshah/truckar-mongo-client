@@ -12,6 +12,7 @@ import { reducer as partyReducer } from "../slices/parties";
 import { reducer as addressReducer } from "../slices/addresses";
 import { reducer as deliveryReducer } from "../slices/deliveries";
 import { reducer as userReducer } from "../slices/user";
+import { reducer as analyticsReducer } from "../slices/analytics";
 
 export const rootReducer = combineReducers({
   accounts: accountReducer,
@@ -26,4 +27,5 @@ export const rootReducer = combineReducers({
   addresses: addressReducer,
   deliveries: deliveryReducer,
   user: userReducer,
+  analytics: analyticsReducer,
 });

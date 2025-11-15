@@ -36,11 +36,11 @@ const getSections = (t) => [
   {
     title: t("General"),
     items: [
-      // {
-      //   title: t("Overview"),
-      //   path: "/dashboard",
-      //   icon: <HomeIcon fontSize="small" />,
-      // },
+      {
+        title: t("Dashboard"),
+        path: "/dashboard",
+        icon: <HomeIcon fontSize="small" />,
+      },
       {
         title: t("Orders"),
         path: "/dashboard/orders",
