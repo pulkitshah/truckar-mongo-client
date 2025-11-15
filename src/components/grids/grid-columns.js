@@ -816,7 +816,7 @@ export const lrTable = (account) => {
       headerName: "Organisation",
       width: 130,
       valueGetter: (params) => {
-        if (params.data) {
+        if (params.data && params.data.delivery?.lr?.organisation) {
           return `${params.data.delivery.lr.organisation.name}`;
         }
       },
