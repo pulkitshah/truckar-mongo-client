@@ -250,7 +250,7 @@ const InvoicePDF = ({ invoice, logo }) => {
               />
             ) : (
               <Text style={[styles.h1]}>
-                {lr.organisation.name.toUpperCase()}
+                {invoice.organisation.name.toUpperCase()}
               </Text>
             )}
           </View>
