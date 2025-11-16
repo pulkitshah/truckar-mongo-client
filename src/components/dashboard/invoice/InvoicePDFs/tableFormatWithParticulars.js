@@ -440,14 +440,14 @@ const InvoicePDF = ({ invoice, logo }) => {
               console.log(invoiceDelivery);
               const delivery = {
                 ...invoiceDelivery.order,
-                delivery: invoiceDelivery.order.deliveries.find(
+                delivery: invoiceDelivery.order?.deliveries?.find(
                   (e) => e._id === invoiceDelivery.delivery
                 ),
                 invoiceCharges: invoiceDelivery.invoiceCharges,
                 particular: invoiceDelivery.particular,
               };
 
-              if (delivery) {
+              if (delivery && delivery.delivery) {
                 subtotalAmount =
                   subtotalAmount +
                   calculateAmountForDeliveryNew(delivery, "freight+lr");

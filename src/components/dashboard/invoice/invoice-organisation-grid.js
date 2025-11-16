@@ -89,10 +89,19 @@ const InvoicesByOrganisationTable = ({ onOpenDrawer, organisationId }) => {
           rowModelType={"infinite"}
           onGridReady={onGridReady}
           rowSelection="multiple"
-          onSelectionChanged={(event) => {
-            event.api
-              .getSelectedNodes()
-              .map((node) => onOpenDrawer(node.data, gridApi));
+          onSelectionChanged={async (event) => {
+            const selectedNodes = event.api.getSelectedNodes();
+            if (selectedNodes.length > 0) {
+              const invoiceId = selectedNodes[0].data._id;
+              try {
+                const { data: completeInvoice } = await invoiceApi.getInvoiceById(invoiceId);
+                onOpenDrawer(completeInvoice, gridApi);
+              } catch (error) {
+                console.error('Failed to fetch complete invoice data:', error);
+                // Fallback to grid data if API call fails
+                onOpenDrawer(selectedNodes[0].data, gridApi);
+              }
+            }
           }}
         />
       </div>
