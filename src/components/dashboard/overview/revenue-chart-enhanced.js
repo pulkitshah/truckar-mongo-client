@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Card,
   CardContent,
@@ -17,8 +17,6 @@ import {
   DialogContent,
   DialogActions,
   Button,
-  ToggleButtonGroup,
-  ToggleButton,
   FormControlLabel,
   Switch,
 } from "@mui/material";
@@ -31,18 +29,17 @@ import moment from "moment";
 import { analyticsApi } from "../../../api/analytics-api";
 import { useAuth } from "../../../hooks/use-auth";
 
-export const RevenueChartEnhanced = ({ 
-  data, 
-  loading, 
+export const RevenueChartEnhanced = ({
+  data,
+  loading,
   period = "month",
+  groupBy = "day",
   startDate,
   endDate,
-  onGroupByChange,
 }) => {
   const theme = useTheme();
   const { user } = useAuth();
   const [showTable, setShowTable] = useState(false);
-  const [groupBy, setGroupBy] = useState("day");
   const [showComparison, setShowComparison] = useState(false);
   const [comparisonData, setComparisonData] = useState(null);
   const [comparisonLoading, setComparisonLoading] = useState(false);
@@ -53,14 +50,7 @@ export const RevenueChartEnhanced = ({
     loading: false,
   });
 
-  // Fetch comparison data when comparison mode is enabled
-  useEffect(() => {
-    if (showComparison && !comparisonLoading && user?.accounts?.[0]?.account) {
-      fetchComparisonData();
-    }
-  }, [showComparison, groupBy, startDate, endDate]);
-
-  const fetchComparisonData = async () => {
+  const fetchComparisonData = useCallback(async () => {
     setComparisonLoading(true);
     const accountId = user?.accounts?.[0]?.account;
 
@@ -82,16 +72,14 @@ export const RevenueChartEnhanced = ({
     } finally {
       setComparisonLoading(false);
     }
-  };
+  }, [user?.accounts, period, startDate, endDate, groupBy]);
 
-  const handleGroupByChange = (event, newGroupBy) => {
-    if (newGroupBy !== null) {
-      setGroupBy(newGroupBy);
-      if (onGroupByChange) {
-        onGroupByChange(newGroupBy);
-      }
+  // Fetch comparison data when comparison mode is enabled
+  useEffect(() => {
+    if (showComparison && !comparisonLoading && user?.accounts?.[0]?.account) {
+      fetchComparisonData();
     }
-  };
+  }, [showComparison, fetchComparisonData, comparisonLoading, user?.accounts]);
 
   const handleComparisonToggle = (event) => {
     setShowComparison(event.target.checked);
@@ -103,7 +91,7 @@ export const RevenueChartEnhanced = ({
   if (loading) {
     return (
       <Card>
-        <CardHeader 
+        <CardHeader
           title="Revenue & Profit Trend"
           subheader="Analyze performance over time"
         />
@@ -153,21 +141,38 @@ export const RevenueChartEnhanced = ({
   };
 
   const formatDate = (dateString) => {
+    const date = moment(dateString);
+
     if (groupBy === "day") {
-      return moment(dateString).format("MMM DD");
+      return date.format("MMM DD");
     } else if (groupBy === "week") {
-      return moment(dateString).format("MMM DD");
+      // Show week range: "Dec 02 - Dec 08"
+      const weekStart = date;
+      const weekEnd = date.clone().add(6, "days");
+
+      // If same month, show abbreviated: "Dec 02-08"
+      if (weekStart.month() === weekEnd.month()) {
+        return `${weekStart.format("MMM DD")}-${weekEnd.format("DD")}`;
+      }
+      // Different months: "Dec 30 - Jan 05"
+      return `${weekStart.format("MMM DD")} - ${weekEnd.format("MMM DD")}`;
     } else if (groupBy === "month") {
-      return moment(dateString).format("MMM YY");
+      return date.format("MMM YY");
     } else if (groupBy === "quarter") {
-      return moment(dateString).format("[Q]Q YYYY");
+      // Show quarter with year: "Q4 2025"
+      const quarter = Math.ceil((date.month() + 1) / 3);
+      return `Q${quarter} ${date.format("YYYY")}`;
     }
-    return moment(dateString).format("DD/MM");
+    return date.format("DD/MM");
   };
 
   const categories = chartData.map((item) => formatDate(item.date));
-  const salesData = chartData.map((item) => Number.parseFloat(item.sales.toFixed(2)));
-  const profitData = chartData.map((item) => Number.parseFloat(item.profit.toFixed(2)));
+  const salesData = chartData.map((item) =>
+    Number.parseFloat((item.sales || 0).toFixed(2))
+  );
+  const profitData = chartData.map((item) =>
+    Number.parseFloat((item.profit || 0).toFixed(2))
+  );
 
   // Calculate moving averages for day view
   const calculateMovingAverage = (data, window = 7) => {
@@ -210,9 +215,13 @@ export const RevenueChartEnhanced = ({
 
   // Add comparison data if enabled
   if (showComparison && comparisonData && comparisonData.length > 0) {
-    const prevSalesData = comparisonData.map((item) => Number.parseFloat(item.sales.toFixed(2)));
-    const prevProfitData = comparisonData.map((item) => Number.parseFloat(item.profit.toFixed(2)));
-    
+    const prevSalesData = comparisonData.map((item) =>
+      Number.parseFloat((item.sales || 0).toFixed(2))
+    );
+    const prevProfitData = comparisonData.map((item) =>
+      Number.parseFloat((item.profit || 0).toFixed(2))
+    );
+
     const comparisonSeries = [
       {
         name: "Sales (Previous)",
@@ -256,7 +265,7 @@ export const RevenueChartEnhanced = ({
       },
     },
     colors: [
-      theme.palette.primary.main, 
+      theme.palette.primary.main,
       theme.palette.success.main,
       theme.palette.primary.light,
       theme.palette.success.light,
@@ -365,28 +374,14 @@ export const RevenueChartEnhanced = ({
         }
       />
       <CardContent>
-        <Box sx={{ mb: 2, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 2 }}>
-          <ToggleButtonGroup
-            value={groupBy}
-            exclusive
-            onChange={handleGroupByChange}
-            size="small"
-            aria-label="time aggregation"
-          >
-            <ToggleButton value="day" aria-label="day view">
-              Day
-            </ToggleButton>
-            <ToggleButton value="week" aria-label="week view">
-              Week
-            </ToggleButton>
-            <ToggleButton value="month" aria-label="month view">
-              Month
-            </ToggleButton>
-            <ToggleButton value="quarter" aria-label="quarter view">
-              Quarter
-            </ToggleButton>
-          </ToggleButtonGroup>
-
+        <Box
+          sx={{
+            mb: 2,
+            display: "flex",
+            justifyContent: "flex-end",
+            alignItems: "center",
+          }}
+        >
           <FormControlLabel
             control={
               <Switch
@@ -431,7 +426,14 @@ export const RevenueChartEnhanced = ({
                         },
                       }}
                     >
-                      <TableCell>{formatDate(item.date)}</TableCell>
+                      <TableCell>
+                        <Typography
+                          variant="body2"
+                          sx={{ whiteSpace: "nowrap" }}
+                        >
+                          {formatDate(item.date)}
+                        </Typography>
+                      </TableCell>
                       <TableCell align="right">
                         {sales.toLocaleString("en-IN", {
                           minimumFractionDigits: 2,
@@ -538,7 +540,7 @@ RevenueChartEnhanced.propTypes = {
   data: PropTypes.array,
   loading: PropTypes.bool,
   period: PropTypes.string,
+  groupBy: PropTypes.string.isRequired,
   startDate: PropTypes.string,
   endDate: PropTypes.string,
-  onGroupByChange: PropTypes.func,
 };

@@ -202,7 +202,11 @@ MetricCard.propTypes = {
 export const FinancialMetricsCardsEnhanced = ({ data, loading }) => {
   const formatCurrency = (value) => {
     if (!value && value !== 0) return "₹0";
-    return `₹${(value / 100000).toFixed(2)}L`;
+    // Use Lakhs format for amounts >= 100K
+    if (value >= 100000) {
+      return `₹${(value / 100000).toFixed(2)}L`;
+    }
+    return `₹${value.toLocaleString("en-IN")}`;
   };
 
   const formatNumber = (value) => {
@@ -210,79 +214,139 @@ export const FinancialMetricsCardsEnhanced = ({ data, loading }) => {
     return value.toLocaleString("en-IN");
   };
 
+  const formatPercent = (value) => {
+    if (!value && value !== 0) return "0%";
+    return `${value.toFixed(1)}%`;
+  };
+
   const metrics = data || {
     totalSales: 0,
     totalProfit: 0,
+    totalOrders: 0,
     profitMargin: 0,
-    activeOrders: 0,
+    averageOrderValue: 0,
+    expenseRatio: 0,
     salesGrowth: 0,
     profitGrowth: 0,
     ordersGrowth: 0,
-    previousTotalSales: 0,
-    previousTotalProfit: 0,
-    previousActiveOrders: 0,
-    salesTrend: [],
-    profitTrend: [],
-    ordersTrend: [],
-    salesTarget: null,
-    profitTarget: null,
-    ordersTarget: null,
+    marginGrowth: 0,
+    aovGrowth: 0,
+    expenseRatioChange: 0,
+    previousPeriod: {
+      sales: 0,
+      profit: 0,
+      orders: 0,
+      margin: 0,
+      aov: 0,
+      expenseRatio: 0,
+    },
+    trends: {
+      sales: [],
+      profit: [],
+      orders: [],
+      margin: [],
+      aov: [],
+      expenseRatio: [],
+    },
+    targets: {
+      sales: null,
+      profit: null,
+      orders: null,
+      profitMargin: null,
+    },
   };
 
   return (
     <Grid container spacing={3}>
-      <Grid item xs={12} sm={6} md={3}>
+      {/* Sales Card */}
+      <Grid item xs={12} sm={6} md={4} lg={2}>
         <MetricCard
           title="Total Sales"
           value={formatCurrency(metrics.totalSales)}
           change={metrics.salesGrowth}
-          changeLabel="last period"
-          previousValue={`${formatCurrency(metrics.previousTotalSales)}`}
+          changeLabel="vs last period"
+          previousValue={`${formatCurrency(metrics.previousPeriod.sales)}`}
           loading={loading}
           color="primary"
-          sparklineData={metrics.salesTrend || []}
-          target={metrics.salesTarget}
+          sparklineData={metrics.trends.sales || []}
+          target={metrics.targets.sales}
           targetLabel="Monthly Target"
         />
       </Grid>
-      <Grid item xs={12} sm={6} md={3}>
-        <MetricCard
-          title="Active Orders"
-          value={formatNumber(metrics.activeOrders)}
-          change={metrics.ordersGrowth}
-          changeLabel="last period"
-          previousValue={`${formatNumber(metrics.previousActiveOrders)}`}
-          loading={loading}
-          color="warning"
-          sparklineData={metrics.ordersTrend || []}
-          target={metrics.ordersTarget}
-          targetLabel="Target"
-        />
-      </Grid>
-      <Grid item xs={12} sm={6} md={3}>
+
+      {/* Profit Card */}
+      <Grid item xs={12} sm={6} md={4} lg={2}>
         <MetricCard
           title="Total Profit"
           value={formatCurrency(metrics.totalProfit)}
           change={metrics.profitGrowth}
-          changeLabel="last period"
-          previousValue={`${formatCurrency(metrics.previousTotalProfit)}`}
+          changeLabel="vs last period"
+          previousValue={`${formatCurrency(metrics.previousPeriod.profit)}`}
           loading={loading}
           color="success"
-          sparklineData={metrics.profitTrend || []}
-          target={metrics.profitTarget}
+          sparklineData={metrics.trends.profit || []}
+          target={metrics.targets.profit}
           targetLabel="Profit Target"
         />
       </Grid>
-      <Grid item xs={12} sm={6} md={3}>
+
+      {/* Orders Card */}
+      <Grid item xs={12} sm={6} md={4} lg={2}>
+        <MetricCard
+          title="Total Orders"
+          value={formatNumber(metrics.totalOrders)}
+          change={metrics.ordersGrowth}
+          changeLabel="vs last period"
+          previousValue={`${formatNumber(metrics.previousPeriod.orders)}`}
+          loading={loading}
+          color="warning"
+          sparklineData={metrics.trends.orders || []}
+          target={metrics.targets.orders}
+          targetLabel="Orders Target"
+        />
+      </Grid>
+
+      {/* Profit Margin Card */}
+      <Grid item xs={12} sm={6} md={4} lg={2}>
         <MetricCard
           title="Profit Margin"
-          value={`${metrics.profitMargin?.toFixed(1) || 0}%`}
-          change={metrics.marginChange}
-          changeLabel="last period"
-          previousValue={metrics.previousProfitMargin ? `${metrics.previousProfitMargin.toFixed(1)}%` : null}
+          value={formatPercent(metrics.profitMargin)}
+          change={metrics.marginGrowth}
+          changeLabel="vs last period"
+          previousValue={`${formatPercent(metrics.previousPeriod.margin)}`}
           loading={loading}
           color="info"
-          sparklineData={metrics.marginTrend || []}
+          sparklineData={metrics.trends.margin || []}
+          target={metrics.targets.profitMargin}
+          targetLabel="Margin Target"
+        />
+      </Grid>
+
+      {/* Average Order Value Card */}
+      <Grid item xs={12} sm={6} md={4} lg={2}>
+        <MetricCard
+          title="Avg Order Value"
+          value={formatCurrency(metrics.averageOrderValue)}
+          change={metrics.aovGrowth}
+          changeLabel="vs last period"
+          previousValue={`${formatCurrency(metrics.previousPeriod.aov)}`}
+          loading={loading}
+          color="secondary"
+          sparklineData={metrics.trends.aov || []}
+        />
+      </Grid>
+
+      {/* Expense Ratio Card */}
+      <Grid item xs={12} sm={6} md={4} lg={2}>
+        <MetricCard
+          title="Expense Ratio"
+          value={formatPercent(metrics.expenseRatio)}
+          change={-metrics.expenseRatioChange} // Negative because lower is better
+          changeLabel="vs last period"
+          previousValue={`${formatPercent(metrics.previousPeriod.expenseRatio)}`}
+          loading={loading}
+          color="error"
+          sparklineData={metrics.trends.expenseRatio || []}
         />
       </Grid>
     </Grid>
@@ -293,23 +357,38 @@ FinancialMetricsCardsEnhanced.propTypes = {
   data: PropTypes.shape({
     totalSales: PropTypes.number,
     totalProfit: PropTypes.number,
+    totalOrders: PropTypes.number,
     profitMargin: PropTypes.number,
-    activeOrders: PropTypes.number,
+    averageOrderValue: PropTypes.number,
+    expenseRatio: PropTypes.number,
     salesGrowth: PropTypes.number,
     profitGrowth: PropTypes.number,
     ordersGrowth: PropTypes.number,
-    marginChange: PropTypes.number,
-    previousTotalSales: PropTypes.number,
-    previousTotalProfit: PropTypes.number,
-    previousActiveOrders: PropTypes.number,
-    previousProfitMargin: PropTypes.number,
-    salesTrend: PropTypes.arrayOf(PropTypes.number),
-    profitTrend: PropTypes.arrayOf(PropTypes.number),
-    ordersTrend: PropTypes.arrayOf(PropTypes.number),
-    marginTrend: PropTypes.arrayOf(PropTypes.number),
-    salesTarget: PropTypes.number,
-    profitTarget: PropTypes.number,
-    ordersTarget: PropTypes.number,
+    marginGrowth: PropTypes.number,
+    aovGrowth: PropTypes.number,
+    expenseRatioChange: PropTypes.number,
+    previousPeriod: PropTypes.shape({
+      sales: PropTypes.number,
+      profit: PropTypes.number,
+      orders: PropTypes.number,
+      margin: PropTypes.number,
+      aov: PropTypes.number,
+      expenseRatio: PropTypes.number,
+    }),
+    trends: PropTypes.shape({
+      sales: PropTypes.arrayOf(PropTypes.number),
+      profit: PropTypes.arrayOf(PropTypes.number),
+      orders: PropTypes.arrayOf(PropTypes.number),
+      margin: PropTypes.arrayOf(PropTypes.number),
+      aov: PropTypes.arrayOf(PropTypes.number),
+      expenseRatio: PropTypes.arrayOf(PropTypes.number),
+    }),
+    targets: PropTypes.shape({
+      sales: PropTypes.number,
+      profit: PropTypes.number,
+      orders: PropTypes.number,
+      profitMargin: PropTypes.number,
+    }),
   }),
   loading: PropTypes.bool,
 };

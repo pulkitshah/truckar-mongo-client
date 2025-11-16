@@ -172,7 +172,7 @@ export const getExpensesExpression = () => ({
     $map: {
       input: { $ifNull: ["$orderExpenses", []] },
       as: "expense",
-      in: { $ifNull: ["$$expense.amount", 0] },
+      in: { $ifNull: ["$$expense.orderExpenseAmount", 0] },
     },
   },
 });

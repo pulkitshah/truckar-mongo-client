@@ -27,20 +27,89 @@ export default async function handler(req, res) {
         : moment().subtract(30, "days").toDate();
       const end = endDate ? new Date(endDate) : new Date();
 
-      // Determine date grouping format
-      let dateFormat;
+      // Build aggregation pipeline based on groupBy
+      let groupId;
+      let projectDate;
+
       switch (groupBy) {
         case "day":
-          dateFormat = "%Y-%m-%d";
+          groupId = {
+            $dateToString: {
+              format: "%Y-%m-%d",
+              date: "$saleDate",
+              timezone: "Asia/Kolkata",
+            },
+          };
+          projectDate = "$_id";
           break;
+
         case "week":
-          dateFormat = "%Y-%U";
+          // Group by ISO week and return the Monday of that week
+          groupId = {
+            year: { $isoWeekYear: "$saleDate" },
+            week: { $isoWeek: "$saleDate" },
+          };
+          // Calculate the Monday of the ISO week
+          projectDate = {
+            $dateToString: {
+              format: "%Y-%m-%d",
+              date: {
+                $dateFromParts: {
+                  isoWeekYear: "$_id.year",
+                  isoWeek: "$_id.week",
+                  isoDayOfWeek: 1, // Monday
+                },
+              },
+            },
+          };
           break;
+
         case "month":
-          dateFormat = "%Y-%m";
+          groupId = {
+            $dateToString: {
+              format: "%Y-%m",
+              date: "$saleDate",
+              timezone: "Asia/Kolkata",
+            },
+          };
+          projectDate = "$_id";
           break;
+
+        case "quarter":
+          // Group by year and quarter, return first day of quarter
+          groupId = {
+            year: { $year: "$saleDate" },
+            quarter: { $ceil: { $divide: [{ $month: "$saleDate" }, 3] } },
+          };
+          // Calculate first day of quarter: (quarter-1)*3 + 1
+          projectDate = {
+            $dateToString: {
+              format: "%Y-%m-%d",
+              date: {
+                $dateFromParts: {
+                  year: "$_id.year",
+                  month: {
+                    $add: [
+                      { $multiply: [{ $subtract: ["$_id.quarter", 1] }, 3] },
+                      1,
+                    ],
+                  },
+                  day: 1,
+                },
+              },
+            },
+          };
+          break;
+
         default:
-          dateFormat = "%Y-%m-%d";
+          groupId = {
+            $dateToString: {
+              format: "%Y-%m-%d",
+              date: "$saleDate",
+              timezone: "Asia/Kolkata",
+            },
+          };
+          projectDate = "$_id";
       }
 
       const revenueTrend = await Order.aggregate([
@@ -52,13 +121,7 @@ export default async function handler(req, res) {
         },
         {
           $group: {
-            _id: {
-              $dateToString: {
-                format: dateFormat,
-                date: "$saleDate",
-                timezone: "Asia/Kolkata",
-              },
-            },
+            _id: groupId,
             ...getFinancialGroupFields(),
           },
         },
@@ -68,11 +131,11 @@ export default async function handler(req, res) {
           },
         },
         {
-          $sort: { _id: -1 },
+          $sort: { _id: 1 },
         },
         {
           $project: {
-            date: "$_id",
+            date: projectDate,
             sales: { $round: ["$sales", 2] },
             profit: { $round: ["$profit", 2] },
             _id: 0,

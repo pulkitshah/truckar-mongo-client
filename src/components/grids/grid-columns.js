@@ -358,7 +358,10 @@ export const deliveriesTable = (account) => {
       sortable: true,
       cellRenderer: (params) => {
         if (params.data) {
-          if (Object.keys(params.data.delivery.lr).length) {
+          if (
+            Object.keys(params.data.delivery.lr).length &&
+            params.data.delivery.lr.organisation
+          ) {
             return (
               <Link
                 color="secondary"
@@ -812,7 +815,10 @@ export const lrTable = (account) => {
 
       cellRenderer: (params) => {
         if (params.data) {
-          if (Object.keys(params.data.delivery.lr).length) {
+          if (
+            Object.keys(params.data.delivery.lr).length &&
+            params.data.delivery.lr.organisation
+          ) {
             return (
               <Link
                 color="secondary"
@@ -846,7 +852,7 @@ export const lrTable = (account) => {
       headerName: "Organisation",
       width: 130,
       valueGetter: (params) => {
-        if (params.data) {
+        if (params.data && params.data.delivery?.lr?.organisation) {
           return `${params.data.delivery.lr.organisation.name}`;
         }
       },
@@ -1104,7 +1110,10 @@ export const orderTableForCreateInvoice = [
     width: 90,
     cellRenderer: (params) => {
       if (params.data) {
-        if (Object.keys(params.data.delivery.lr).length) {
+        if (
+          Object.keys(params.data.delivery.lr).length &&
+          params.data.delivery.lr.organisation
+        ) {
           return (
             <Link
               color="secondary"

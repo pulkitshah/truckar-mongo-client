@@ -46,6 +46,23 @@ const invoiceSchema = new mongoose.Schema({
   taxes: {
     type: Array,
   },
+  paymentStatus: {
+    type: String,
+    enum: ['unpaid', 'partial', 'paid'],
+    default: 'unpaid',
+  },
+  paidAmount: {
+    type: Number,
+    default: 0,
+  },
+  paidDate: {
+    type: Date,
+    // null for unpaid invoices
+  },
+  dueDate: {
+    type: Date,
+    // Can be calculated as invoiceDate + payment terms
+  },
   account: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "account",

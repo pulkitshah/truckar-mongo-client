@@ -71,7 +71,19 @@ export default async function handler(req, res) {
             transporterName: 1,
             profit: { $round: ["$profit", 2] },
             sales: { $round: ["$sales", 2] },
-            orderCount: 1,
+            orders: "$orderCount",
+            profitMargin: {
+              $cond: [
+                { $gt: ["$sales", 0] },
+                {
+                  $round: [
+                    { $multiply: [{ $divide: ["$profit", "$sales"] }, 100] },
+                    2,
+                  ],
+                },
+                0,
+              ],
+            },
             _id: 0,
           },
         },

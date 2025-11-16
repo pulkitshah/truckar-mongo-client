@@ -6,7 +6,7 @@ export default async function handler(req, res, next) {
 
   //Check if no token
   if (!token) {
-    res.status(401).json({ errors: [{ msg: "No Token!" }] });
+    return res.status(401).json({ errors: [{ msg: "No Token!" }] });
   }
 
   // Verify Token
@@ -21,6 +21,6 @@ export default async function handler(req, res, next) {
     req.user = decoded.user;
     next();
   } catch (error) {
-    res.status(401).json({ errors: [{ msg: "Token is not valid" }] });
+    return res.status(401).json({ errors: [{ msg: "Token is not valid" }] });
   }
 }

@@ -147,6 +147,12 @@ const orderSchema = new mongoose.Schema({
     type: String,
     default: "pending",
   },
+  organisation: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "organisation",
+    // Optional - will be populated from vehicle.organisation for new orders
+    // Existing orders can derive this in queries via vehicle lookup
+  },
   account: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "account",

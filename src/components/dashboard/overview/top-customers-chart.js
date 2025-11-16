@@ -18,6 +18,7 @@ import {
   DialogActions,
   Button,
   Chip,
+  Grid,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { Chart } from "../../chart";
@@ -144,6 +145,7 @@ export const TopCustomersChart = ({
         show: false,
       },
       events: {
+        // Single click instead of double-click for better UX
         dataPointSelection: (event, chartContext, config) => {
           const dataPointIndex = config.dataPointIndex;
           if (dataPointIndex >= 0 && chartData[dataPointIndex]) {
@@ -152,29 +154,48 @@ export const TopCustomersChart = ({
         },
       },
     },
-    colors: [theme.palette.primary.main],
+    // Color gradient from high to low performers
+    colors: [
+      (opts) => {
+        const percentage =
+          opts.value / Math.max(...chartData.map((d) => d[dataKey]));
+        if (percentage > 0.7) return theme.palette.success.main;
+        if (percentage > 0.4) return theme.palette.primary.main;
+        return theme.palette.warning.main;
+      },
+    ],
     dataLabels: {
-      enabled: false,
+      enabled: true,
+      formatter: (value) => `₹${(value / 100000).toFixed(1)}L`,
+      style: {
+        fontSize: "11px",
+        colors: [theme.palette.mode === "dark" ? "#fff" : "#000"],
+      },
+      offsetX: 0,
     },
     grid: {
       borderColor: theme.palette.divider,
       strokeDashArray: 2,
       xaxis: {
         lines: {
-          show: false,
+          show: true,
         },
       },
       yaxis: {
         lines: {
-          show: true,
+          show: false,
         },
       },
     },
     plotOptions: {
       bar: {
-        borderRadius: 8,
-        columnWidth: "70%",
-        horizontal: false,
+        borderRadius: 4,
+        barHeight: "70%",
+        horizontal: true, // Horizontal bars for better label readability
+        distributed: true, // Different color per bar
+        dataLabels: {
+          position: "top",
+        },
       },
     },
     states: {
@@ -186,7 +207,7 @@ export const TopCustomersChart = ({
       hover: {
         filter: {
           type: "darken",
-          value: 0.9,
+          value: 0.85,
         },
       },
     },
@@ -195,33 +216,87 @@ export const TopCustomersChart = ({
     },
     tooltip: {
       theme: theme.palette.mode,
-      y: {
-        formatter: (value) => `₹${Number(value).toLocaleString("en-IN")}`,
+      custom: ({ series, seriesIndex, dataPointIndex, w }) => {
+        const item = chartData[dataPointIndex];
+        return `
+          <div style="padding: 12px; min-width: 200px;">
+            <div style="font-weight: 600; margin-bottom: 8px; font-size: 13px;">
+              ${item[nameKey] || "Unknown"}
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 12px;">
+              <span style="color: #888;">Profit:</span>
+              <span style="font-weight: 600;">₹${Number(
+                item[dataKey] || 0
+              ).toLocaleString("en-IN")}</span>
+            </div>
+            ${
+              item.orders
+                ? `
+              <div style="display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 12px;">
+                <span style="color: #888;">Orders:</span>
+                <span style="font-weight: 600;">${item.orders}</span>
+              </div>
+            `
+                : ""
+            }
+            ${
+              item.sales
+                ? `
+              <div style="display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 12px;">
+                <span style="color: #888;">Sales:</span>
+                <span style="font-weight: 600;">₹${Number(
+                  item.sales
+                ).toLocaleString("en-IN")}</span>
+              </div>
+            `
+                : ""
+            }
+            ${
+              item.profitMargin
+                ? `
+              <div style="display: flex; justify-content: space-between; font-size: 12px;">
+                <span style="color: #888;">Margin:</span>
+                <span style="font-weight: 600; color: ${
+                  item.profitMargin > 20
+                    ? "#10b981"
+                    : item.profitMargin > 10
+                    ? "#f59e0b"
+                    : "#ef4444"
+                };">
+                  ${item.profitMargin.toFixed(1)}%
+                </span>
+              </div>
+            `
+                : ""
+            }
+            <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #eee; font-size: 11px; color: #888;">
+              Click to view detailed orders
+            </div>
+          </div>
+        `;
       },
     },
     xaxis: {
-      axisBorder: {
-        show: false,
-      },
-      axisTicks: {
-        show: false,
-      },
       categories: categories,
       labels: {
+        formatter: (value) => `₹${(value / 100000).toFixed(1)}L`,
         style: {
           colors: theme.palette.text.secondary,
+          fontSize: "11px",
         },
-        rotate: -45,
-        rotateAlways: categories.length > 5,
       },
     },
     yaxis: {
       labels: {
-        formatter: (value) => `₹${Number(value).toLocaleString("en-IN")}`,
         style: {
           colors: theme.palette.text.secondary,
+          fontSize: "12px",
         },
+        maxWidth: 180,
       },
+    },
+    legend: {
+      show: false,
     },
   };
 
@@ -231,6 +306,135 @@ export const TopCustomersChart = ({
       data: chartData.map((item) => item[dataKey] || 0),
     },
   ];
+
+  // Prepare donut chart data - Top 5 + Others
+  const totalProfit = chartData.reduce(
+    (sum, item) => sum + (item[dataKey] || 0),
+    0
+  );
+  const top5Data = chartData.slice(0, Math.min(5, chartData.length));
+  const othersProfit = chartData
+    .slice(5)
+    .reduce((sum, item) => sum + (item[dataKey] || 0), 0);
+
+  const donutSeries =
+    top5Data.length > 0
+      ? [
+          ...top5Data.map((item) => item[dataKey] || 0),
+          ...(othersProfit > 0 ? [othersProfit] : []),
+        ]
+      : [];
+
+  const donutLabels =
+    top5Data.length > 0
+      ? [
+          ...top5Data.map((item) => item[nameKey] || "Unknown"),
+          ...(othersProfit > 0 ? ["Others"] : []),
+        ]
+      : [];
+
+  // Calculate concentration metrics
+  const top3Profit = chartData
+    .slice(0, Math.min(3, chartData.length))
+    .reduce((sum, item) => sum + (item[dataKey] || 0), 0);
+  const top3Percentage =
+    totalProfit > 0 ? ((top3Profit / totalProfit) * 100).toFixed(1) : "0";
+
+  const donutOptions = {
+    chart: {
+      background: "transparent",
+      toolbar: {
+        show: false,
+      },
+      selection: {
+        enabled: false,
+      },
+      zoom: {
+        enabled: false,
+      },
+    },
+    colors: [
+      theme.palette.success.main,
+      theme.palette.primary.main,
+      theme.palette.info.main,
+      theme.palette.warning.main,
+      theme.palette.error.main,
+      theme.palette.grey[500],
+    ],
+    labels: donutLabels,
+    legend: {
+      show: true,
+      position: "bottom",
+      fontSize: "11px",
+      labels: {
+        colors: theme.palette.text.secondary,
+      },
+      formatter: (seriesName, opts) => {
+        const value = opts.w.globals.series[opts.seriesIndex];
+        const percentage =
+          totalProfit > 0 ? ((value / totalProfit) * 100).toFixed(1) : "0";
+        return `${seriesName}: ${percentage}%`;
+      },
+    },
+    plotOptions: {
+      pie: {
+        donut: {
+          size: "65%",
+          labels: {
+            show: true,
+            name: {
+              show: true,
+              fontSize: "14px",
+              fontWeight: 600,
+              color: theme.palette.text.primary,
+            },
+            value: {
+              show: true,
+              fontSize: "20px",
+              fontWeight: 700,
+              color: theme.palette.text.primary,
+              formatter: () => `${top3Percentage}%`,
+            },
+            total: {
+              show: true,
+              label: "Top 3 Share",
+              fontSize: "12px",
+              color: theme.palette.text.secondary,
+              formatter: () => `${top3Percentage}%`,
+            },
+          },
+        },
+      },
+    },
+    dataLabels: {
+      enabled: false,
+    },
+    states: {
+      active: {
+        filter: {
+          type: "none",
+        },
+      },
+      hover: {
+        filter: {
+          type: "darken",
+          value: 0.85,
+        },
+      },
+    },
+    theme: {
+      mode: theme.palette.mode,
+    },
+    tooltip: {
+      theme: theme.palette.mode,
+      y: {
+        formatter: (value) => {
+          const percentage = ((value / totalProfit) * 100).toFixed(1);
+          return `₹${Number(value).toLocaleString("en-IN")} (${percentage}%)`;
+        },
+      },
+    },
+  };
 
   return (
     <Card>
@@ -252,42 +456,178 @@ export const TopCustomersChart = ({
             <Table size="small">
               <TableHead>
                 <TableRow>
+                  <TableCell>Rank</TableCell>
                   <TableCell>Name</TableCell>
-                  <TableCell align="right">
-                    {dataKey.charAt(0).toUpperCase() + dataKey.slice(1)} (₹)
-                  </TableCell>
-                  <TableCell align="right">Order Count</TableCell>
+                  <TableCell align="right">Orders</TableCell>
+                  <TableCell align="right">Sales (₹)</TableCell>
+                  <TableCell align="right">Profit (₹)</TableCell>
+                  <TableCell align="right">Margin %</TableCell>
+                  <TableCell align="center">Action</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {chartData.map((item) => (
-                  <TableRow
-                    key={item.customerId || item.transporterId}
-                    onClick={() => handleItemDoubleClick(item)}
-                    sx={{
-                      cursor: "pointer",
-                      "&:hover": {
-                        backgroundColor: theme.palette.action.hover,
-                      },
-                    }}
-                  >
-                    <TableCell>{item[nameKey] || "Unknown"}</TableCell>
-                    <TableCell align="right">
-                      {Number(item[dataKey] || 0).toLocaleString("en-IN")}
-                    </TableCell>
-                    <TableCell align="right">{item.orderCount || 0}</TableCell>
-                  </TableRow>
-                ))}
+                {chartData.map((item, index) => {
+                  const profitMargin =
+                    item.profitMargin ||
+                    (item.sales > 0
+                      ? ((item[dataKey] || 0) / item.sales) * 100
+                      : 0);
+                  return (
+                    <TableRow
+                      key={item.customerId || item.transporterId}
+                      sx={{
+                        "&:hover": {
+                          backgroundColor: theme.palette.action.hover,
+                        },
+                      }}
+                    >
+                      <TableCell>
+                        <Chip
+                          label={index + 1}
+                          size="small"
+                          color={
+                            index === 0
+                              ? "success"
+                              : index === 1
+                              ? "primary"
+                              : "default"
+                          }
+                          sx={{ minWidth: 32 }}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                          {item[nameKey] || "Unknown"}
+                        </Typography>
+                      </TableCell>
+                      <TableCell align="right">
+                        <Typography variant="body2">
+                          {item.orders || item.orderCount || 0}
+                        </Typography>
+                      </TableCell>
+                      <TableCell align="right">
+                        <Typography variant="body2">
+                          {item.sales
+                            ? `₹${(item.sales / 100000).toFixed(2)}L`
+                            : "-"}
+                        </Typography>
+                      </TableCell>
+                      <TableCell align="right">
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                          ₹{((item[dataKey] || 0) / 100000).toFixed(2)}L
+                        </Typography>
+                      </TableCell>
+                      <TableCell align="right">
+                        <Chip
+                          label={`${profitMargin.toFixed(1)}%`}
+                          size="small"
+                          color={
+                            profitMargin > 20
+                              ? "success"
+                              : profitMargin > 10
+                              ? "warning"
+                              : "error"
+                          }
+                          variant="outlined"
+                        />
+                      </TableCell>
+                      <TableCell align="center">
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          onClick={() => handleItemDoubleClick(item)}
+                        >
+                          View Orders
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </Box>
         ) : (
-          <Chart
-            height={300}
-            options={chartOptions}
-            series={chartSeries}
-            type="bar"
-          />
+          <Grid container spacing={2}>
+            {/* Bar Chart - Ranking View */}
+            <Grid item xs={12} md={8}>
+              <Box>
+                <Typography
+                  variant="subtitle2"
+                  color="text.secondary"
+                  sx={{ mb: 1 }}
+                >
+                  Ranking & Performance
+                </Typography>
+                <Chart
+                  height={Math.max(300, chartData.length * 50)}
+                  options={chartOptions}
+                  series={chartSeries}
+                  type="bar"
+                />
+              </Box>
+            </Grid>
+
+            {/* Donut Chart - Concentration View */}
+            <Grid item xs={12} md={4}>
+              <Box>
+                <Typography
+                  variant="subtitle2"
+                  color="text.secondary"
+                  sx={{ mb: 1 }}
+                >
+                  Concentration Analysis
+                </Typography>
+                {donutSeries.length > 0 ? (
+                  <>
+                    <Chart
+                      height={Math.max(300, chartData.length * 50)}
+                      options={donutOptions}
+                      series={donutSeries}
+                      type="donut"
+                    />
+                    <Box sx={{ mt: 2, textAlign: "center" }}>
+                      <Typography variant="caption" color="text.secondary">
+                        {top3Percentage}% of profit from top 3{" "}
+                        {type === "customer" ? "customers" : "transporters"}
+                      </Typography>
+                      <br />
+                      <Chip
+                        label={
+                          parseFloat(top3Percentage) > 60
+                            ? "High Concentration"
+                            : parseFloat(top3Percentage) > 40
+                            ? "Moderate Concentration"
+                            : "Well Diversified"
+                        }
+                        size="small"
+                        color={
+                          parseFloat(top3Percentage) > 60
+                            ? "error"
+                            : parseFloat(top3Percentage) > 40
+                            ? "warning"
+                            : "success"
+                        }
+                        sx={{ mt: 1 }}
+                      />
+                    </Box>
+                  </>
+                ) : (
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      height: 300,
+                    }}
+                  >
+                    <Typography color="textSecondary" variant="body2">
+                      Insufficient data
+                    </Typography>
+                  </Box>
+                )}
+              </Box>
+            </Grid>
+          </Grid>
         )}
       </CardContent>
 

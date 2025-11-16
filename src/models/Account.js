@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-import validator from "validator";
 
 const accountSchema = new mongoose.Schema({
   name: {
@@ -19,6 +18,28 @@ const accountSchema = new mongoose.Schema({
   },
   invoiceFormat: {
     type: String,
+  },
+  analyticsSettings: {
+    type: Object,
+    default: {
+      monthlyTargets: {
+        sales: null,
+        profit: null,
+        orders: null,
+        profitMargin: null,
+      },
+      thresholds: {
+        maxExpenseRatio: 15,
+        minProfitMargin: 15,
+        minDocumentCompletion: 80,
+        minFleetUtilization: 70,
+      },
+      alertSettings: {
+        outstandingDaysThreshold: 30,
+        pendingLRDaysThreshold: 7,
+        pendingInvoiceDaysThreshold: 15,
+      },
+    },
   },
 });
 

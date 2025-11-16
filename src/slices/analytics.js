@@ -1,5 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit";
 import { analyticsApi } from "../api/analytics-api";
+import { organisationApi } from "../api/organisation-api";
 
 const initialState = {
   financialMetrics: {
@@ -27,7 +28,14 @@ const initialState = {
     loading: false,
     error: null,
   },
-  period: "month", // week, month, quarter, year
+  // Organization context
+  organizations: {
+    data: [],
+    loading: false,
+    error: null,
+  },
+  selectedOrganization: null, // null = All Organizations, objectId = specific org
+  period: "month", // 'week', 'month', 'quarter', 'year'
   dateRange: {
     startDate: null,
     endDate: null,
@@ -111,6 +119,24 @@ export const slice = createSlice({
     setRevenueTrendError(state, action) {
       state.revenueTrend.loading = false;
       state.revenueTrend.error = action.payload;
+    },
+
+    // Organizations
+    setOrganizationsLoading(state) {
+      state.organizations.loading = true;
+      state.organizations.error = null;
+    },
+    setOrganizations(state, action) {
+      state.organizations.data = action.payload;
+      state.organizations.loading = false;
+      state.organizations.error = null;
+    },
+    setOrganizationsError(state, action) {
+      state.organizations.loading = false;
+      state.organizations.error = action.payload;
+    },
+    setSelectedOrganization(state, action) {
+      state.selectedOrganization = action.payload;
     },
 
     // Period Selection
@@ -199,6 +225,24 @@ export const fetchRevenueTrend = (params) => async (dispatch) => {
   } catch (error) {
     dispatch(slice.actions.setRevenueTrendError(error.message));
   }
+};
+
+export const fetchOrganizations = () => async (dispatch) => {
+  dispatch(slice.actions.setOrganizationsLoading());
+  try {
+    const result = await organisationApi.getOrganisations();
+    if (result.error) {
+      dispatch(slice.actions.setOrganizationsError(result.error));
+    } else {
+      dispatch(slice.actions.setOrganizations(result.data));
+    }
+  } catch (error) {
+    dispatch(slice.actions.setOrganizationsError(error.message));
+  }
+};
+
+export const selectOrganization = (orgId) => async (dispatch) => {
+  dispatch(slice.actions.setSelectedOrganization(orgId));
 };
 
 export const fetchAllDashboardData = (params) => async (dispatch) => {

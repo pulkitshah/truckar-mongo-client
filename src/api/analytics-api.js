@@ -321,12 +321,12 @@ class AnalyticsApi {
 
   /**
    * Get financial metrics with sparkline trend data
-   * @param {Object} params - { account, period, startDate, endDate }
+   * @param {Object} params - { account, period, startDate, endDate, organisation }
    * @returns {Object} - Enhanced metrics with trend arrays and targets
    */
   async getFinancialMetricsEnhanced(params) {
     try {
-      const response = await axios.get(`/api/analytics/financial-metrics-enhanced`, {
+      const response = await axios.get(`/api/analytics/financial-metrics`, {
         params,
       });
 
@@ -368,6 +368,33 @@ class AnalyticsApi {
         status: err.response?.status || 400,
         data: { current: [], previous: [] },
         error: err.response?.data?.message || "Failed to fetch revenue trend comparison",
+      };
+    }
+  }
+
+  /**
+   * Get operational health metrics
+   * @param {Object} params - { account, startDate, endDate, organisation }
+   * @returns {Object} - Document completion, fleet utilization, pending actions, outstanding invoices
+   */
+  async getOperationalHealth(params) {
+    try {
+      const response = await axios.get(`/api/analytics/operational-health`, {
+        params,
+      });
+
+      return {
+        status: response.status,
+        data: response.data,
+        error: false,
+      };
+    } catch (err) {
+      console.error("[Analytics Api - Operational Health]: ", err);
+      return {
+        status: err.response?.status || 400,
+        data: null,
+        error:
+          err.response?.data?.message || "Failed to fetch operational health",
       };
     }
   }

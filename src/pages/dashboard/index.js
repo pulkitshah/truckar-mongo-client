@@ -13,7 +13,9 @@ import {
 import { AuthGuard } from "../../components/authentication/auth-guard";
 import { OnBoardingGuard } from "../../components/authentication/onboarding-guard";
 import { DashboardLayout } from "../../components/dashboard/dashboard-layout";
+import OrganizationSelector from "../../components/dashboard/OrganizationSelector";
 import { FinancialMetricsCardsEnhanced } from "../../components/dashboard/overview/financial-metrics-cards-enhanced";
+import { OperationalHealthDashboard } from "../../components/dashboard/overview/operational-health-dashboard";
 import { RevenueChartEnhanced } from "../../components/dashboard/overview/revenue-chart-enhanced";
 import { TopCustomersChart } from "../../components/dashboard/overview/top-customers-chart";
 import { DashboardInsights } from "../../components/dashboard/dashboard-insights";
@@ -22,7 +24,11 @@ import { Refresh as RefreshIcon } from "../../icons/refresh";
 import { gtm } from "../../lib/gtm";
 import { useAuth } from "../../hooks/use-auth";
 import { useDispatch, useSelector } from "../../store";
-import { fetchAllDashboardData } from "../../slices/analytics";
+import {
+  fetchAllDashboardData,
+  fetchOrganizations,
+  selectOrganization,
+} from "../../slices/analytics";
 import { analyticsApi } from "../../api/analytics-api";
 import moment from "moment";
 
@@ -39,6 +45,9 @@ const Overview = () => {
   const [enhancedMetricsLoading, setEnhancedMetricsLoading] = useState(false);
   const [enhancedRevenueTrend, setEnhancedRevenueTrend] = useState([]);
   const [enhancedRevenueLoading, setEnhancedRevenueLoading] = useState(false);
+  const [operationalHealth, setOperationalHealth] = useState(null);
+  const [operationalHealthLoading, setOperationalHealthLoading] =
+    useState(false);
 
   // Get current account from user
   const currentAccount = user?.accounts?.[0]?.account;
@@ -52,6 +61,10 @@ const Overview = () => {
     (state) => state.analytics.topTransporters
   );
   const revenueTrend = useSelector((state) => state.analytics.revenueTrend);
+  const organizations = useSelector((state) => state.analytics.organizations);
+  const selectedOrganization = useSelector(
+    (state) => state.analytics.selectedOrganization
+  );
 
   // Calculate date range based on period
   const getDateRange = (selectedPeriod) => {
@@ -91,15 +104,34 @@ const Overview = () => {
       account: currentAccount,
       period,
       ...dateRange,
+      groupBy: groupBy,
+      ...(selectedOrganization && { organisation: selectedOrganization }),
     };
 
     dispatch(fetchAllDashboardData(params));
-    
+
     // Fetch insights
     loadInsights(params);
-    
+
     // Fetch enhanced revenue trend
     loadEnhancedRevenueTrend(params);
+
+    // Fetch operational health
+    loadOperationalHealth(params);
+  };
+
+  const loadOperationalHealth = async (params) => {
+    setOperationalHealthLoading(true);
+    try {
+      const response = await analyticsApi.getOperationalHealth(params);
+      if (!response.error && response.data) {
+        setOperationalHealth(response.data);
+      }
+    } catch (error) {
+      console.error("Error loading operational health:", error);
+    } finally {
+      setOperationalHealthLoading(false);
+    }
   };
 
   const loadEnhancedMetrics = async (params) => {
@@ -116,30 +148,47 @@ const Overview = () => {
             ...existingMetrics,
             previousTotalSales: existingMetrics.totalSales * 1.12,
             previousTotalProfit: existingMetrics.totalProfit * 0.966,
-            previousActiveOrders: Math.round(existingMetrics.activeOrders * 1.17),
-            salesTrend: new Array(30).fill(0).map(() => 
-              existingMetrics.totalSales * (0.8 + Math.random() * 0.4)
+            previousActiveOrders: Math.round(
+              existingMetrics.activeOrders * 1.17
             ),
-            profitTrend: new Array(30).fill(0).map(() => 
-              existingMetrics.totalProfit * (0.8 + Math.random() * 0.4)
-            ),
-            ordersTrend: new Array(30).fill(0).map(() => 
-              Math.round(existingMetrics.activeOrders * (0.8 + Math.random() * 0.4))
-            ),
-            marginTrend: new Array(30).fill(0).map(() => 
-              existingMetrics.profitMargin * (0.9 + Math.random() * 0.2)
-            ),
+            salesTrend: new Array(30)
+              .fill(0)
+              .map(
+                () => existingMetrics.totalSales * (0.8 + Math.random() * 0.4)
+              ),
+            profitTrend: new Array(30)
+              .fill(0)
+              .map(
+                () => existingMetrics.totalProfit * (0.8 + Math.random() * 0.4)
+              ),
+            ordersTrend: new Array(30)
+              .fill(0)
+              .map(() =>
+                Math.round(
+                  existingMetrics.activeOrders * (0.8 + Math.random() * 0.4)
+                )
+              ),
+            marginTrend: new Array(30)
+              .fill(0)
+              .map(
+                () => existingMetrics.profitMargin * (0.9 + Math.random() * 0.2)
+              ),
             salesTarget: existingMetrics.totalSales * 1.5,
             profitTarget: existingMetrics.totalProfit * 1.5,
             ordersTarget: Math.round(existingMetrics.activeOrders * 1.3),
             previousProfitMargin: existingMetrics.profitMargin * 0.95,
-            marginChange: existingMetrics.profitMargin - (existingMetrics.profitMargin * 0.95),
+            marginChange:
+              existingMetrics.profitMargin -
+              existingMetrics.profitMargin * 0.95,
           };
           setEnhancedMetrics(mockEnhanced);
         }
       }
     } catch (error) {
-      console.warn("Enhanced metrics API not available, using fallback data:", error.message);
+      console.warn(
+        "Enhanced metrics API not available, using fallback data:",
+        error.message
+      );
       // Fallback already handled in the if-else above
     } finally {
       setEnhancedMetricsLoading(false);
@@ -158,18 +207,24 @@ const Overview = () => {
           {
             type: "info",
             message: "Backend API for insights not yet implemented",
-            action: "Once the /api/analytics/insights endpoint is created, real-time insights will appear here automatically",
+            action:
+              "Once the /api/analytics/insights endpoint is created, real-time insights will appear here automatically",
           },
           {
             type: "warning",
-            message: "Enhanced dashboard features require backend implementation",
-            action: "Refer to _docs/dashboard-improvements.md for API specifications",
+            message:
+              "Enhanced dashboard features require backend implementation",
+            action:
+              "Refer to _docs/dashboard-improvements.md for API specifications",
           },
         ];
         setInsights(mockInsights);
       }
     } catch (error) {
-      console.warn("Insights API not available, showing placeholder:", error.message);
+      console.warn(
+        "Insights API not available, showing placeholder:",
+        error.message
+      );
       setInsights([
         {
           type: "info",
@@ -217,9 +272,16 @@ const Overview = () => {
     gtm.push({ event: "page_view" });
   }, []);
 
+  // Load organizations on mount
+  useEffect(() => {
+    if (currentAccount) {
+      dispatch(fetchOrganizations());
+    }
+  }, [currentAccount]);
+
   useEffect(() => {
     loadDashboardData();
-  }, [currentAccount, period]);
+  }, [currentAccount, period, selectedOrganization, groupBy]);
 
   // Load enhanced metrics after regular metrics are loaded
   useEffect(() => {
@@ -236,6 +298,15 @@ const Overview = () => {
 
   const handlePeriodChange = (event) => {
     setPeriod(event.target.value);
+  };
+
+  const handleViewModeChange = (event) => {
+    const newGroupBy = event.target.value;
+    handleGroupByChange(newGroupBy);
+  };
+
+  const handleOrganizationChange = (orgId) => {
+    dispatch(selectOrganization(orgId));
   };
 
   const handleRefresh = () => {
@@ -261,69 +332,111 @@ const Overview = () => {
           py: 8,
         }}
       >
-        <Container maxWidth="xl">
-          <Box sx={{ mb: 4 }}>
-            <Grid container justifyContent="space-between" spacing={3}>
-              <Grid item>
-                <Typography variant="h4">
-                  {getGreeting()}
-                  {user?.name && `, ${user.name.split(" ")[0]}`}
-                </Typography>
-                <Typography
-                  color="textSecondary"
-                  variant="body2"
-                  sx={{ mt: 1 }}
+        <Box
+          sx={{
+            position: 'sticky',
+            top: 64,
+            zIndex: 10,
+            bgcolor: 'background.default',
+            borderBottom: 1,
+            borderColor: 'divider',
+            pb: 2,
+            mb: 4,
+          }}
+        >
+          <Container maxWidth="xl">
+            <Box sx={{ pt: 2 }}>
+              <Grid container justifyContent="space-between" spacing={3}>
+                <Grid item>
+                  <Typography variant="h4">
+                    {getGreeting()}
+                    {user?.name && `, ${user.name.split(" ")[0]}`}
+                  </Typography>
+                  <Typography
+                    color="textSecondary"
+                    variant="body2"
+                    sx={{ mt: 1 }}
+                  >
+                    Here's what's happening with your logistics today
+                  </Typography>
+                </Grid>
+                <Grid
+                  item
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                    flexWrap: "wrap",
+                  }}
                 >
-                  Here's what's happening with your logistics today
-                </Typography>
+                  <OrganizationSelector
+                    organizations={organizations.data}
+                    selectedOrgId={selectedOrganization}
+                    onSelectOrg={handleOrganizationChange}
+                  />
+                  <Button
+                    startIcon={<RefreshIcon fontSize="small" />}
+                    onClick={handleRefresh}
+                    variant="outlined"
+                    size="small"
+                  >
+                    Refresh
+                  </Button>
+                  <Button
+                    startIcon={<ReportsIcon fontSize="small" />}
+                    variant="outlined"
+                    size="small"
+                    onClick={() => router.push("/dashboard/reports")}
+                  >
+                    Reports
+                  </Button>
+                  <TextField
+                    value={period}
+                    onChange={handlePeriodChange}
+                    label="Period"
+                    select
+                    size="small"
+                    sx={{ minWidth: 140 }}
+                  >
+                    <MenuItem value="week">Last 7 days</MenuItem>
+                    <MenuItem value="month">Last 30 days</MenuItem>
+                    <MenuItem value="quarter">Last 90 days</MenuItem>
+                    <MenuItem value="year">Last year</MenuItem>
+                  </TextField>
+                  <TextField
+                    value={groupBy}
+                    onChange={handleViewModeChange}
+                    label="View By"
+                    select
+                    size="small"
+                    sx={{ minWidth: 120 }}
+                  >
+                    <MenuItem value="day">Day</MenuItem>
+                    <MenuItem value="week">Week</MenuItem>
+                    <MenuItem value="month">Month</MenuItem>
+                    <MenuItem value="quarter">Quarter</MenuItem>
+                  </TextField>
+                </Grid>
               </Grid>
-              <Grid
-                item
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 1,
-                }}
-              >
-                <Button
-                  startIcon={<RefreshIcon fontSize="small" />}
-                  onClick={handleRefresh}
-                  variant="outlined"
-                  size="small"
-                >
-                  Refresh
-                </Button>
-                <Button
-                  startIcon={<ReportsIcon fontSize="small" />}
-                  variant="outlined"
-                  size="small"
-                  onClick={() => router.push("/dashboard/reports")}
-                >
-                  Reports
-                </Button>
-                <TextField
-                  value={period}
-                  onChange={handlePeriodChange}
-                  label="Period"
-                  select
-                  size="small"
-                  sx={{ minWidth: 140 }}
-                >
-                  <MenuItem value="week">Last 7 days</MenuItem>
-                  <MenuItem value="month">Last 30 days</MenuItem>
-                  <MenuItem value="quarter">Last 90 days</MenuItem>
-                  <MenuItem value="year">Last year</MenuItem>
-                </TextField>
-              </Grid>
-            </Grid>
-          </Box>
+            </Box>
+          </Container>
+        </Box>
 
+        <Container maxWidth="xl">
           <Grid container spacing={3}>
             {/* Financial Metrics Cards - Enhanced */}
             <Grid item xs={12}>
               <FinancialMetricsCardsEnhanced
                 data={enhancedMetrics}
                 loading={enhancedMetricsLoading}
+              />
+            </Grid>
+
+            {/* Operational Health Dashboard */}
+            <Grid item xs={12}>
+              <OperationalHealthDashboard
+                data={operationalHealth}
+                loading={operationalHealthLoading}
               />
             </Grid>
 
@@ -338,12 +451,16 @@ const Overview = () => {
             {/* Revenue Chart - Enhanced */}
             <Grid item xs={12}>
               <RevenueChartEnhanced
-                data={enhancedRevenueTrend.length > 0 ? enhancedRevenueTrend : revenueTrend.data}
+                data={
+                  enhancedRevenueTrend.length > 0
+                    ? enhancedRevenueTrend
+                    : revenueTrend.data
+                }
                 loading={enhancedRevenueLoading || revenueTrend.loading}
                 period={period}
+                groupBy={groupBy}
                 startDate={currentDateRange.startDate}
                 endDate={currentDateRange.endDate}
-                onGroupByChange={handleGroupByChange}
               />
             </Grid>
 
@@ -355,6 +472,7 @@ const Overview = () => {
                 title="Top Customers by Profit"
                 dataKey="profit"
                 type="customer"
+                period={period}
                 startDate={currentDateRange.startDate}
                 endDate={currentDateRange.endDate}
               />
@@ -369,6 +487,7 @@ const Overview = () => {
                 dataKey="profit"
                 nameKey="transporterName"
                 type="transporter"
+                period={period}
                 startDate={currentDateRange.startDate}
                 endDate={currentDateRange.endDate}
               />
