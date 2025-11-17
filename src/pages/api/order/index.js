@@ -5,8 +5,7 @@ import Organisation from "../../../models/Organisation";
 import auth from "../../../auth";
 
 export const lookups = [
-  // Sort early to take advantage of indexes and reduce memory usage
-  { $sort: { saleDate: -1, orderNo: -1 } },
+  // Field lookups; sorting is handled before pagination in list routes
   
   // Lookup customer data
   {

@@ -23,6 +23,7 @@ const DeliveriesGrid = ({ onOpenDrawer }) => {
             startRow: params.startRow,
             endRow: params.endRow,
             filter,
+            sort,
           })
         );
         console.log(data);

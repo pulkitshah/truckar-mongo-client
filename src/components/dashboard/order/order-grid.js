@@ -62,6 +62,7 @@ const Table = ({ onOpenDrawer, open, toggleDrawer }) => {
             startRow: params.startRow,
             endRow: params.endRow,
             filter,
+            sort,
           })
         );
         console.log(data);
