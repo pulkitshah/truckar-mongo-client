@@ -13,12 +13,12 @@ import {
   Image,
 } from "@react-pdf/renderer";
 import {
-  calculateAmountForDelivery,
   getInvoiceWeight,
   formatNumber,
   getSumOfInvoiceCharges,
   calculateAmountForDeliveryNew,
 } from "../../../../utils/amount-calculation";
+import { getNormalizedInvoiceDeliveries } from "./invoiceDeliveryUtils";
 
 Font.register({
   family: "Roboto",
@@ -223,14 +223,13 @@ const styles = StyleSheet.create({
   },
 });
 
-const InvoicePDF = ({ invoice, logo }) => {
+const InvoicePDF = ({ invoice }) => {
   let subtotalAmount = 0;
   let advance = 0;
-  console.log(invoice);
   let totalTaxPercentage =
     invoice.taxes && invoice.taxes
       ? invoice.taxes.reduce((a, b) => {
-          return a + (parseFloat(b.value) || 0);
+          return a + (Number.parseFloat(b.value) || 0);
         }, 0)
       : 0;
 
@@ -239,7 +238,7 @@ const InvoicePDF = ({ invoice, logo }) => {
       <Page size="A4" style={styles.page}>
         <View style={{ display: "flex" }}>
           <View>
-            {Boolean(invoice.organisation.logo) ? (
+            {invoice.organisation.logo ? (
               <Image
                 source={{
                   uri: invoice.organisation.logo.location,
@@ -254,7 +253,7 @@ const InvoicePDF = ({ invoice, logo }) => {
               />
             ) : (
               <Text style={[styles.h1]}>
-                {lr.organisation.name.toUpperCase()}
+                {invoice.organisation.name.toUpperCase()}
               </Text>
             )}
           </View>
@@ -415,30 +414,16 @@ const InvoicePDF = ({ invoice, logo }) => {
               </View>
             </View>
 
-            {invoice.deliveries.map((invoiceDelivery, index) => {
-              const delivery = {
-                ...invoiceDelivery.order,
-                delivery: invoiceDelivery.order.deliveries.find(
-                  (e) => e._id === invoiceDelivery.delivery
-                ),
-                invoiceCharges: invoiceDelivery.invoiceCharges,
-                particular: invoiceDelivery.particular,
-              };
-
-              subtotalAmount =
-                subtotalAmount +
-                calculateAmountForDeliveryNew(delivery, "freight+lr+invoice");
-              advance =
-                advance +
-                parseFloat(
-                  delivery.saleAdvance
-                    ? delivery.saleAdvance / delivery.deliveries.length
-                    : 0
-                );
+            {getNormalizedInvoiceDeliveries(invoice).map((delivery, index) => {
+              subtotalAmount += calculateAmountForDeliveryNew(
+                delivery,
+                "freight+lr+invoice"
+              );
+              advance += Number.parseFloat(delivery.saleAdvanceShare || 0);
               return (
                 <View
                   style={[styles.tableRow, styles.bottomBorder]}
-                  key={delivery.id}
+                  key={delivery.id || delivery.delivery?._id || index}
                 >
                   <View style={[styles.srNoCell, styles.rightBorder]}>
                     <Text style={[styles.tableCellText]}>{index + 1}</Text>
@@ -456,24 +441,23 @@ const InvoicePDF = ({ invoice, logo }) => {
                   </View>
                   <View style={[styles.locationCell, styles.rightBorder]}>
                     <Text style={[styles.tableCellText]}>
-                      {
-                        delivery.delivery.loading.structured_formatting
-                          .main_text
-                      }
+                      {delivery.delivery?.loading?.structured_formatting
+                        ?.main_text || ""}
                     </Text>
                   </View>
                   <View style={[styles.locationCell, styles.rightBorder]}>
                     <Text style={[styles.tableCellText]}>
-                      {
-                        delivery.delivery.unloading.structured_formatting
-                          .main_text
-                      }
+                      {delivery.delivery?.unloading?.structured_formatting
+                        ?.main_text || ""}
                     </Text>
                   </View>
                   <View style={[styles.lrNoCell, styles.rightBorder]}>
-                    {Object.keys(delivery.delivery.lr).length ? (
+                    {delivery.delivery?.lr &&
+                    Object.keys(delivery.delivery.lr).length ? (
                       <Text style={[styles.tableCellText]}>
-                        {`${delivery.delivery.lr.organisation.initials} - ${delivery.delivery.lr.lrNo}`}
+                        {`${
+                          delivery.delivery.lr.organisation?.initials || ""
+                        } - ${delivery.delivery.lr.lrNo || ""}`}
                       </Text>
                     ) : (
                       <Text style={[styles.tableCellText]}></Text>
@@ -481,13 +465,14 @@ const InvoicePDF = ({ invoice, logo }) => {
                   </View>
                   <View style={[styles.weightCell, styles.rightBorder]}>
                     <Text style={[styles.tableCellText]}>
-                      {delivery.delivery.lr &&
-                      delivery.delivery.lr.chargedWeight
+                      {delivery.delivery?.lr?.chargedWeight
                         ? delivery.delivery.lr.chargedWeight
-                        : delivery.delivery.billQuantity
-                        ? `${delivery.delivery.billQuantity} ${delivery.saleType.unit} `
+                        : delivery.delivery?.billQuantity
+                        ? `${delivery.delivery.billQuantity} ${
+                            delivery.saleType?.unit || ""
+                          } `
                         : `${delivery.minimumSaleGuarantee || 0} ${
-                            delivery.saleType.unit
+                            delivery.saleType?.unit || ""
                           }`}
                     </Text>
                   </View>
@@ -522,12 +507,7 @@ const InvoicePDF = ({ invoice, logo }) => {
                   </View>
                   <View style={[styles.advanceCell]}>
                     <Text style={[styles.tableCellText]}>
-                      {"Rs " +
-                        formatNumber(
-                          delivery.saleAdvance
-                            ? delivery.saleAdvance / delivery.deliveries.length
-                            : 0
-                        )}
+                      {"Rs " + formatNumber(delivery.saleAdvanceShare || 0)}
                     </Text>
                   </View>
                 </View>
@@ -543,8 +523,7 @@ const InvoicePDF = ({ invoice, logo }) => {
                       )
                     ).replace(/\w\S*/g, function (txt) {
                       return (
-                        txt.charAt(0).toUpperCase() +
-                        txt.substr(1).toLowerCase()
+                        txt.charAt(0).toUpperCase() + txt.slice(1).toLowerCase()
                       );
                     })} Only`}
                   </Text>
@@ -579,9 +558,12 @@ const InvoicePDF = ({ invoice, logo }) => {
               </View>
             )}
             {invoice.taxes && invoice.taxes.length ? (
-              invoice.taxes.map((tax) => {
+              invoice.taxes.map((tax, idx) => {
                 return (
-                  <View style={[styles.tableRow]}>
+                  <View
+                    style={[styles.tableRow]}
+                    key={tax?.name || String(idx)}
+                  >
                     <View
                       style={[styles.amountInWordsCell, styles.rightBorder]}
                     >
@@ -630,7 +612,7 @@ const InvoicePDF = ({ invoice, logo }) => {
                       ).replace(/\w\S*/g, function (txt) {
                         return (
                           txt.charAt(0).toUpperCase() +
-                          txt.substr(1).toLowerCase()
+                          txt.slice(1).toLowerCase()
                         );
                       })} Only`}
                   </Text>
@@ -753,19 +735,17 @@ const InvoicePDF = ({ invoice, logo }) => {
                 <Text style={[styles.termsAndConditionsCellText, styles.bold]}>
                   Terms & Conditions
                 </Text>
-                {console.log(
-                  Boolean(invoice.organisation.invoiceTermsAndConditions)
-                )}
-                {Boolean(invoice.organisation.invoiceTermsAndConditions) ? (
+                {invoice.organisation.invoiceTermsAndConditions ? (
                   invoice.organisation.invoiceTermsAndConditions
                     .split("\n")
-                    .map((tc) => {
-                      return (
-                        <Text style={[styles.termsAndConditionsCellText]}>
-                          {tc ? tc : ""}
-                        </Text>
-                      );
-                    })
+                    .map((tc, idx) => (
+                      <Text
+                        key={idx}
+                        style={[styles.termsAndConditionsCellText]}
+                      >
+                        {tc ? tc : ""}
+                      </Text>
+                    ))
                 ) : (
                   <Text style={[styles.termsAndConditionsCellText]}>{""}</Text>
                 )}

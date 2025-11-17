@@ -42,6 +42,14 @@ const InvoicePreview = (props) => {
 
   invoice.account = account;
 
+  // Validate invoice data
+  const isInvoiceValid =
+    invoice &&
+    invoice.organisation &&
+    invoice.organisation.name &&
+    invoice.deliveries &&
+    Array.isArray(invoice.deliveries);
+
   console.log(invoice);
   return (
     <>
@@ -82,11 +90,12 @@ const InvoicePreview = (props) => {
               size="small"
               sx={{ pt: 3 }}
               onClick={() => setViewPDF(true)}
+              disabled={!isInvoiceValid}
             >
               Preview
             </Button>
           </Hidden>
-          {logo && (
+          {logo && isInvoiceValid && (
             <PDFDownloadLink
               document={
                 <InvoiceFormat
@@ -148,7 +157,7 @@ const InvoicePreview = (props) => {
               {invoice.customer.mobile}
             </Typography>
             <Typography color="textSecondary" variant="body2">
-              {invoice.customer.city?.description || 'No city available'}
+              {invoice.customer.city?.description || "No city available"}
             </Typography>
           </PropertyListItem>
         )}
@@ -169,7 +178,7 @@ const InvoicePreview = (props) => {
               {invoice.billingAddress.billingAddressLine2}
             </Typography>
             <Typography color="textSecondary" variant="body2">
-              {invoice.billingAddress.city?.description || 'No city available'}
+              {invoice.billingAddress.city?.description || "No city available"}
             </Typography>
             <Typography color="textSecondary" variant="body2">
               {invoice.billingAddress.pan &&
@@ -203,15 +212,28 @@ const InvoicePreview = (props) => {
             </Button>
           </Box>
           <Box flexGrow={1}>
-            <PDFViewer
-              width="100%"
-              height="100%"
-              style={{
-                border: "none",
-              }}
-            >
-              <InvoiceFormat logo={logo} invoice={invoice} printRates={false} />
-            </PDFViewer>
+            {viewPDF && isInvoiceValid && (
+              <PDFViewer
+                width="100%"
+                height="100%"
+                style={{
+                  border: "none",
+                }}
+              >
+                <InvoiceFormat
+                  logo={logo}
+                  invoice={invoice}
+                  printRates={false}
+                />
+              </PDFViewer>
+            )}
+            {viewPDF && !isInvoiceValid && (
+              <Box p={3}>
+                <Typography color="error">
+                  Unable to generate PDF preview. Invoice data is incomplete.
+                </Typography>
+              </Box>
+            )}
           </Box>
         </Box>
       </Dialog>

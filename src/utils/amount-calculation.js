@@ -447,48 +447,55 @@ export var getInvoiceWeight = (delivery, type) => {
 };
 
 export var calculateAmountForDeliveryNew = (delivery, type) => {
-  let sumOfBillQuantity = 0;
+  if (!delivery) return 0;
 
-  delivery.deliveries.map((delivery) => {
-    if (Boolean(delivery.billQuantity)) {
-      return (sumOfBillQuantity =
-        sumOfBillQuantity + parseFloat(delivery.billQuantity));
+  const deliveriesArr = Array.isArray(delivery.deliveries)
+    ? delivery.deliveries
+    : [];
+
+  let sumOfBillQuantity = 0;
+  deliveriesArr.forEach((d) => {
+    if (d && d.billQuantity != null && d.billQuantity !== "") {
+      const val = Number.parseFloat(d.billQuantity) || 0;
+      sumOfBillQuantity += val;
     }
-    return sumOfBillQuantity;
   });
 
   let freight = 0;
   let lrAmount = 0;
   let invoiceAmount = 0;
 
-  switch (delivery.saleType.value) {
+  const saleTypeValue = delivery?.saleType?.value || null;
+  switch (saleTypeValue) {
     case "quantity":
-      if (delivery.delivery.billQuantity) {
+      if (delivery?.delivery?.billQuantity != null) {
         freight =
-          parseFloat(delivery.delivery.billQuantity) *
-          parseFloat(delivery.saleRate);
+          Number.parseFloat(delivery.delivery.billQuantity || 0) *
+          Number.parseFloat(delivery.saleRate || 0);
       }
       if (
-        parseFloat(sumOfBillQuantity) <
-        parseFloat(delivery.minimumSaleGuarantee || 0)
+        Number.parseFloat(sumOfBillQuantity || 0) <
+        Number.parseFloat(delivery.minimumSaleGuarantee || 0)
       ) {
         freight =
-          (parseFloat(delivery.minimumSaleGuarantee || 0) *
-            parseFloat(delivery.saleRate) *
-            parseFloat(delivery.delivery.billQuantity || 1)) /
-          parseFloat(sumOfBillQuantity || delivery.deliveries.length);
+          (Number.parseFloat(delivery.minimumSaleGuarantee || 0) *
+            Number.parseFloat(delivery.saleRate || 0) *
+            Number.parseFloat(delivery?.delivery?.billQuantity || 1)) /
+          Number.parseFloat(sumOfBillQuantity || deliveriesArr.length || 1);
       }
       // console.log("freight");
       // console.log(freight);
       break;
     case "fixed":
-      freight = parseFloat(delivery.saleRate);
+      freight = Number.parseFloat(delivery.saleRate || 0);
       break;
     default:
+      // Unknown or missing saleType; treat as 0 to avoid crashes
+      freight = 0;
       break;
   }
 
-  if (delivery.delivery.lr) {
+  if (delivery?.delivery?.lr) {
     if (delivery.delivery.lr.lrCharges) {
       lrAmount = parseFloat(
         getSumOfLrCharges(delivery.delivery.lr.lrCharges || 0)
@@ -502,10 +509,10 @@ export var calculateAmountForDeliveryNew = (delivery, type) => {
     );
   }
 
-  if (type === "freight") return parseFloat(freight);
-  if (type === "freight+lr") return parseFloat(freight) + lrAmount;
+  if (type === "freight") return Number.parseFloat(freight || 0);
+  if (type === "freight+lr") return Number.parseFloat(freight || 0) + lrAmount;
   if (type === "freight+lr+invoice")
-    return parseFloat(freight) + lrAmount + invoiceAmount;
+    return Number.parseFloat(freight || 0) + lrAmount + invoiceAmount;
 
-  return parseFloat(freight);
+  return Number.parseFloat(freight || 0);
 };

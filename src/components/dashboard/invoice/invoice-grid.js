@@ -11,11 +11,13 @@ import { invoiceApi } from "../../../api/invoice-api";
 const Table = ({ onOpenDrawer }) => {
   const { account } = useAuth();
   const [gridApi, setGridApi] = useState(null);
+  const [error, setError] = useState(null);
 
   const onGridReady = useCallback((params) => {
     const dataSource = {
       rowCount: undefined,
       getRows: async (params) => {
+        setError(null);
         let filter = params.filterModel;
         const sort = params.sortModel;
 
@@ -45,19 +47,34 @@ const Table = ({ onOpenDrawer }) => {
             values: filteredOrganisations,
           };
         }
+        try {
+          const {
+            data,
+            count = 0,
+            status,
+            error: apiError,
+          } = await invoiceApi.getInvoicesByAccount(
+            JSON.stringify({
+              account: account._id,
+              startRow: params.startRow,
+              endRow: params.endRow,
+              filter,
+            })
+          );
 
-        let { data, count = 0 } = await invoiceApi.getInvoicesByAccount(
-          JSON.stringify({
-            account: account._id,
-            startRow: params.startRow,
-            endRow: params.endRow,
-            filter,
-          })
-        );
+          if (status !== 200 || apiError) {
+            throw new Error(apiError || `Failed with status ${status}`);
+          }
 
-        console.log(data);
-
-        params.successCallback(data, count);
+          params.successCallback(data, count);
+        } catch (e) {
+          console.error("Invoice grid load failed", e);
+          setError("Failed to load invoices. Please try again.");
+          params.failCallback([], 0);
+          if (params.api && params.api.showNoRowsOverlay) {
+            params.api.showNoRowsOverlay();
+          }
+        }
       },
     };
     params.api.setDatasource(dataSource);
@@ -73,6 +90,9 @@ const Table = ({ onOpenDrawer }) => {
   }, []);
   return (
     <div style={{ width: "100%", height: "100%" }}>
+      {error && (
+        <div style={{ color: "#d32f2f", marginBottom: 8 }}>{error}</div>
+      )}
       <div
         style={{ width: "100%", height: "100%" }}
         className="ag-theme-balham"
@@ -88,10 +108,11 @@ const Table = ({ onOpenDrawer }) => {
             if (selectedNodes.length > 0) {
               const invoiceId = selectedNodes[0].data._id;
               try {
-                const { data: completeInvoice } = await invoiceApi.getInvoiceById(invoiceId);
+                const { data: completeInvoice } =
+                  await invoiceApi.getInvoiceById(invoiceId);
                 onOpenDrawer(completeInvoice, gridApi);
               } catch (error) {
-                console.error('Failed to fetch complete invoice data:', error);
+                console.error("Failed to fetch complete invoice data:", error);
                 // Fallback to grid data if API call fails
                 onOpenDrawer(selectedNodes[0].data, gridApi);
               }

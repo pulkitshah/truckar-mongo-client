@@ -4,7 +4,12 @@ import Order from "../../../models/Order";
 import Account from "../../../models/Account";
 import auth from "../../../auth";
 import moment from "moment";
-import { getFinancialGroupFields } from "../../../helper";
+import {
+  getFinancialGroupFields,
+  getTotalSalesExpression,
+  getTotalPurchaseExpression,
+  getExpensesExpression,
+} from "../../../helper";
 
 export default async function handler(req, res) {
   const { method } = req;
@@ -261,59 +266,67 @@ export default async function handler(req, res) {
             ]
           : []),
         {
+          $addFields: {
+            calculatedSales: getTotalSalesExpression(),
+            calculatedPurchase: getTotalPurchaseExpression(),
+            calculatedExpenses: getExpensesExpression(),
+          },
+        },
+        {
+          $addFields: {
+            calculatedProfit: {
+              $subtract: [
+                { $subtract: ["$calculatedSales", "$calculatedPurchase"] },
+                "$calculatedExpenses",
+              ],
+            },
+            calculatedMargin: {
+              $cond: [
+                { $gt: ["$calculatedSales", 0] },
+                {
+                  $multiply: [
+                    {
+                      $divide: [
+                        {
+                          $subtract: [
+                            { $subtract: ["$calculatedSales", "$calculatedPurchase"] },
+                            "$calculatedExpenses",
+                          ],
+                        },
+                        "$calculatedSales",
+                      ],
+                    },
+                    100,
+                  ],
+                },
+                0,
+              ],
+            },
+            calculatedExpenseRatio: {
+              $cond: [
+                { $gt: ["$calculatedSales", 0] },
+                {
+                  $multiply: [
+                    { $divide: ["$calculatedExpenses", "$calculatedSales"] },
+                    100,
+                  ],
+                },
+                0,
+              ],
+            },
+          },
+        },
+        {
           $group: {
             _id: {
               $dateToString: { format: "%Y-%m-%d", date: "$saleDate" },
             },
-            sales: { $sum: "$sales" },
-            profit: {
-              $sum: {
-                $subtract: [
-                  { $subtract: ["$sales", "$purchase"] },
-                  "$expenses",
-                ],
-              },
-            },
+            sales: { $sum: "$calculatedSales" },
+            profit: { $sum: "$calculatedProfit" },
             orders: { $sum: 1 },
-            margin: {
-              $avg: {
-                $cond: [
-                  { $gt: ["$sales", 0] },
-                  {
-                    $multiply: [
-                      {
-                        $divide: [
-                          {
-                            $subtract: [
-                              { $subtract: ["$sales", "$purchase"] },
-                              "$expenses",
-                            ],
-                          },
-                          "$sales",
-                        ],
-                      },
-                      100,
-                    ],
-                  },
-                  0,
-                ],
-              },
-            },
-            aov: { $avg: "$sales" },
-            expenseRatio: {
-              $avg: {
-                $cond: [
-                  { $gt: ["$sales", 0] },
-                  {
-                    $multiply: [
-                      { $divide: ["$expenses", "$sales"] },
-                      100,
-                    ],
-                  },
-                  0,
-                ],
-              },
-            },
+            margin: { $avg: "$calculatedMargin" },
+            aov: { $avg: "$calculatedSales" },
+            expenseRatio: { $avg: "$calculatedExpenseRatio" },
           },
         },
         {

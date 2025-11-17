@@ -16,11 +16,9 @@ import {
   calculateAmountForDeliveryNew,
   formatNumber,
 } from "../../../../utils/amount-calculation";
+import { getNormalizedInvoiceDeliveries } from "./invoiceDeliveryUtils";
 
-Font.register({
-  family: "Roboto",
-  src: font,
-});
+Font.register({ family: "Roboto", src: font });
 
 const styles = StyleSheet.create({
   page: {
@@ -216,13 +214,13 @@ const styles = StyleSheet.create({
   },
 });
 
-const InvoicePDF = ({ invoice, logo }) => {
+const InvoicePDF = ({ invoice }) => {
   let subtotalAmount = 0;
   let advance = 0;
   let totalTaxPercentage =
     invoice.taxes && invoice.taxes
       ? invoice.taxes.reduce((a, b) => {
-          return a + (parseFloat(b.value) || 0);
+          return a + (Number.parseFloat(b.value) || 0);
         }, 0)
       : 0;
 
@@ -235,7 +233,7 @@ const InvoicePDF = ({ invoice, logo }) => {
       <Page size="A4" style={styles.page}>
         <View style={{ display: "flex" }}>
           <View>
-            {Boolean(invoice.organisation.logo) ? (
+            {invoice.organisation.logo ? (
               <Image
                 source={{
                   uri: invoice.organisation.logo.location,
@@ -250,7 +248,7 @@ const InvoicePDF = ({ invoice, logo }) => {
               />
             ) : (
               <Text style={[styles.h1]}>
-                {lr.organisation.name.toUpperCase()}
+                {invoice.organisation.name.toUpperCase()}
               </Text>
             )}
           </View>
@@ -436,168 +434,151 @@ const InvoicePDF = ({ invoice, logo }) => {
               </View>
             </View>
 
-            {invoice.deliveries.map((invoiceDelivery) => {
-              console.log(invoiceDelivery);
-              const delivery = {
-                ...invoiceDelivery.order,
-                delivery: invoiceDelivery.order.deliveries.find(
-                  (e) => e._id === invoiceDelivery.delivery
-                ),
-                invoiceCharges: invoiceDelivery.invoiceCharges,
-                particular: invoiceDelivery.particular,
-              };
-
-              if (delivery) {
-                subtotalAmount =
-                  subtotalAmount +
-                  calculateAmountForDeliveryNew(delivery, "freight+lr");
-                advance =
-                  advance +
-                  parseFloat(
-                    delivery.saleAdvance
-                      ? delivery.saleAdvance / delivery.deliveries.length
-                      : 0
-                  );
-                return (
-                  <View style={[styles.tableRow]} key={delivery.id}>
-                    <View
-                      style={[
-                        styles.locationCell,
-                        styles.rightBorder,
-                        styles.bottomBorder,
-                        styles.leftBorder,
-                      ]}
-                    >
-                      <Text style={[styles.tableCellText]}>
-                        {
-                          delivery.delivery.loading.structured_formatting
-                            .main_text
-                        }
-                      </Text>
-                    </View>
-
-                    <View
-                      style={[
-                        styles.lrNoCell,
-                        styles.rightBorder,
-                        styles.bottomBorder,
-                      ]}
-                    >
-                      <Text style={[styles.tableCellText]}>
-                        {delivery.delivery.lr &&
-                        Object.keys(delivery.delivery.lr).length
-                          ? `${delivery.delivery.lr.organisation.initials} - ${delivery.delivery.lr.lrNo}`
-                          : ""}
-                      </Text>
-                    </View>
-                    <View
-                      style={[
-                        styles.dateCell,
-                        styles.rightBorder,
-                        styles.bottomBorder,
-                      ]}
-                    >
-                      <Text billingAddress style={[styles.tableCellText]}>
-                        {moment(delivery.saleDate).format("DD-MM-YY")}
-                      </Text>
-                    </View>
-                    <View
-                      style={[
-                        styles.locationCell,
-                        styles.rightBorder,
-                        styles.bottomBorder,
-                      ]}
-                    >
-                      <Text billingAddress style={[styles.tableCellText]}>
-                        {
-                          delivery.delivery.unloading.structured_formatting
-                            .main_text
-                        }
-                      </Text>
-                    </View>
-                    <View
-                      style={[
-                        styles.particularsCell,
-                        styles.rightBorder,
-                        styles.bottomBorder,
-                      ]}
-                    >
-                      <Text billingAddress style={[styles.tableCellText]}>
-                        {delivery.particular}
-                      </Text>
-                      {delivery.invoiceCharges.map((invoiceCharge, i) => {
-                        return (
-                          <Text key={i} style={[styles.tableCellText]}>
-                            {invoiceCharge.particular}
-                          </Text>
-                        );
-                      })}
-                    </View>
-                    <View
-                      style={[
-                        styles.weightCell,
-                        styles.rightBorder,
-                        styles.bottomBorder,
-                      ]}
-                    >
-                      <React.Fragment>
-                        <Text billingAddress style={[styles.tableCellText]}>
-                          {delivery.delivery.lr &&
-                          delivery.delivery.lr.chargedWeight
-                            ? delivery.delivery.lr.chargedWeight
-                            : delivery.delivery.billQuantity
-                            ? `${delivery.delivery.billQuantity} ${delivery.saleType.unit} `
-                            : `${delivery.minimumSaleGuarantee || 0} ${
-                                delivery.saleType.unit
-                              }`}
-                        </Text>
-                      </React.Fragment>
-                    </View>
-                    <View
-                      style={[
-                        styles.freightCell,
-                        styles.rightBorder,
-                        styles.bottomBorder,
-                      ]}
-                    >
-                      <Text billingAddress style={[styles.tableCellText]}>
-                        Rs.{" "}
-                        {formatNumber(
-                          calculateAmountForDeliveryNew(delivery, "freight+lr")
-                        )}
-                      </Text>
-                      {delivery.invoiceCharges.map((invoiceCharge, i) => {
-                        subtotalAmount = subtotalAmount + invoiceCharge.amount;
-
-                        return (
-                          <Text key={i} style={[styles.tableCellText]}>
-                            Rs. {formatNumber(invoiceCharge.amount)}
-                          </Text>
-                        );
-                      })}
-                    </View>
-
-                    <View
-                      style={[
-                        styles.advanceCell,
-                        styles.bottomBorder,
-                        styles.rightBorder,
-                      ]}
-                    >
-                      <Text style={[styles.tableCellText]}>
-                        {"Rs " +
-                          formatNumber(
-                            delivery.saleAdvance
-                              ? delivery.saleAdvance /
-                                  delivery.deliveries.length
-                              : 0
-                          )}
-                      </Text>
-                    </View>
+            {getNormalizedInvoiceDeliveries(invoice).map((delivery, index) => {
+              subtotalAmount += calculateAmountForDeliveryNew(
+                delivery,
+                "freight+lr"
+              );
+              advance += Number.parseFloat(delivery.saleAdvanceShare || 0);
+              return (
+                <View
+                  style={[styles.tableRow]}
+                  key={delivery.id || delivery.delivery?._id || index}
+                >
+                  <View
+                    style={[
+                      styles.locationCell,
+                      styles.rightBorder,
+                      styles.bottomBorder,
+                      styles.leftBorder,
+                    ]}
+                  >
+                    <Text style={[styles.tableCellText]}>
+                      {delivery.delivery?.loading?.structured_formatting
+                        ?.main_text || ""}
+                    </Text>
                   </View>
-                );
-              }
-              return null;
+
+                  <View
+                    style={[
+                      styles.lrNoCell,
+                      styles.rightBorder,
+                      styles.bottomBorder,
+                    ]}
+                  >
+                    <Text style={[styles.tableCellText]}>
+                      {delivery.delivery?.lr &&
+                      Object.keys(delivery.delivery.lr).length
+                        ? `${
+                            delivery.delivery.lr.organisation?.initials || ""
+                          } - ${delivery.delivery.lr.lrNo || ""}`
+                        : ""}
+                    </Text>
+                  </View>
+                  <View
+                    style={[
+                      styles.dateCell,
+                      styles.rightBorder,
+                      styles.bottomBorder,
+                    ]}
+                  >
+                    <Text billingAddress style={[styles.tableCellText]}>
+                      {moment(delivery.saleDate).format("DD-MM-YY")}
+                    </Text>
+                  </View>
+                  <View
+                    style={[
+                      styles.locationCell,
+                      styles.rightBorder,
+                      styles.bottomBorder,
+                    ]}
+                  >
+                    <Text billingAddress style={[styles.tableCellText]}>
+                      {delivery.delivery?.unloading?.structured_formatting
+                        ?.main_text || ""}
+                    </Text>
+                  </View>
+                  <View
+                    style={[
+                      styles.particularsCell,
+                      styles.rightBorder,
+                      styles.bottomBorder,
+                    ]}
+                  >
+                    <Text billingAddress style={[styles.tableCellText]}>
+                      {delivery.particular}
+                    </Text>
+                    {delivery.invoiceCharges.map((invoiceCharge, i) => {
+                      return (
+                        <Text key={i} style={[styles.tableCellText]}>
+                          {invoiceCharge.particular}
+                        </Text>
+                      );
+                    })}
+                  </View>
+                  <View
+                    style={[
+                      styles.weightCell,
+                      styles.rightBorder,
+                      styles.bottomBorder,
+                    ]}
+                  >
+                    <React.Fragment>
+                      <Text billingAddress style={[styles.tableCellText]}>
+                        {delivery.delivery?.lr?.chargedWeight
+                          ? delivery.delivery.lr.chargedWeight
+                          : delivery.delivery?.billQuantity
+                          ? `${delivery.delivery.billQuantity} ${
+                              delivery.saleType?.unit || ""
+                            } `
+                          : `${delivery.minimumSaleGuarantee || 0} ${
+                              delivery.saleType?.unit || ""
+                            }`}
+                      </Text>
+                    </React.Fragment>
+                  </View>
+                  <View
+                    style={[
+                      styles.freightCell,
+                      styles.rightBorder,
+                      styles.bottomBorder,
+                    ]}
+                  >
+                    <Text billingAddress style={[styles.tableCellText]}>
+                      Rs.{" "}
+                      {formatNumber(
+                        calculateAmountForDeliveryNew(delivery, "freight+lr")
+                      )}
+                    </Text>
+                    {delivery.invoiceCharges.map((invoiceCharge, i) => {
+                      subtotalAmount = subtotalAmount + invoiceCharge.amount;
+
+                      return (
+                        <Text key={i} style={[styles.tableCellText]}>
+                          Rs. {formatNumber(invoiceCharge.amount)}
+                        </Text>
+                      );
+                    })}
+                  </View>
+
+                  <View
+                    style={[
+                      styles.advanceCell,
+                      styles.bottomBorder,
+                      styles.rightBorder,
+                    ]}
+                  >
+                    <Text style={[styles.tableCellText]}>
+                      {"Rs " +
+                        formatNumber(
+                          delivery.saleAdvance
+                            ? delivery.saleAdvance / delivery.deliveries.length
+                            : 0
+                        )}
+                    </Text>
+                  </View>
+                </View>
+              );
             })}
             {invoice.taxes && invoice.taxes.length > 0 && (
               <View style={[styles.tableRow]}>
@@ -609,8 +590,7 @@ const InvoicePDF = ({ invoice, logo }) => {
                       )
                     ).replace(/\w\S*/g, function (txt) {
                       return (
-                        txt.charAt(0).toUpperCase() +
-                        txt.substr(1).toLowerCase()
+                        txt.charAt(0).toUpperCase() + txt.slice(1).toLowerCase()
                       );
                     })} Only`}
                   </Text>
@@ -651,9 +631,12 @@ const InvoicePDF = ({ invoice, logo }) => {
               </View>
             )}
             {invoice.taxes &&
-              invoice.taxes.map((tax) => {
+              invoice.taxes.map((tax, idx) => {
                 return (
-                  <View style={[styles.tableRow]}>
+                  <View
+                    style={[styles.tableRow]}
+                    key={tax?.name || String(idx)}
+                  >
                     <View
                       style={[styles.amountInWordsCell, styles.rightBorder]}
                     >
@@ -702,8 +685,7 @@ const InvoicePDF = ({ invoice, logo }) => {
                       )
                     ).replace(/\w\S*/g, function (txt) {
                       return (
-                        txt.charAt(0).toUpperCase() +
-                        txt.substr(1).toLowerCase()
+                        txt.charAt(0).toUpperCase() + txt.slice(1).toLowerCase()
                       );
                     })} Only`}
                 </Text>
@@ -827,16 +809,14 @@ const InvoicePDF = ({ invoice, logo }) => {
                   Terms & Conditions
                 </Text>
 
-                {Boolean(invoice.organisation.invoiceTermsAndConditions) &&
+                {invoice.organisation.invoiceTermsAndConditions &&
                   invoice.organisation.invoiceTermsAndConditions
                     .split("\n")
-                    .map((tc) => {
-                      return (
-                        <Text style={[styles.termsAndConditionsCellText]}>
-                          {tc}
-                        </Text>
-                      );
-                    })}
+                    .map((tc, i) => (
+                      <Text key={i} style={[styles.termsAndConditionsCellText]}>
+                        {tc}
+                      </Text>
+                    ))}
               </View>
               <View
                 style={[
