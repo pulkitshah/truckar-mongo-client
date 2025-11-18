@@ -17,16 +17,39 @@ export default async function handler(req, res) {
           startRow,
           endRow,
           filter = {},
-          sort = { saleDate: -1, orderNo: -1 },
+          sort = [], // AG Grid sortModel array or empty
         } = JSON.parse(req.query.id);
+
+        // Build a MongoDB sort object from AG Grid sortModel
+        const buildSort = (sortModel) => {
+          if (!Array.isArray(sortModel) || sortModel.length === 0) {
+            return { saleDate: -1, orderNo: -1 };
+          }
+          const allowed = new Set(["saleDate", "orderNo", "vehicleNumber"]);
+          const sortObj = {};
+          for (const s of sortModel) {
+            const field = s.colId || s.field;
+            if (!field || !allowed.has(field)) continue;
+            sortObj[field] = s.sort === "asc" ? 1 : -1;
+          }
+          // Fallback if nothing valid collected
+          if (Object.keys(sortObj).length === 0) {
+            return { saleDate: -1, orderNo: -1 };
+          }
+          // Stable secondary sort
+          if (!sortObj.orderNo) sortObj.orderNo = -1;
+          return sortObj;
+        };
+        const sortStage = { $sort: buildSort(sort) };
 
         let matches = { account: new mongoose.Types.ObjectId(account) };
 
         let query = [
-          // filter the results by our accountId
           {
             $match: Object.assign(matches),
           },
+          // Apply dynamic sort BEFORE pagination facet so skip/limit uses ordered set
+          sortStage,
         ];
 
         // filter according to filterModel object
