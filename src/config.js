@@ -27,6 +27,11 @@ export const gtmConfig = {
   containerId: process.env.NEXT_PUBLIC_GTM_CONTAINER_ID,
 };
 
+const fallbackGoogleMapsKey = "AIzaSyDxGCC86EWkjtOccLqVDZKcw-yii2YHcmU";
+
 export const googleMapsConfig = {
-  apiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY,
+  apiKey:
+    process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ||
+    process.env.REACT_APP_GOOGLE_MAPS_API_KEY ||
+    fallbackGoogleMapsKey,
 };

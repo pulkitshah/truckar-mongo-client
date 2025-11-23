@@ -18,7 +18,9 @@ export default async function handler(req, res) {
             query.name = { $regex: value, $options: "i" };
             // query.name = new RegExp(`.*${value}*.`, "i");
           }
-          const vehicles = await Vehicle.find(query).populate("organisation");
+          const vehicles = await Vehicle.find(query)
+            .populate("organisation")
+            .populate("transporter");
           res.json(vehicles);
         } catch (error) {
           console.log(error.message);

@@ -7,9 +7,11 @@ const now = new Date();
 class VehicleApi {
   async validateDuplicateVehicleNumber(account, vehicleNumber) {
     try {
+      const accountId =
+        typeof account === "object" ? account?._id || account?.id : account;
       const response = await axios.get(
         `/api/vehicle/validateDuplicateVehicleNumber/${JSON.stringify({
-          account,
+          account: accountId,
           vehicleNumber,
         })}`
       );
@@ -31,7 +33,6 @@ class VehicleApi {
         };
       }
     }
-    return Boolean(!vehicle);
   }
 
   async createVehicle(newVehicle, dispatch) {
@@ -39,6 +40,10 @@ class VehicleApi {
       const response = await axios.post(`/api/vehicle/`, newVehicle);
       let vehicle = response.data;
       console.log(vehicle);
+
+      if (dispatch) {
+        dispatch(slice.actions.createVehicle({ vehicle }));
+      }
 
       return {
         status: response.status,
@@ -81,13 +86,33 @@ class VehicleApi {
     }
   }
 
-  async getVehiclesByAccount(dispatch, account, value) {
+  async getVehiclesByAccount(dispatchOrAccount, accountOrValue, value) {
     try {
+      let dispatch = null;
+      let account = accountOrValue;
+      let searchValue = value;
+
+      if (typeof dispatchOrAccount === "function") {
+        dispatch = dispatchOrAccount;
+      } else if (dispatchOrAccount && !accountOrValue) {
+        account = dispatchOrAccount;
+      } else if (dispatchOrAccount && accountOrValue) {
+        account = accountOrValue;
+        searchValue = value;
+      }
+
+      const accountId =
+        typeof account === "object" ? account?._id || account?.id : account;
       const response = await axios.get(
-        `/api/vehicle/${JSON.stringify({ account, value })}`
+        `/api/vehicle/${JSON.stringify({
+          account: accountId,
+          value: searchValue,
+        })}`
       );
       let vehicles = response.data;
-      dispatch(slice.actions.getVehicles(vehicles));
+      if (dispatch) {
+        dispatch(slice.actions.getVehicles(vehicles));
+      }
       return {
         status: response.status,
         data: vehicles,

@@ -57,6 +57,11 @@ const getSections = (t) => [
         icon: <ReceiptTaxIcon fontSize="small" />,
       },
       {
+        title: t("Balance Sheet"),
+        path: "/dashboard/balance-sheet",
+        icon: <CashIcon fontSize="small" />,
+      },
+      {
         title: t("Parties"),
         path: "/dashboard/parties",
         icon: <UsersIcon fontSize="small" />,

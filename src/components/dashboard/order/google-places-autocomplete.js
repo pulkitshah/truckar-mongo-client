@@ -12,7 +12,6 @@ const autocompleteService = { current: null };
 
 export default function GoogleMaps({
   label,
-  handleBlur,
   formik,
   touched,
   error,
@@ -20,15 +19,16 @@ export default function GoogleMaps({
   index,
   type,
 }) {
-  const [value, setValue] = React.useState(
-    values.deliveries[index][type] ? values.deliveries[index][type] : null
-  );
+  const formikValue =
+    (values?.deliveries?.[index] && values.deliveries[index][type]) || null;
+
+  const [value, setValue] = React.useState(formikValue);
   const [inputValue, setInputValue] = React.useState("");
   const [options, setOptions] = React.useState([]);
 
   React.useEffect(() => {
-    setValue(values.deliveries[index][type]);
-  }, [values.deliveries.length]);
+    setValue(formikValue);
+  }, [formikValue]);
 
   const fetch = React.useMemo(
     () =>
@@ -88,7 +88,9 @@ export default function GoogleMaps({
       id={`deliveries[${index}].${type}`}
       autoSelect={true}
       disableClearable
-      onBlur={handleBlur}
+      onBlur={() =>
+        formik.setFieldTouched(`deliveries[${index}].${type}`, true, false)
+      }
       blurOnSelect={true}
       //   sx={{ width: 300 }}
       getOptionLabel={(option) =>
@@ -122,6 +124,12 @@ export default function GoogleMaps({
                   ),
                 });
 
+                formik.setFieldTouched(
+                  `deliveries[${index}].${type}`,
+                  true,
+                  false
+                );
+
                 // formik.setFieldValue(
                 //   `deliveries[${index}].${type}.latitude`,
                 //   results[0].geometry.location.lat()
@@ -154,7 +162,10 @@ export default function GoogleMaps({
             }
           );
         }
-        setOptions(newValue ? [newValue, ...options] : options);
+
+        setOptions((previousOptions) =>
+          newValue ? [newValue, ...previousOptions] : previousOptions
+        );
         setValue(newValue);
       }}
       onInputChange={(event, newInputValue) => {
@@ -164,6 +175,7 @@ export default function GoogleMaps({
         <TextField
           {...params}
           placeholder={label}
+          name={`deliveries[${index}].${type}`}
           helperText={touched && error ? error : ""}
           error={Boolean(touched && error)}
           fullWidth

@@ -9,45 +9,12 @@ import {
   InputAdornment,
   TextField,
 } from "@mui/material";
-import { DistanceMatrixService } from "@react-google-maps/api";
 import { Trash as TrashIcon } from "../../../icons/trash";
 import { Plus as PlusIcon } from "../../../icons/plus";
 import GoogleMaps from "./google-places-autocomplete";
 
 const DeliveryForm = ({ sx, formik, ...rest }) => {
-  const [noOfDeliveries, setNoOfDeliveries] = React.useState(1);
-  const [googleResponse, setResponse] = React.useState([]);
-
-  let distanceCallback = (response) => {
-    if (response !== null) {
-      if (response.rows[0].elements[0].status === "OK") {
-        const index = googleResponse.findIndex(
-          (obj) =>
-            obj.origin === response.originAddresses[0] &&
-            obj.destination === response.destinationAddresses[0]
-        );
-        if (index < 0) {
-          console.log(response);
-          setResponse([
-            ...googleResponse,
-            {
-              origin: response.originAddresses[0],
-              destination: response.destinationAddresses[0],
-              distance: response.rows[0].elements[0].distance.text,
-              duration: response.rows[0].elements[0].duration.text,
-            },
-          ]);
-        }
-      }
-    }
-  };
-
-  let getDistance = (origin, destination) => {
-    let object = googleResponse.find(
-      (obj) => obj.origin === origin && obj.destination === destination
-    );
-    if (object) return object.distance;
-  };
+  const totalDeliveries = formik.values.deliveries?.length || 0;
 
   return (
     <React.Fragment>
@@ -64,7 +31,7 @@ const DeliveryForm = ({ sx, formik, ...rest }) => {
               >
                 <Grid item>
                   <Typography variant="h6">
-                    Total Deliveries: {noOfDeliveries}
+                    Total Deliveries: {totalDeliveries}
                   </Typography>
                 </Grid>
                 <Grid item>
@@ -73,7 +40,6 @@ const DeliveryForm = ({ sx, formik, ...rest }) => {
                     color="secondary"
                     startIcon={<PlusIcon fontSize="small" />}
                     onClick={() => {
-                      setNoOfDeliveries(noOfDeliveries + 1);
                       push({
                         _id: uuidv4(),
                         loading: {},
@@ -114,8 +80,10 @@ const DeliveryForm = ({ sx, formik, ...rest }) => {
                     formik.errors,
                     unloadingQuantity
                   );
+                  const deliveryKey = delivery?._id || `${index}`;
+
                   return (
-                    <React.Fragment>
+                    <React.Fragment key={deliveryKey}>
                       {index > 0 && <Divider sx={{ mb: 2 }} />}
 
                       <Grid
@@ -131,9 +99,6 @@ const DeliveryForm = ({ sx, formik, ...rest }) => {
                             label={"Loading"}
                             error={errorLoading}
                             touched={touchedLoading}
-                            name={loading}
-                            setFieldValue={formik.setFieldValue}
-                            handleBlur={formik.handleBlur}
                             values={formik.values}
                             index={index}
                             type="loading"
@@ -145,9 +110,6 @@ const DeliveryForm = ({ sx, formik, ...rest }) => {
                             label={"Unloading"}
                             error={errorUnloading}
                             touched={touchedUnloading}
-                            name={loading}
-                            setFieldValue={formik.setFieldValue}
-                            handleBlur={formik.handleBlur}
                             values={formik.values}
                             index={index}
                             type="unloading"
@@ -159,7 +121,6 @@ const DeliveryForm = ({ sx, formik, ...rest }) => {
                             disabled={index < 1}
                             color="error"
                             onClick={() => {
-                              setNoOfDeliveries(noOfDeliveries - 1);
                               remove(index);
                             }}
                           >
@@ -186,12 +147,9 @@ const DeliveryForm = ({ sx, formik, ...rest }) => {
                               touchedBillQuantity && errorBillQuantity
                             )}
                             variant="outlined"
-                            onChange={(event) => {
-                              formik.setFieldValue(
-                                `deliveries[${index}].billQuantity`,
-                                event.target.value
-                              );
-                            }}
+                            name={`deliveries[${index}].billQuantity`}
+                            id={`deliveries[${index}].billQuantity`}
+                            onChange={formik.handleChange}
                             InputProps={{
                               endAdornment: (
                                 <InputAdornment position="end">
@@ -200,8 +158,6 @@ const DeliveryForm = ({ sx, formik, ...rest }) => {
                               ),
                             }}
                             onBlur={formik.handleBlur}
-                            id="billQuantity"
-                            name="billQuantity"
                             label="Bill Quantity"
                             fullWidth
                             value={formik.values.deliveries[index].billQuantity}
@@ -218,12 +174,9 @@ const DeliveryForm = ({ sx, formik, ...rest }) => {
                               touchedUnloadingQuantity && errorUnloadingQuantity
                             )}
                             variant="outlined"
-                            onChange={(event) => {
-                              formik.setFieldValue(
-                                `deliveries[${index}].unloadingQuantity`,
-                                event.target.value
-                              );
-                            }}
+                            name={`deliveries[${index}].unloadingQuantity`}
+                            id={`deliveries[${index}].unloadingQuantity`}
+                            onChange={formik.handleChange}
                             InputProps={{
                               endAdornment: (
                                 <InputAdornment position="end">
@@ -232,8 +185,6 @@ const DeliveryForm = ({ sx, formik, ...rest }) => {
                               ),
                             }}
                             onBlur={formik.handleBlur}
-                            id="unloadingQuantity"
-                            name="unloadingQuantity"
                             label="Unloading Quantity"
                             fullWidth
                             value={

@@ -55,6 +55,53 @@ class OrderApi {
     }
   }
 
+  async getBalanceSheet(params) {
+    try {
+      const response = await axios.get(`/api/order/balance-sheet`, {
+        params,
+      });
+
+      return {
+        status: response.status,
+        data: response.data,
+        error: false,
+      };
+    } catch (err) {
+      console.error("[Order Api - Balance Sheet]: ", err);
+      return {
+        status: err?.response?.status || 400,
+        data: null,
+        error:
+          err?.response?.data?.message ||
+          "Failed to fetch balance sheet data. Please try again later.",
+      };
+    }
+  }
+
+  async getNextOrderNumber(params) {
+    try {
+      const response = await axios.get(
+        `/api/order/nextOrderNumber/${JSON.stringify(params)}`
+      );
+
+      return {
+        status: response.status,
+        data: response.data?.nextOrderNo,
+        error: false,
+      };
+    } catch (err) {
+      console.error("[Order Api]: ", err);
+      if (err) {
+        return {
+          status: 400,
+          data: err,
+          error:
+            "Failed to fetch the next order number. Please try again or contact customer support.",
+        };
+      }
+    }
+  }
+
   async createOrder(newOrder, dispatch) {
     try {
       const response = await axios.post(`/api/order/`, newOrder);
@@ -151,6 +198,29 @@ class OrderApi {
             "Order not created, please try again or contact customer support.",
         };
       }
+    }
+  }
+
+  async updateOrderStatus(payload) {
+    try {
+      const response = await axios.patch(
+        `/api/order/updateOrderStatus`,
+        payload
+      );
+      return {
+        status: response.status,
+        data: response.data,
+        error: false,
+      };
+    } catch (err) {
+      console.error("[Order Api - Update Status]: ", err);
+      return {
+        status: err?.response?.status || 400,
+        data: null,
+        error:
+          err?.response?.data?.message ||
+          "Failed to update order status. Please try again later.",
+      };
     }
   }
 }

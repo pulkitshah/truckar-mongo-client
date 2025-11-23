@@ -341,7 +341,8 @@ class AnalyticsApi {
         status: err.response?.status || 400,
         data: null,
         error:
-          err.response?.data?.message || "Failed to fetch enhanced financial metrics",
+          err.response?.data?.message ||
+          "Failed to fetch enhanced financial metrics",
       };
     }
   }
@@ -353,9 +354,12 @@ class AnalyticsApi {
    */
   async getRevenueTrendWithComparison(params) {
     try {
-      const response = await axios.get(`/api/analytics/revenue-trend-comparison`, {
-        params: { ...params, groupBy: params.groupBy || "day" },
-      });
+      const response = await axios.get(
+        `/api/analytics/revenue-trend-comparison`,
+        {
+          params: { ...params, groupBy: params.groupBy || "day" },
+        }
+      );
 
       return {
         status: response.status,
@@ -367,7 +371,9 @@ class AnalyticsApi {
       return {
         status: err.response?.status || 400,
         data: { current: [], previous: [] },
-        error: err.response?.data?.message || "Failed to fetch revenue trend comparison",
+        error:
+          err.response?.data?.message ||
+          "Failed to fetch revenue trend comparison",
       };
     }
   }

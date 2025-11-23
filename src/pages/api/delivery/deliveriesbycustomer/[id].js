@@ -20,9 +20,53 @@ export default async function handler(req, res) {
           sort = { saleDate: -1, orderNo: -1 },
         } = JSON.parse(req.query.id);
 
+        const parsedStartRow = Number(startRow);
+        const safeStartRow = Math.max(
+          Number.isFinite(parsedStartRow) ? parsedStartRow : 0,
+          0
+        );
+        const parsedEndRow = Number(endRow);
+        const safeEndRow =
+          Number.isFinite(parsedEndRow) && parsedEndRow > safeStartRow
+            ? parsedEndRow
+            : safeStartRow + 100;
+        const pageSize = Math.max(safeEndRow - safeStartRow, 0);
+
         let matches = {
           account: new mongoose.Types.ObjectId(account),
           customer: new mongoose.Types.ObjectId(customer),
+        };
+
+        const filteredDeliveriesExpression = {
+          $filter: {
+            input: "$deliveries",
+            as: "delivery",
+            cond: {
+              $and: [
+                {
+                  $or: [
+                    { $ifNull: ["$$delivery.lr.lrNo", false] },
+                    { $ifNull: ["$$delivery.lr.lrNumber", false] },
+                    { $ifNull: ["$$delivery.lr.lrno", false] },
+                    { $ifNull: ["$$delivery.lr.number", false] },
+                    { $ifNull: ["$$delivery.lr.no", false] },
+                  ],
+                },
+                {
+                  $eq: [
+                    {
+                      $cond: [
+                        { $eq: [{ $type: "$$delivery.invoices" }, "array"] },
+                        { $size: "$$delivery.invoices" },
+                        0,
+                      ],
+                    },
+                    0,
+                  ],
+                },
+              ],
+            },
+          },
         };
 
         let query = [
@@ -38,10 +82,26 @@ export default async function handler(req, res) {
             $facet: {
               rows: [
                 {
-                  $skip: startRow,
+                  $addFields: {
+                    deliveries: filteredDeliveriesExpression,
+                  },
                 },
                 {
-                  $limit: endRow - startRow,
+                  $unwind: "$deliveries",
+                },
+                {
+                  $addFields: {
+                    delivery: "$deliveries",
+                  },
+                },
+                {
+                  $unset: ["deliveries"],
+                },
+                {
+                  $skip: safeStartRow,
+                },
+                {
+                  $limit: pageSize,
                 },
                 {
                   $lookup: {
@@ -105,12 +165,6 @@ export default async function handler(req, res) {
                   },
                 },
                 {
-                  $addFields: {
-                    delivery: "$deliveries",
-                  },
-                },
-                { $unwind: "$delivery" },
-                {
                   $lookup: {
                     from: "organisations",
                     let: {
@@ -139,6 +193,14 @@ export default async function handler(req, res) {
               ],
               count: [
                 {
+                  $addFields: {
+                    deliveries: filteredDeliveriesExpression,
+                  },
+                },
+                {
+                  $unwind: "$deliveries",
+                },
+                {
                   $group: {
                     _id: null,
                     Total: { $sum: 1 },
@@ -152,7 +214,9 @@ export default async function handler(req, res) {
           },
           {
             $addFields: {
-              "rows.count": { $arrayElemAt: ["$count.Total", 0] },
+              "rows.count": {
+                $ifNull: [{ $arrayElemAt: ["$count.Total", 0] }, 0],
+              },
             },
           },
           {

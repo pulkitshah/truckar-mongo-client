@@ -242,7 +242,7 @@ const InvoicePreview = (props) => {
 };
 
 export const InvoiceForm = (props) => {
-  const { invoice, onCancel, gridApi } = props;
+  const { invoice, onCancel, onClose, gridApi } = props;
 
   let deliveries = invoice.deliveries.map((invoiceDelivery) => {
     return {
@@ -258,6 +258,7 @@ export const InvoiceForm = (props) => {
   return (
     <InvoiceEditForm
       onCancel={onCancel}
+      onClose={onClose}
       invoice={invoice}
       deliveries={deliveries}
       gridApi={gridApi}
@@ -341,6 +342,7 @@ export const InvoiceDrawer = (props) => {
           <InvoiceForm
             onOpen={onOpen}
             onCancel={handleCancel}
+            onClose={onClose}
             invoice={invoice}
             gridApi={gridApi}
           />

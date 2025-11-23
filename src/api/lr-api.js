@@ -129,6 +129,40 @@ class LrApi {
     }
   }
 
+  async getNextLrNumber({ account, organisation, lrDate }) {
+    try {
+      const response = await axios.get(
+        `/api/lr/nextNumber/${JSON.stringify({
+          account,
+          organisation,
+          lrDate,
+        })}`
+      );
+
+      return {
+        status: response.status,
+        data: response.data,
+        error: false,
+      };
+    } catch (err) {
+      console.error("[Lr Api]: ", err);
+
+      if (err?.response?.data?.error) {
+        return {
+          status: err.response.status,
+          data: null,
+          error: err.response.data.error,
+        };
+      }
+
+      return {
+        status: 400,
+        data: null,
+        error: "Unable to get next LR number.",
+      };
+    }
+  }
+
   async updateLr(editedLr, dispatch) {
     try {
       const response = await axios.patch(`/api/lr/`, editedLr);

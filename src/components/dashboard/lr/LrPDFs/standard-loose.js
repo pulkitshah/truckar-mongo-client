@@ -154,14 +154,14 @@ const styles = StyleSheet.create({
 });
 
 const LrPDF = ({ delivery, printRates = false }) => {
-  if (!delivery.delivery.lr) {
+  const lrDelivery = delivery?.delivery;
+
+  if (!lrDelivery?.lr) {
     return null;
   }
 
+  const lr = lrDelivery.lr;
   let lrChargeAmount = 0;
-  let lr = delivery.delivery.lr;
-
-  console.log(lr);
 
   return (
     <Document>
@@ -407,13 +407,13 @@ const LrPDF = ({ delivery, printRates = false }) => {
                     FROM
                   </Text>
                   <Text style={[styles.body1, styles.bottomBorder]}>
-                    {delivery.delivery.loading.description}
+                    {lrDelivery?.loading?.description || ""}
                   </Text>
                   <Text style={[styles.body1, styles.bold, styles.underlined]}>
                     TO
                   </Text>
                   <Text style={[styles.body1]}>
-                    {delivery.delivery.unloading.description}
+                    {lrDelivery?.unloading?.description || ""}
                   </Text>
                 </View>
                 <View
@@ -600,8 +600,11 @@ const LrPDF = ({ delivery, printRates = false }) => {
                     </View>
                     <View style={[styles.tableCell]}>
                       <Text style={[styles.body1]}>
-                        {delivery.delivery.billQuantity &&
-                          `${delivery.delivery.billQuantity} ${delivery.saleType.unit}`}
+                        {lrDelivery?.billQuantity
+                          ? `${lrDelivery.billQuantity} ${
+                              delivery?.saleType?.unit || ""
+                            }`.trim()
+                          : ""}
                       </Text>
                     </View>
                   </View>

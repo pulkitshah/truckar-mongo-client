@@ -112,6 +112,40 @@ class InvoiceApi {
     return Boolean(!invoice);
   }
 
+  async getNextInvoiceNumber({ account, organisation, invoiceDate }) {
+    try {
+      const response = await axios.get(
+        `/api/invoice/nextInvoiceNumber/${JSON.stringify({
+          account,
+          organisation,
+          invoiceDate,
+        })}`
+      );
+
+      return {
+        status: response.status,
+        data: response.data?.nextInvoiceNo,
+        error: false,
+      };
+    } catch (err) {
+      console.error("[Invoice Api]: ", err);
+      if (err?.response?.data?.error) {
+        return {
+          status: err.response.status,
+          data: null,
+          error: err.response.data.error,
+        };
+      }
+
+      return {
+        status: 400,
+        data: null,
+        error:
+          "Failed to fetch the next invoice number. Please try again or contact customer support.",
+      };
+    }
+  }
+
   async getInvoiceById(id) {
     try {
       const response = await axios.get(`/api/invoice/id/${id}`);
@@ -155,6 +189,68 @@ class InvoiceApi {
             "Invoice not created, please try again or contact customer support.",
         };
       }
+    }
+  }
+
+  async deleteInvoice(invoiceId) {
+    try {
+      const response = await axios.delete(`/api/invoice/`, {
+        data: { invoiceId },
+      });
+
+      return {
+        status: response.status,
+        data: response.data,
+        error: false,
+      };
+    } catch (err) {
+      console.error("[Invoice Api]: ", err);
+
+      if (err?.response?.data?.error) {
+        return {
+          status: err.response.status,
+          data: null,
+          error: err.response.data.error,
+        };
+      }
+
+      return {
+        status: 400,
+        data: null,
+        error:
+          "Invoice not deleted, please try again or contact customer support.",
+      };
+    }
+  }
+
+  async updatePaymentStatus(payload) {
+    try {
+      const response = await axios.patch(
+        `/api/invoice/payment-status`,
+        payload
+      );
+
+      return {
+        status: response.status,
+        data: response.data?.data,
+        error: false,
+      };
+    } catch (err) {
+      console.error("[Invoice Api]: ", err);
+      if (err?.response?.data?.message) {
+        return {
+          status: err.response.status,
+          data: null,
+          error: err.response.data.message,
+        };
+      }
+
+      return {
+        status: 400,
+        data: null,
+        error:
+          "Unable to update invoice payment status. Please try again or contact support.",
+      };
     }
   }
 }

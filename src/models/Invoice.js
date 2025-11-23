@@ -13,7 +13,7 @@ const invoiceSchema = new mongoose.Schema({
   },
   customer: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "customer",
+    ref: "party",
   },
   organisation: {
     type: mongoose.Schema.Types.ObjectId,
@@ -48,8 +48,8 @@ const invoiceSchema = new mongoose.Schema({
   },
   paymentStatus: {
     type: String,
-    enum: ['unpaid', 'partial', 'paid'],
-    default: 'unpaid',
+    enum: ["unpaid", "partial", "paid"],
+    default: "unpaid",
   },
   paidAmount: {
     type: Number,

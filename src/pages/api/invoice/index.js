@@ -139,7 +139,7 @@ export const basicLookups = [
 // Full lookups for detailed view - simplified approach
 export const lookups = [
   ...basicLookups,
-  
+
   // First, collect all unique order IDs from deliveries
   {
     $addFields: {
@@ -147,12 +147,12 @@ export const lookups = [
         $map: {
           input: "$deliveries",
           as: "delivery",
-          in: { $toObjectId: "$$delivery.order" }
-        }
-      }
-    }
+          in: { $toObjectId: "$$delivery.order" },
+        },
+      },
+    },
   },
-  
+
   // Lookup all orders at once
   {
     $lookup: {
@@ -161,8 +161,8 @@ export const lookups = [
       pipeline: [
         {
           $match: {
-            $expr: { $in: ["$_id", "$$orderIds"] }
-          }
+            $expr: { $in: ["$_id", "$$orderIds"] },
+          },
         },
         // Process order deliveries with organisation lookup
         {
@@ -225,7 +225,7 @@ export const lookups = [
       as: "ordersData",
     },
   },
-  
+
   // Now merge the order data back into each delivery
   {
     $addFields: {
@@ -243,27 +243,32 @@ export const lookups = [
                       $filter: {
                         input: "$ordersData",
                         as: "order",
-                        cond: { $eq: ["$$order._id", { $toObjectId: "$$delivery.order" }] }
-                      }
+                        cond: {
+                          $eq: [
+                            "$$order._id",
+                            { $toObjectId: "$$delivery.order" },
+                          ],
+                        },
+                      },
                     },
-                    0
-                  ]
-                }
-              }
-            ]
-          }
-        }
-      }
-    }
+                    0,
+                  ],
+                },
+              },
+            ],
+          },
+        },
+      },
+    },
   },
-  
+
   // Clean up temporary fields
   {
     $project: {
       orderIds: 0,
-      ordersData: 0
-    }
-  }
+      ordersData: 0,
+    },
+  },
 ];
 
 export default async function handler(req, res) {
@@ -415,16 +420,84 @@ export default async function handler(req, res) {
           }));
           await invoice.save();
 
-          const invoices = await Invoice.aggregate([
-            {
-              $match: Object.assign({
-                _id: new mongoose.Types.ObjectId(req.body._id),
-              }),
-            },
-            ...lookups,
-          ], { allowDiskUse: true });
+          const invoices = await Invoice.aggregate(
+            [
+              {
+                $match: Object.assign({
+                  _id: new mongoose.Types.ObjectId(req.body._id),
+                }),
+              },
+              ...lookups,
+            ],
+            { allowDiskUse: true }
+          );
 
           res.send(invoices[0]);
+        } catch (error) {
+          console.log(error.message);
+          res.status(500).send("Server Error");
+        }
+      });
+      break;
+
+    case "DELETE":
+      auth(req, res, async () => {
+        const { invoiceId } = req.body || {};
+
+        if (!invoiceId) {
+          return res
+            .status(400)
+            .json({ error: "Invoice ID is required to delete invoice." });
+        }
+
+        try {
+          const invoice = await Invoice.findOne({
+            _id: invoiceId,
+          }).populate("organisation");
+
+          if (!invoice) {
+            return res.status(404).json({ error: "Invoice not found." });
+          }
+
+          const organisationInitials = invoice.organisation?.initials ?? "";
+          const invoiceLabel = organisationInitials
+            ? `${organisationInitials}-${invoice.invoiceNo}`
+            : `${invoice.invoiceNo}`;
+
+          const deliveries = Array.isArray(invoice.deliveries)
+            ? invoice.deliveries
+            : [];
+
+          for (const delivery of deliveries) {
+            if (!delivery?.order || !delivery?.delivery) {
+              continue;
+            }
+
+            const order = await Order.findOne({
+              _id: delivery.order,
+            });
+
+            if (!order) {
+              continue;
+            }
+
+            order.deliveries = order.deliveries.map((orderDelivery) => {
+              if (orderDelivery._id === delivery.delivery) {
+                if (Array.isArray(orderDelivery.invoices)) {
+                  orderDelivery.invoices = orderDelivery.invoices.filter(
+                    (label) => label !== invoiceLabel
+                  );
+                }
+              }
+              return orderDelivery;
+            });
+
+            await order.save();
+          }
+
+          await invoice.deleteOne();
+
+          res.status(200).json({ success: true });
         } catch (error) {
           console.log(error.message);
           res.status(500).send("Server Error");

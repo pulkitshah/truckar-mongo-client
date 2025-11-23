@@ -1,26 +1,21 @@
 import { useEffect, useState } from "react";
 import Head from "next/head";
 import { useRouter } from "next/router";
-import {
-  Box,
-  Button,
-  Container,
-  Grid,
-  MenuItem,
-  TextField,
-  Typography,
-} from "@mui/material";
+import { Box, Container } from "@mui/material";
 import { AuthGuard } from "../../components/authentication/auth-guard";
 import { OnBoardingGuard } from "../../components/authentication/onboarding-guard";
 import { DashboardLayout } from "../../components/dashboard/dashboard-layout";
-import OrganizationSelector from "../../components/dashboard/OrganizationSelector";
-import { FinancialMetricsCardsEnhanced } from "../../components/dashboard/overview/financial-metrics-cards-enhanced";
-import { OperationalHealthDashboard } from "../../components/dashboard/overview/operational-health-dashboard";
-import { RevenueChartEnhanced } from "../../components/dashboard/overview/revenue-chart-enhanced";
-import { TopCustomersChart } from "../../components/dashboard/overview/top-customers-chart";
-import { DashboardInsights } from "../../components/dashboard/dashboard-insights";
-import { Reports as ReportsIcon } from "../../icons/reports";
-import { Refresh as RefreshIcon } from "../../icons/refresh";
+import { DashboardHeader } from "../../components/dashboard/overview/dashboard-header";
+import DashboardOutlinedIcon from "@mui/icons-material/DashboardOutlined";
+import PeopleAltOutlinedIcon from "@mui/icons-material/PeopleAltOutlined";
+import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined";
+import TrendingUpIcon from "@mui/icons-material/TrendingUp";
+import {
+  OverviewPanel,
+  CustomersPanel,
+  TransportersPanel,
+  PerformancePanel,
+} from "../../components/dashboard/overview/dashboard-section-panels";
 import { gtm } from "../../lib/gtm";
 import { useAuth } from "../../hooks/use-auth";
 import { useDispatch, useSelector } from "../../store";
@@ -48,6 +43,30 @@ const Overview = () => {
   const [operationalHealth, setOperationalHealth] = useState(null);
   const [operationalHealthLoading, setOperationalHealthLoading] =
     useState(false);
+  const [activeTab, setActiveTab] = useState("overview");
+
+  const dashboardSections = [
+    {
+      id: "overview",
+      label: "Overview",
+      icon: <DashboardOutlinedIcon fontSize="small" />,
+    },
+    {
+      id: "customers",
+      label: "Customers",
+      icon: <PeopleAltOutlinedIcon fontSize="small" />,
+    },
+    {
+      id: "transporters",
+      label: "Transporters",
+      icon: <LocalShippingOutlinedIcon fontSize="small" />,
+    },
+    {
+      id: "performance",
+      label: "Performance",
+      icon: <TrendingUpIcon fontSize="small" />,
+    },
+  ];
 
   // Get current account from user
   const currentAccount = user?.accounts?.[0]?.account;
@@ -268,6 +287,51 @@ const Overview = () => {
   // Get current date range for passing to components
   const currentDateRange = getDateRange(period);
 
+  const tabContent = {
+    overview: (
+      <OverviewPanel
+        metrics={enhancedMetrics}
+        metricsLoading={enhancedMetricsLoading}
+        operationalHealth={operationalHealth}
+        operationalHealthLoading={operationalHealthLoading}
+        insights={insights}
+        insightsLoading={insightsLoading}
+      />
+    ),
+    customers: (
+      <CustomersPanel
+        data={topCustomers.data}
+        loading={topCustomers.loading}
+        period={period}
+        startDate={currentDateRange.startDate}
+        endDate={currentDateRange.endDate}
+      />
+    ),
+    transporters: (
+      <TransportersPanel
+        data={topTransporters.data}
+        loading={topTransporters.loading}
+        period={period}
+        startDate={currentDateRange.startDate}
+        endDate={currentDateRange.endDate}
+      />
+    ),
+    performance: (
+      <PerformancePanel
+        data={
+          enhancedRevenueTrend.length > 0
+            ? enhancedRevenueTrend
+            : revenueTrend.data
+        }
+        loading={enhancedRevenueLoading || revenueTrend.loading}
+        period={period}
+        groupBy={groupBy}
+        startDate={currentDateRange.startDate}
+        endDate={currentDateRange.endDate}
+      />
+    ),
+  };
+
   useEffect(() => {
     gtm.push({ event: "page_view" });
   }, []);
@@ -320,6 +384,9 @@ const Overview = () => {
     return "Good Evening";
   };
 
+  const greeting = getGreeting();
+  const firstName = user?.name ? user.name.split(" ")[0] : undefined;
+
   return (
     <>
       <Head>
@@ -332,167 +399,25 @@ const Overview = () => {
           py: 8,
         }}
       >
-        <Box
-          sx={{
-            position: 'sticky',
-            top: 64,
-            zIndex: 10,
-            bgcolor: 'background.default',
-            borderBottom: 1,
-            borderColor: 'divider',
-            pb: 2,
-            mb: 4,
-          }}
-        >
-          <Container maxWidth="xl">
-            <Box sx={{ pt: 2 }}>
-              <Grid container justifyContent="space-between" spacing={3}>
-                <Grid item>
-                  <Typography variant="h4">
-                    {getGreeting()}
-                    {user?.name && `, ${user.name.split(" ")[0]}`}
-                  </Typography>
-                  <Typography
-                    color="textSecondary"
-                    variant="body2"
-                    sx={{ mt: 1 }}
-                  >
-                    Here's what's happening with your logistics today
-                  </Typography>
-                </Grid>
-                <Grid
-                  item
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 1,
-                    flexWrap: "wrap",
-                  }}
-                >
-                  <OrganizationSelector
-                    organizations={organizations.data}
-                    selectedOrgId={selectedOrganization}
-                    onSelectOrg={handleOrganizationChange}
-                  />
-                  <Button
-                    startIcon={<RefreshIcon fontSize="small" />}
-                    onClick={handleRefresh}
-                    variant="outlined"
-                    size="small"
-                  >
-                    Refresh
-                  </Button>
-                  <Button
-                    startIcon={<ReportsIcon fontSize="small" />}
-                    variant="outlined"
-                    size="small"
-                    onClick={() => router.push("/dashboard/reports")}
-                  >
-                    Reports
-                  </Button>
-                  <TextField
-                    value={period}
-                    onChange={handlePeriodChange}
-                    label="Period"
-                    select
-                    size="small"
-                    sx={{ minWidth: 140 }}
-                  >
-                    <MenuItem value="week">Last 7 days</MenuItem>
-                    <MenuItem value="month">Last 30 days</MenuItem>
-                    <MenuItem value="quarter">Last 90 days</MenuItem>
-                    <MenuItem value="year">Last year</MenuItem>
-                  </TextField>
-                  <TextField
-                    value={groupBy}
-                    onChange={handleViewModeChange}
-                    label="View By"
-                    select
-                    size="small"
-                    sx={{ minWidth: 120 }}
-                  >
-                    <MenuItem value="day">Day</MenuItem>
-                    <MenuItem value="week">Week</MenuItem>
-                    <MenuItem value="month">Month</MenuItem>
-                    <MenuItem value="quarter">Quarter</MenuItem>
-                  </TextField>
-                </Grid>
-              </Grid>
-            </Box>
-          </Container>
-        </Box>
+        <DashboardHeader
+          greeting={greeting}
+          firstName={firstName}
+          sections={dashboardSections}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          period={period}
+          onPeriodChange={handlePeriodChange}
+          groupBy={groupBy}
+          onGroupByChange={handleViewModeChange}
+          organizations={organizations.data}
+          selectedOrganization={selectedOrganization}
+          onOrganizationChange={handleOrganizationChange}
+          onRefresh={handleRefresh}
+          onReportsClick={() => router.push("/dashboard/reports")}
+        />
 
-        <Container maxWidth="xl">
-          <Grid container spacing={3}>
-            {/* Financial Metrics Cards - Enhanced */}
-            <Grid item xs={12}>
-              <FinancialMetricsCardsEnhanced
-                data={enhancedMetrics}
-                loading={enhancedMetricsLoading}
-              />
-            </Grid>
-
-            {/* Operational Health Dashboard */}
-            <Grid item xs={12}>
-              <OperationalHealthDashboard
-                data={operationalHealth}
-                loading={operationalHealthLoading}
-              />
-            </Grid>
-
-            {/* Key Insights Card */}
-            <Grid item xs={12}>
-              <DashboardInsights
-                insights={insights}
-                loading={insightsLoading}
-              />
-            </Grid>
-
-            {/* Revenue Chart - Enhanced */}
-            <Grid item xs={12}>
-              <RevenueChartEnhanced
-                data={
-                  enhancedRevenueTrend.length > 0
-                    ? enhancedRevenueTrend
-                    : revenueTrend.data
-                }
-                loading={enhancedRevenueLoading || revenueTrend.loading}
-                period={period}
-                groupBy={groupBy}
-                startDate={currentDateRange.startDate}
-                endDate={currentDateRange.endDate}
-              />
-            </Grid>
-
-            {/* Top Customers Chart */}
-            <Grid item xs={12} md={6}>
-              <TopCustomersChart
-                data={topCustomers.data}
-                loading={topCustomers.loading}
-                title="Top Customers by Profit"
-                dataKey="profit"
-                type="customer"
-                period={period}
-                startDate={currentDateRange.startDate}
-                endDate={currentDateRange.endDate}
-              />
-            </Grid>
-
-            {/* Top Transporters Chart */}
-            <Grid item xs={12} md={6}>
-              <TopCustomersChart
-                data={topTransporters.data}
-                loading={topTransporters.loading}
-                title="Top Transporters by Profit"
-                dataKey="profit"
-                nameKey="transporterName"
-                type="transporter"
-                period={period}
-                startDate={currentDateRange.startDate}
-                endDate={currentDateRange.endDate}
-              />
-            </Grid>
-          </Grid>
+        <Container maxWidth="xl" sx={{ mt: 4 }}>
+          {tabContent[activeTab] || tabContent.overview}
         </Container>
       </Box>
     </>

@@ -75,9 +75,9 @@ const OrganisationAutocomplete = ({
       onClose={() => {
         setOpen(false);
       }}
-      // getOptionSelected={(option, value) => {
-      //   return option.name === value.name;
-      // }}
+      isOptionEqualToValue={(option, value) => {
+        return option._id === value._id;
+      }}
       getOptionLabel={(option) => {
         return option ? option.name : "";
       }}

@@ -1,45 +1,75 @@
-import React, { useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import {
   GoogleMap,
-  Marker,
   DirectionsService,
   DirectionsRenderer,
+  useJsApiLoader,
 } from "@react-google-maps/api";
+
+import { googleMapsConfig } from "../../../config";
+
+const libraries = ["places"];
+const mapContainerStyle = {
+  width: "100%",
+  height: "100%",
+  minHeight: "12rem",
+  maxHeight: "16rem",
+};
 
 const GoogleMaps = ({ sx, addresses }) => {
   const [googleResponse, setResponse] = useState(null);
   const [totalDistance, setTotalDistance] = useState(0);
 
-  let directionsCallback = (response) => {
-    if (response !== null) {
+  const { isLoaded, loadError } = useJsApiLoader({
+    id: "truckar-order-map",
+    googleMapsApiKey: googleMapsConfig.apiKey || "",
+    libraries,
+  });
+
+  const mapOptions = useMemo(
+    () => ({ mapTypeId: "hybrid", disableDefaultUI: true }),
+    []
+  );
+
+  const directionsCallback = useCallback(
+    (response) => {
+      if (!response) {
+        return;
+      }
+
       if (response.status === "OK") {
         if (JSON.stringify(googleResponse) === JSON.stringify(response)) {
           return;
-        } else {
-          setTotalDistance(0);
-          setResponse(response);
-
-          response.routes[0].legs.map((leg) => {
-            setTotalDistance(totalDistance + leg.distance.value);
-          });
         }
+
+        setResponse(response);
+
+        const distance = response.routes?.[0]?.legs?.reduce((sum, leg) => {
+          const legDistance = leg?.distance?.value || 0;
+          return sum + legDistance;
+        }, 0);
+
+        setTotalDistance(distance || 0);
       } else {
-        console.log("response: ");
+        console.log("Directions request failed", response);
       }
-    }
-  };
-  // console.log(totalDistance);
+    },
+    [googleResponse]
+  );
+
+  if (loadError || !googleMapsConfig.apiKey) {
+    return <div>Unable to load Google Maps.</div>;
+  }
+
+  if (!isLoaded) {
+    return <div>Loading map...</div>;
+  }
 
   return (
     <GoogleMap
       sx={sx}
-      options={{ mapTypeId: "hybrid", disableDefaultUI: true }}
-      mapContainerStyle={{
-        width: "100%",
-        height: "100%",
-        minHeight: "12rem",
-        maxHeight: "16rem",
-      }}
+      options={mapOptions}
+      mapContainerStyle={mapContainerStyle}
       center={{
         lat: 22.309425,
         lng: 72.13623,

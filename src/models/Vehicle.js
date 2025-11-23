@@ -27,6 +27,10 @@ const vehicleSchema = new mongoose.Schema({
     type: Schema.Types.ObjectId,
     ref: "organisation",
   },
+  transporter: {
+    type: Schema.Types.ObjectId,
+    ref: "party",
+  },
   account: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "account",

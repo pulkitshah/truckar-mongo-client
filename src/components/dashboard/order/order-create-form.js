@@ -15,6 +15,8 @@ import {
   Grid,
   InputAdornment,
   TextField,
+  ToggleButton,
+  ToggleButtonGroup,
   Typography,
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
@@ -26,6 +28,7 @@ import VehicleAutocomplete from "../autocompletes/vehicle-autocomplete/vehicle-a
 import DriverAutocomplete from "../autocompletes/driver-autocomplete/driver-autocomplete";
 import GoogleMaps from "./google-maps";
 import { orderApi } from "../../../api/order-api";
+import { vehicleApi } from "../../../api/vehicle-api";
 import { useDispatch } from "../../../store";
 import { deliveryApi } from "../../../api/delivery-api";
 import { sendOrderConfirmationMessageToOwner } from "../../../utils/whatsapp";
@@ -35,11 +38,48 @@ export const OrderCreateForm = (props) => {
   const router = useRouter();
   const dispatch = useDispatch();
   const { account } = useAuth();
-  const [selectedVehicle, setSelectedVehicle] = useState(null);
+  const initialPurchaseType = order.purchaseType || "quantity";
+  const initialVehicleOwnership =
+    order?.transporter || order?.vehicle?.transporter ? "outsourced" : "owned";
+  const [selectedVehicle, setSelectedVehicle] = useState(order.vehicle || null);
   const [driver, setDriver] = useState();
-  const [addresses, setAddresses] = useState({ waypoints: [] });
+  const [addresses, setAddresses] = useState(() => ({
+    origin: "",
+    destination: "",
+    waypoints: [],
+  }));
+  const [orderNoManuallyEdited, setOrderNoManuallyEdited] = useState(false);
 
-  const [purchaseType, setPurchaseType] = React.useState("quantity");
+  const [purchaseType, setPurchaseType] = React.useState(initialPurchaseType);
+
+  const isEditMode = Boolean(order?._id || order?.id);
+  const accountId = account?._id || account?.id;
+  const addressesSignatureRef = useRef("");
+
+  const addressesAreEqual = useCallback((current, next) => {
+    if (!current || !next) {
+      return false;
+    }
+
+    if (current.origin !== next.origin || current.destination !== next.destination) {
+      return false;
+    }
+
+    const currentWaypoints = current.waypoints || [];
+    const nextWaypoints = next.waypoints || [];
+
+    if (currentWaypoints.length !== nextWaypoints.length) {
+      return false;
+    }
+
+    for (let index = 0; index < currentWaypoints.length; index += 1) {
+      if (currentWaypoints[index]?.location !== nextWaypoints[index]?.location) {
+        return false;
+      }
+    }
+
+    return true;
+  }, []);
 
   const purchaseTypes = [
     {
@@ -51,6 +91,17 @@ export const OrderCreateForm = (props) => {
       label: "Fixed",
     },
   ];
+
+  const nullableNumber = () =>
+    Yup.number()
+      .transform((value, originalValue) => {
+        if (originalValue === "" || originalValue === null) {
+          return null;
+        }
+
+        return value;
+      })
+      .nullable();
 
   let validationShape = {
     orderNo: Yup.number()
@@ -88,20 +139,48 @@ export const OrderCreateForm = (props) => {
     }),
     saleType: Yup.object().required("Sale is required"),
     saleRate: Yup.number().required("Sale Rate is required"),
-  };
+    vehicleOwnership: Yup.string()
+      .oneOf(["owned", "outsourced"])
+      .required("Vehicle sourcing is required"),
+    transporter: Yup.mixed()
+      .nullable()
+      .when("vehicleOwnership", {
+        is: "outsourced",
+        then: (schema) =>
+          schema.test(
+            "transporter-required",
+            "Transporter is required",
+            (value) => {
+              if (value === null || value === undefined) {
+                return false;
+              }
 
-  if (typeof selectedVehicle === "object" && selectedVehicle !== null) {
-  } else {
-    validationShape.transporter = Yup.object().required(
-      "Transporter is required"
-    );
-    validationShape.purchaseType = Yup.string().required(
-      "Purchase is required"
-    );
-    validationShape.purchaseRate = Yup.number().required(
-      "Purchase Rate is required"
-    );
-  }
+              if (typeof value === "string") {
+                return value.trim().length > 0;
+              }
+
+              if (typeof value === "object") {
+                return Object.keys(value).length > 0;
+              }
+
+              return false;
+            }
+          ),
+        otherwise: (schema) => schema.nullable(),
+      }),
+    purchaseType: Yup.string()
+      .nullable()
+      .when("vehicleOwnership", {
+        is: "outsourced",
+        then: (schema) => schema.required("Purchase is required"),
+        otherwise: (schema) => schema.nullable(),
+      }),
+    purchaseRate: nullableNumber().when("vehicleOwnership", {
+      is: "outsourced",
+      then: (schema) => schema.required("Purchase Rate is required"),
+      otherwise: (schema) => schema.nullable(),
+    }),
+  };
 
   validationShape.deliveries = Yup.array().of(
     Yup.object().shape({
@@ -145,7 +224,8 @@ export const OrderCreateForm = (props) => {
       customer: order.customer || null,
       vehicle: order.vehicle || null,
       driver: order.driver || "",
-      transporter: order.transporter || "",
+      transporter: order.transporter || null,
+      vehicleOwnership: initialVehicleOwnership,
       saleType: order.saleType
         ? order.saleType
         : {
@@ -190,9 +270,22 @@ export const OrderCreateForm = (props) => {
 
         if (values.saleAdvance) newOrder.saleAdvance = values.saleAdvance;
 
-        if (typeof selectedVehicle === "object" && selectedVehicle !== null) {
+        const selectedVehicleIsObject =
+          typeof values.vehicle === "object" && values.vehicle !== null;
+        const selectedVehicleHasTransporter =
+          selectedVehicleIsObject && Boolean(values.vehicle?.transporter);
+        const isOwnedVehicle = values.vehicleOwnership === "owned";
+
+        const vehicleNumberRaw = selectedVehicleIsObject
+          ? values.vehicle?.vehicleNumber
+          : values.vehicle;
+        const vehicleNumber = vehicleNumberRaw
+          ? vehicleNumberRaw.toUpperCase()
+          : "";
+
+        if (isOwnedVehicle) {
           newOrder.vehicle = values.vehicle;
-          newOrder.vehicleNumber = values.vehicle.vehicleNumber.toUpperCase();
+          newOrder.vehicleNumber = vehicleNumber;
           if (values.driver) {
             newOrder.driver = values.driver;
           }
@@ -203,16 +296,80 @@ export const OrderCreateForm = (props) => {
             newOrder.minimumPurchaseGuarantee = null;
           newOrder.purchaseAdvance = null;
         } else {
-          newOrder.vehicle = null;
-          newOrder.vehicleNumber = values.vehicle.toUpperCase();
+          newOrder.vehicle = selectedVehicleIsObject ? values.vehicle : null;
+          newOrder.vehicleNumber = vehicleNumber;
           newOrder.driver = null;
-          newOrder.transporter = values.transporter;
+          newOrder.transporter = selectedVehicleHasTransporter
+            ? values.vehicle.transporter
+            : values.transporter;
           newOrder.purchaseRate = values.purchaseRate;
           newOrder.purchaseType = values.purchaseType;
           if (values.minimumPurchaseGuarantee)
             newOrder.minimumPurchaseGuarantee = values.minimumPurchaseGuarantee;
           if (values.purchaseAdvance)
             newOrder.purchaseAdvance = values.purchaseAdvance;
+
+          if (
+            !selectedVehicleHasTransporter &&
+            !selectedVehicleIsObject &&
+            vehicleNumber
+          ) {
+            try {
+              const accountId = account?._id || account?.id;
+              const transporterId =
+                values.transporter?._id || values.transporter?.id;
+
+              if (!transporterId) {
+                throw new Error(
+                  "Missing transporter selection for new vehicle"
+                );
+              }
+
+              const validation =
+                await vehicleApi.validateDuplicateVehicleNumber(
+                  accountId,
+                  vehicleNumber
+                );
+
+              if (!validation?.data) {
+                toast.error(
+                  "Vehicle number already exists. Please pick it from the list."
+                );
+                throw new Error(
+                  "Duplicate vehicle number when creating vehicle"
+                );
+              }
+
+              const creation = await vehicleApi.createVehicle(
+                {
+                  vehicleNumber,
+                  account: accountId,
+                  transporter: transporterId,
+                },
+                dispatch
+              );
+
+              if (creation?.error) {
+                throw new Error(creation.error);
+              }
+
+              const createdVehicle = creation?.data;
+
+              toast.success(`Vehicle ${vehicleNumber} saved with transporter`);
+
+              if (createdVehicle) {
+                newOrder.vehicle = createdVehicle;
+                newOrder.transporter =
+                  createdVehicle.transporter || newOrder.transporter;
+              }
+
+              await vehicleApi.getVehiclesByAccount(dispatch, accountId);
+            } catch (vehicleError) {
+              console.error(vehicleError);
+              toast.error("Failed to save vehicle. Please try again.");
+              throw vehicleError;
+            }
+          }
         }
 
         let { data } = await orderApi.createOrder(newOrder, dispatch);
@@ -230,73 +387,188 @@ export const OrderCreateForm = (props) => {
     },
   });
 
-  React.useEffect(() => {
-    setAddresses({ waypoints: [...addresses.waypoints] });
+  const { setFieldValue, setFieldTouched } = formik;
+  const isOwnedVehicle = formik.values.vehicleOwnership === "owned";
+  const isOutsourcedVehicle = formik.values.vehicleOwnership === "outsourced";
+  const saleDateIso = formik.values.saleDate
+    ? moment(formik.values.saleDate).toISOString()
+    : moment().toISOString();
+  const transporterName = useMemo(() => {
+    const transporter = formik.values?.transporter;
 
-    // Setting Origin
-    setAddresses((addresses) => ({
-      ...addresses,
-      ...{
-        origin: formik.values.deliveries[0].loading.description,
-      },
-    }));
-
-    // Setting Destination
-    if (
-      formik.values.deliveries[formik.values.deliveries.length - 1].unloading
-        .description
-    ) {
-      setAddresses((addresses) => ({
-        ...addresses,
-        ...{
-          destination:
-            formik.values.deliveries[formik.values.deliveries.length - 1]
-              .unloading.description,
-        },
-      }));
+    if (!transporter) {
+      return "";
     }
 
-    // Setting waypoints
+    return (
+      transporter?.name ||
+      transporter?.label ||
+      transporter?.legalName ||
+      transporter?.displayName ||
+      ""
+    );
+  }, [formik.values?.transporter]);
+  const transporterHelperText = useMemo(() => {
+    if (formik.errors?.transporter) {
+      return formik.errors.transporter;
+    }
 
-    let waypoints = [];
+    if (transporterName) {
+      return "Auto-filled from selected vehicle";
+    }
 
-    formik.values.deliveries.map((delivery) => {
-      if (delivery.loading.description) {
-        waypoints.push({
-          location: delivery.loading.description,
+    return "Select a vehicle to auto-fill transporter";
+  }, [formik.errors?.transporter, transporterName]);
+
+  const handleVehicleOwnershipChange = (event, newOwnership) => {
+    if (!newOwnership) {
+      return;
+    }
+
+    formik.setFieldValue("vehicleOwnership", newOwnership);
+
+    if (newOwnership === "owned") {
+      formik.setFieldValue("transporter", null);
+      formik.setFieldValue("purchaseRate", "");
+      formik.setFieldValue("purchaseAdvance", "");
+      formik.setFieldValue("minimumPurchaseGuarantee", "");
+    } else {
+      const existingPurchaseType = formik.values.purchaseType || purchaseType;
+      const defaultPurchaseType = existingPurchaseType || "quantity";
+
+      setPurchaseType(defaultPurchaseType);
+      formik.setFieldValue("purchaseType", defaultPurchaseType);
+      formik.setFieldValue("driver", "");
+      setDriver(null);
+    }
+  };
+
+  React.useEffect(() => {
+    if (!accountId || orderNoManuallyEdited || isEditMode) {
+      return;
+    }
+
+    let isActive = true;
+
+    const populateNextOrderNumber = async () => {
+      try {
+        const response = await orderApi.getNextOrderNumber({
+          account: accountId,
+          saleDate: saleDateIso,
         });
+
+        if (!isActive || response?.error) {
+          return;
+        }
+
+        if (typeof response?.data === "number") {
+          setFieldValue("orderNo", String(response.data), false);
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    populateNextOrderNumber();
+
+    return () => {
+      isActive = false;
+    };
+  }, [
+    accountId,
+    saleDateIso,
+    orderNoManuallyEdited,
+    isEditMode,
+    setFieldValue,
+  ]);
+
+  React.useEffect(() => {
+    const deliveries = formik.values.deliveries || [];
+
+    const signature = deliveries
+      .map((delivery) => {
+        const loadingDescription = delivery?.loading?.description || "";
+        const unloadingDescription = delivery?.unloading?.description || "";
+
+        return `${loadingDescription}->${unloadingDescription}`;
+      })
+      .join("|");
+
+    if (signature === addressesSignatureRef.current) {
+      return;
+    }
+
+    addressesSignatureRef.current = signature;
+
+    if (!deliveries.length) {
+      const emptyAddresses = {
+        origin: "",
+        destination: "",
+        waypoints: [],
+      };
+
+      setAddresses((previous) =>
+        addressesAreEqual(previous, emptyAddresses) ? previous : emptyAddresses
+      );
+
+      return;
+    }
+
+    const origin = deliveries[0]?.loading?.description || "";
+    const destination =
+      deliveries[deliveries.length - 1]?.unloading?.description || "";
+
+    if (!origin || !destination) {
+      const partialAddresses = { origin, destination, waypoints: [] };
+
+      setAddresses((previous) =>
+        addressesAreEqual(previous, partialAddresses)
+          ? previous
+          : partialAddresses
+      );
+
+      return;
+    }
+
+    const seenLocations = new Set();
+    const nextWaypoints = [];
+
+    deliveries.forEach((delivery) => {
+      const loadingDescription = delivery?.loading?.description || "";
+
+      if (
+        loadingDescription &&
+        loadingDescription !== origin &&
+        loadingDescription !== destination &&
+        !seenLocations.has(loadingDescription)
+      ) {
+        seenLocations.add(loadingDescription);
+        nextWaypoints.push({ location: loadingDescription });
       }
 
-      if (delivery.unloading.description) {
-        waypoints.push({
-          location: delivery.unloading.description,
-        });
+      const unloadingDescription = delivery?.unloading?.description || "";
+
+      if (
+        unloadingDescription &&
+        unloadingDescription !== origin &&
+        unloadingDescription !== destination &&
+        !seenLocations.has(unloadingDescription)
+      ) {
+        seenLocations.add(unloadingDescription);
+        nextWaypoints.push({ location: unloadingDescription });
       }
     });
 
-    waypoints = waypoints.filter(
-      (waypoint) =>
-        waypoint.location !== formik.values.deliveries[0].loading.description
-    );
-    waypoints = waypoints.filter(
-      (waypoint) =>
-        waypoint.location !==
-        formik.values.deliveries[formik.values.deliveries.length - 1].unloading
-          .description
-    );
+    const nextAddresses = {
+      origin,
+      destination,
+      waypoints: nextWaypoints,
+    };
 
-    waypoints = [
-      ...new Map(waypoints.map((item) => [item.location, item])).values(),
-    ];
-
-    setAddresses({
-      origin: formik.values.deliveries[0].loading.description,
-      destination:
-        formik.values.deliveries[formik.values.deliveries.length - 1].unloading
-          .description,
-      waypoints: waypoints,
-    });
-  }, [formik.values.deliveries]);
+    setAddresses((previous) =>
+      addressesAreEqual(previous, nextAddresses) ? previous : nextAddresses
+    );
+  }, [formik.values.deliveries, addressesAreEqual]);
 
   return (
     <form onSubmit={formik.handleSubmit} {...props}>
@@ -319,7 +591,9 @@ export const OrderCreateForm = (props) => {
                     name="orderNo"
                     onBlur={formik.handleBlur}
                     onChange={(event) => {
-                      formik.setFieldValue(`orderNo`, event.target.value);
+                      const value = event.target.value;
+                      setOrderNoManuallyEdited(Boolean(value));
+                      formik.setFieldValue(`orderNo`, value);
                     }}
                     value={formik.values.orderNo}
                   />
@@ -391,8 +665,20 @@ export const OrderCreateForm = (props) => {
             </Grid>
             <Grid item md={9} xs={12}>
               <Grid container spacing={3}>
+                <Grid item xs={12}>
+                  <ToggleButtonGroup
+                    exclusive
+                    size="small"
+                    value={formik.values.vehicleOwnership}
+                    onChange={handleVehicleOwnershipChange}
+                  >
+                    <ToggleButton value="owned">Owned</ToggleButton>
+                    <ToggleButton value="outsourced">Outsourced</ToggleButton>
+                  </ToggleButtonGroup>
+                </Grid>
                 <Grid item md={4} xs={12}>
                   <VehicleAutocomplete
+                    currentValue={formik.values.vehicle}
                     errors={formik.errors}
                     touched={formik.touched}
                     setFieldValue={formik.setFieldValue}
@@ -402,9 +688,23 @@ export const OrderCreateForm = (props) => {
                     account={account}
                   />
                 </Grid>
-                <Grid item md={4} xs={12}>
-                  {typeof selectedVehicle === "object" &&
-                  selectedVehicle !== null ? (
+                {isOutsourcedVehicle && (
+                  <Grid item md={4} xs={12}>
+                    <TextField
+                      label="Transporter"
+                      name="transporter"
+                      value={transporterName}
+                      variant="outlined"
+                      fullWidth
+                      InputProps={{ readOnly: true }}
+                      error={Boolean(formik.errors?.transporter)}
+                      helperText={transporterHelperText}
+                      onBlur={() => setFieldTouched("transporter", true, true)}
+                    />
+                  </Grid>
+                )}
+                {isOwnedVehicle && (
+                  <Grid item md={4} xs={12}>
                     <DriverAutocomplete
                       errors={formik.errors}
                       touched={formik.touched}
@@ -416,20 +716,8 @@ export const OrderCreateForm = (props) => {
                       values={formik.values}
                       formik={formik}
                     />
-                  ) : (
-                    selectedVehicle !== null && (
-                      <PartyAutocomplete
-                        errors={formik.errors}
-                        touched={formik.touched}
-                        setFieldValue={formik.setFieldValue}
-                        handleBlur={formik.handleBlur}
-                        type="transporter"
-                        account={account}
-                        formik={formik}
-                      />
-                    )
-                  )}
-                </Grid>
+                  </Grid>
+                )}
               </Grid>
             </Grid>
           </Grid>
@@ -531,7 +819,7 @@ export const OrderCreateForm = (props) => {
           </Grid>
         </CardContent>
       </Card>
-      {!(typeof selectedVehicle === "object") && selectedVehicle !== null && (
+      {isOutsourcedVehicle && (
         <Card sx={{ mt: 3 }}>
           <CardContent>
             <Grid container spacing={3}>

@@ -6,6 +6,9 @@ import * as Yup from "yup";
 import axios from "../../../utils/axios";
 import { useAuth } from "../../../hooks/use-auth";
 import { LanguagePopover } from "../language-popover";
+import { useSettings } from "../../../hooks/use-settings";
+import { Sun as SunIcon } from "../../../icons/sun";
+import { Moon as MoonIcon } from "../../../icons/moon";
 
 import {
   Avatar,
@@ -18,6 +21,8 @@ import {
   FormControlLabel,
   Grid,
   IconButton,
+  ToggleButton,
+  ToggleButtonGroup,
   TextField,
   Typography,
 } from "@mui/material";
@@ -60,6 +65,18 @@ const LanguageButton = () => {
 export const AccountGeneralSettings = (props) => {
   const { user } = useAuth();
   const { t } = useTranslation();
+  const { settings, saveSettings } = useSettings();
+
+  const handleThemeChange = (event, themeValue) => {
+    if (!themeValue || themeValue === settings.theme) {
+      return;
+    }
+
+    saveSettings({
+      ...settings,
+      theme: themeValue,
+    });
+  };
   return (
     <Formik
       enableReinitialize
@@ -336,6 +353,58 @@ export const AccountGeneralSettings = (props) => {
                         </Typography>
                       </div>
                       <LanguageButton />
+                    </Box>
+                    <Box
+                      sx={{
+                        alignItems: "center",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        mb: 1,
+                      }}
+                    >
+                      <div>
+                        <Typography variant="subtitle1">
+                          {t("Appearance")}
+                        </Typography>
+                        <Typography color="textSecondary" variant="body2">
+                          {t("Toggle between light and dark themes")}
+                        </Typography>
+                      </div>
+                      <ToggleButtonGroup
+                        aria-label={t("Theme selection")}
+                        color="primary"
+                        exclusive
+                        onChange={handleThemeChange}
+                        size="small"
+                        value={settings.theme}
+                      >
+                        <ToggleButton
+                          aria-label={t("Light mode")}
+                          sx={{ gap: 1, px: 2, py: 0.5 }}
+                          value="light"
+                        >
+                          <SunIcon fontSize="small" />
+                          <Typography
+                            variant="caption"
+                            sx={{ fontWeight: 600 }}
+                          >
+                            {t("Light")}
+                          </Typography>
+                        </ToggleButton>
+                        <ToggleButton
+                          aria-label={t("Dark mode")}
+                          sx={{ gap: 1, px: 2, py: 0.5 }}
+                          value="dark"
+                        >
+                          <MoonIcon fontSize="small" />
+                          <Typography
+                            variant="caption"
+                            sx={{ fontWeight: 600 }}
+                          >
+                            {t("Dark")}
+                          </Typography>
+                        </ToggleButton>
+                      </ToggleButtonGroup>
                     </Box>
                   </Grid>
                 </Grid>

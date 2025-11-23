@@ -1,9 +1,8 @@
-import React, { accountef, useState } from "react";
+import React from "react";
 import { v4 as uuidv4 } from "uuid";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-hot-toast";
 import { useFormik, FormikProvider, FieldArray, getIn } from "formik";
-import * as Yup from "yup";
 import { useAuth } from "../../../hooks/use-auth";
 import { Trash as TrashIcon } from "../../../icons/trash";
 import { useDispatch } from "../../../store";
@@ -13,10 +12,8 @@ import {
   Button,
   Card,
   CardContent,
-  Checkbox,
   Divider,
   Grid,
-  InputAdornment,
   TextField,
   Typography,
 } from "@mui/material";
@@ -28,31 +25,51 @@ export const OrderExpensesSettings = (props) => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
 
+  const buildDefaultExpense = () => ({
+    id: uuidv4(),
+    orderExpenseName: "",
+    orderExpenseAmount: 0,
+    isActive: true,
+  });
+
+  const resolveInitialExpenses = () => {
+    const storedExpenses = account?.orderExpensesSettings;
+
+    if (Array.isArray(storedExpenses)) {
+      return storedExpenses.length ? storedExpenses : [buildDefaultExpense()];
+    }
+
+    if (typeof storedExpenses === "string" && storedExpenses.trim().length) {
+      try {
+        const parsed = JSON.parse(storedExpenses);
+        return Array.isArray(parsed) && parsed.length
+          ? parsed
+          : [buildDefaultExpense()];
+      } catch (error) {
+        console.error("Failed to parse order expenses settings", error);
+        return [buildDefaultExpense()];
+      }
+    }
+
+    return [buildDefaultExpense()];
+  };
+
   const formik = useFormik({
+    enableReinitialize: true,
     initialValues: {
-      orderExpensesSettings: account.orderExpensesSettings || [
-        {
-          id: uuidv4(),
-          orderExpenseName: "",
-          orderExpenseAmount: 0,
-          isActive: true,
-        },
-      ],
+      orderExpensesSettings: resolveInitialExpenses(),
     },
     onSubmit: async (values, helpers) => {
       try {
-        console.log(values.orderExpensesSettings),
-          // await orderApi.createOrder(newOrder, dispatch);
-          await accountApi.updateAccount(
-            {
-              id: account.id,
-              orderExpensesSettings: JSON.stringify(
-                values.orderExpensesSettings
-              ),
-              _version: account._version,
-            },
-            dispatch
-          );
+        console.log(values.orderExpensesSettings);
+        await accountApi.updateAccount(
+          {
+            id: account.id,
+            orderExpensesSettings: values.orderExpensesSettings,
+            _version: account._version,
+          },
+          dispatch
+        );
         toast.success("Order Expenses Settings updated!");
         // router.push("/dashboard/orders");
       } catch (err) {
@@ -88,14 +105,14 @@ export const OrderExpensesSettings = (props) => {
                       {formik.values.orderExpensesSettings.length > 0 &&
                         formik.values.orderExpensesSettings.map(
                           (delivery, index) => {
-                            const orderExpensesName = `orderExpensesSettings[${index}]`;
-                            const touchedOrderExpensesName = getIn(
+                            const orderExpenseNamePath = `orderExpensesSettings[${index}].orderExpenseName`;
+                            const touchedOrderExpenseName = getIn(
                               formik.touched,
-                              orderExpensesName
+                              orderExpenseNamePath
                             );
-                            const errorOrderExpensesName = getIn(
+                            const errorOrderExpenseName = getIn(
                               formik.errors,
-                              orderExpensesName
+                              orderExpenseNamePath
                             );
 
                             const orderExpenseAmount = `orderExpensesSettings[${index}].orderExpenseAmount`;
@@ -108,7 +125,7 @@ export const OrderExpensesSettings = (props) => {
                               orderExpenseAmount
                             );
                             return (
-                              <React.Fragment>
+                              <React.Fragment key={delivery.id || index}>
                                 <Grid container spacing={3}>
                                   {index > 0 && <Divider sx={{ mb: 2 }} />}
                                   <Grid
@@ -120,25 +137,20 @@ export const OrderExpensesSettings = (props) => {
                                   >
                                     <TextField
                                       helperText={
-                                        touchedOrderExpensesName &&
-                                        errorOrderExpensesName
-                                          ? errorOrderExpensesName
+                                        touchedOrderExpenseName &&
+                                        errorOrderExpenseName
+                                          ? errorOrderExpenseName
                                           : ""
                                       }
                                       error={Boolean(
-                                        touchedOrderExpensesName &&
-                                          errorOrderExpensesName
+                                        touchedOrderExpenseName &&
+                                          errorOrderExpenseName
                                       )}
                                       variant="outlined"
-                                      onChange={(event) => {
-                                        formik.setFieldValue(
-                                          `orderExpensesSettings[${index}].orderExpensesName`,
-                                          event.target.value
-                                        );
-                                      }}
+                                      onChange={formik.handleChange}
                                       onBlur={formik.handleBlur}
-                                      id="orderExpensesName"
-                                      name="orderExpensesName"
+                                      id={orderExpenseNamePath}
+                                      name={orderExpenseNamePath}
                                       label="Expense Name"
                                       fullWidth
                                       value={
@@ -155,6 +167,7 @@ export const OrderExpensesSettings = (props) => {
                                     className="col"
                                   >
                                     <TextField
+                                      type="number"
                                       value={
                                         formik.values.orderExpensesSettings[
                                           index

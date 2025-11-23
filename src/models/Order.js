@@ -134,6 +134,20 @@ const orderSchema = new mongoose.Schema({
   purchaseRemarks: {
     type: String,
   },
+  salePaymentStatus: {
+    type: String,
+    default: "pending",
+  },
+  salePaymentDate: {
+    type: Date,
+  },
+  purchasePaymentStatus: {
+    type: String,
+    default: "pending",
+  },
+  purchasePaymentDate: {
+    type: Date,
+  },
   driverName: {
     type: String,
   },

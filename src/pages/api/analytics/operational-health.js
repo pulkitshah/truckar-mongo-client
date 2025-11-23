@@ -7,6 +7,7 @@ import Driver from "../../../models/Driver";
 import Account from "../../../models/Account";
 import auth from "../../../auth";
 import moment from "moment";
+import { getBaseSalesExpression } from "../../../helper/orderCalculations";
 
 export default async function handler(req, res) {
   const { method } = req;
@@ -72,7 +73,11 @@ export default async function handler(req, res) {
             $match: {
               $or: [
                 { organisation: new mongoose.Types.ObjectId(organisation) },
-                { "vehicleData.organisation": new mongoose.Types.ObjectId(organisation) },
+                {
+                  "vehicleData.organisation": new mongoose.Types.ObjectId(
+                    organisation
+                  ),
+                },
               ],
             },
           },
@@ -178,23 +183,24 @@ export default async function handler(req, res) {
         vehicleMatch.organisation = new mongoose.Types.ObjectId(organisation);
       }
 
-      const [totalVehicles, activeVehicleCount] = await Promise.all([
+      const [totalVehicles, activeVehiclesGroup] = await Promise.all([
         Vehicle.countDocuments(vehicleMatch),
         Order.aggregate([
           { $match: matchQuery },
           ...orgFilterPipeline,
-          {
-            $group: {
-              _id: "$vehicle",
-            },
-          },
-          {
-            $count: "count",
-          },
+          { $match: { vehicle: { $ne: null } } },
+          { $group: { _id: "$vehicle" } },
         ]),
       ]);
-
-      const activeVehicles = activeVehicleCount[0]?.count || 0;
+      const activeVehicleIds = activeVehiclesGroup
+        .map((v) => v._id)
+        .filter(Boolean);
+      const activeVehicles = activeVehicleIds.length;
+      const activeVehicleDocs = activeVehicleIds.length
+        ? await Vehicle.find({ _id: { $in: activeVehicleIds } }).select(
+            "vehicleNumber"
+          )
+        : [];
       const fleetUtilization =
         totalVehicles > 0 ? (activeVehicles / totalVehicles) * 100 : 0;
 
@@ -204,23 +210,25 @@ export default async function handler(req, res) {
         driverMatch.organisation = new mongoose.Types.ObjectId(organisation);
       }
 
-      const [totalDrivers, activeDriverCount] = await Promise.all([
+      const [totalDrivers, activeDriversGroup] = await Promise.all([
         Driver.countDocuments(driverMatch),
         Order.aggregate([
           { $match: matchQuery },
           ...orgFilterPipeline,
-          {
-            $group: {
-              _id: "$driver",
-            },
-          },
-          {
-            $count: "count",
-          },
+          { $match: { driver: { $ne: null } } },
+          { $group: { _id: "$driver" } },
         ]),
       ]);
 
-      const activeDrivers = activeDriverCount[0]?.count || 0;
+      const activeDriverIds = activeDriversGroup
+        .map((d) => d._id)
+        .filter(Boolean);
+      const activeDrivers = activeDriverIds.length;
+      const activeDriverDocs = activeDriverIds.length
+        ? await Driver.find({ _id: { $in: activeDriverIds } }).select(
+            "name mobile"
+          )
+        : [];
       const driverUtilization =
         totalDrivers > 0 ? (activeDrivers / totalDrivers) * 100 : 0;
 
@@ -354,6 +362,12 @@ export default async function handler(req, res) {
           },
         },
         {
+          $addFields: {
+            // Conservative base sales at risk (no invoice created yet)
+            sales: getBaseSalesExpression(),
+          },
+        },
+        {
           $project: {
             orderId: "$_id",
             orderNumber: "$orderNumber",
@@ -425,8 +439,16 @@ export default async function handler(req, res) {
               {
                 $match: {
                   $or: [
-                    { "orderData.organisation": new mongoose.Types.ObjectId(organisation) },
-                    { "vehicleData.organisation": new mongoose.Types.ObjectId(organisation) },
+                    {
+                      "orderData.organisation": new mongoose.Types.ObjectId(
+                        organisation
+                      ),
+                    },
+                    {
+                      "vehicleData.organisation": new mongoose.Types.ObjectId(
+                        organisation
+                      ),
+                    },
                   ],
                 },
               },
@@ -616,10 +638,13 @@ export default async function handler(req, res) {
       const result = {
         documentCompletion: {
           lrCompletionRate: Number.parseFloat(lrCompletionRate.toFixed(2)),
-          invoiceCompletionRate: Number.parseFloat(invoiceCompletionRate.toFixed(2)),
+          invoiceCompletionRate: Number.parseFloat(
+            invoiceCompletionRate.toFixed(2)
+          ),
           fullCompletionRate: Number.parseFloat(fullCompletionRate.toFixed(2)),
           ordersWithoutLR: docStats.totalOrders - docStats.ordersWithLR,
-          ordersWithoutInvoice: docStats.totalOrders - docStats.ordersWithInvoice,
+          ordersWithoutInvoice:
+            docStats.totalOrders - docStats.ordersWithInvoice,
           totalOrders: docStats.totalOrders,
           threshold: thresholds.minDocumentCompletion,
         },
@@ -629,12 +654,21 @@ export default async function handler(req, res) {
           totalVehicles,
           idleVehicles: totalVehicles - activeVehicles,
           threshold: thresholds.minFleetUtilization,
+          activeVehicleList: activeVehicleDocs.map((v) => ({
+            vehicleId: v._id,
+            vehicleNumber: v.vehicleNumber,
+          })),
         },
         driverActivity: {
           utilizationRate: Number.parseFloat(driverUtilization.toFixed(2)),
           activeDrivers,
           totalDrivers,
           idleDrivers: totalDrivers - activeDrivers,
+          activeDriverList: activeDriverDocs.map((d) => ({
+            driverId: d._id,
+            name: d.name,
+            mobile: d.mobile,
+          })),
         },
         pendingActions: {
           pendingLRs: {

@@ -17,16 +17,29 @@ import {
   Typography,
   Chip,
   Paper,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import { ChevronDown as ExpandMoreIcon } from "../../../icons/chevron-down";
 import { ChevronUp as ExpandLessIcon } from "../../../icons/chevron-up";
 import PropTypes from "prop-types";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Chart } from "../../chart";
 
 // KPI Card Component
-const KPICard = ({ title, value, subtitle, threshold, loading, color = "primary" }) => {
+const KPICard = ({
+  title,
+  value,
+  subtitle,
+  threshold,
+  loading,
+  color = "primary",
+  onClick,
+}) => {
   const isAboveThreshold = threshold ? value >= threshold : true;
   const statusColor = isAboveThreshold ? "success" : "warning";
 
@@ -36,14 +49,18 @@ const KPICard = ({ title, value, subtitle, threshold, loading, color = "primary"
         <CardContent>
           <Skeleton variant="text" width="60%" />
           <Skeleton variant="text" width="40%" height={40} sx={{ mt: 1 }} />
-          <Skeleton variant="rectangular" height={6} sx={{ mt: 1, borderRadius: 1 }} />
+          <Skeleton
+            variant="rectangular"
+            height={6}
+            sx={{ mt: 1, borderRadius: 1 }}
+          />
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card>
+    <Card onClick={onClick} sx={{ cursor: onClick ? "pointer" : "default" }}>
       <CardContent>
         <Typography color="textSecondary" variant="overline">
           {title}
@@ -60,11 +77,17 @@ const KPICard = ({ title, value, subtitle, threshold, loading, color = "primary"
         )}
         {threshold && (
           <Box sx={{ mt: 2 }}>
-            <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
+            <Box
+              sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}
+            >
               <Typography variant="caption" color="textSecondary">
                 Target: {threshold}%
               </Typography>
-              <Typography variant="caption" color="textSecondary" fontWeight={600}>
+              <Typography
+                variant="caption"
+                color="textSecondary"
+                fontWeight={600}
+              >
                 {value >= threshold ? "On Track" : "Below Target"}
               </Typography>
             </Box>
@@ -94,17 +117,29 @@ KPICard.propTypes = {
   threshold: PropTypes.number,
   loading: PropTypes.bool,
   color: PropTypes.string,
+  onClick: PropTypes.func,
 };
 
 // Collapsible Section Component
-const CollapsibleSection = ({ title, count, children, defaultExpanded = false }) => {
+const CollapsibleSection = ({
+  title,
+  count,
+  children,
+  defaultExpanded = false,
+}) => {
   const [expanded, setExpanded] = useState(defaultExpanded);
 
   return (
     <Card>
       <CardHeader
         title={
-          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
             <Typography variant="h6">{title}</Typography>
             <Chip
               label={count}
@@ -207,6 +242,125 @@ AgingChart.propTypes = {
   }).isRequired,
 };
 
+// Details Dialog component (opened via window event to keep props minimal)
+const DetailsDialog = ({ metrics }) => {
+  const [open, setOpen] = useState(false);
+  const [type, setType] = useState(null);
+
+  useEffect(() => {
+    const handleOpen = (e) => {
+      setType(e.detail?.type || null);
+      setOpen(true);
+    };
+    if (typeof globalThis !== "undefined" && globalThis.window) {
+      globalThis.window.addEventListener("oh-open-details", handleOpen);
+    }
+    return () => {
+      if (typeof globalThis !== "undefined" && globalThis.window) {
+        globalThis.window.removeEventListener("oh-open-details", handleOpen);
+      }
+    };
+  }, []);
+
+  const fmtINR = (n) => `₹${Number(n || 0).toLocaleString("en-IN")}`;
+
+  // Build rows depending on type
+  let title = "Details";
+  let headers = [];
+  let rows = [];
+
+  if (type === "lr") {
+    title = "Pending LRs - Order Details";
+    headers = ["Order No.", "Customer", "Sale Date", "Days Pending", "Key"];
+    rows = (metrics.pendingActions.pendingLRs.byCustomer || []).flatMap((c) =>
+      (c.items || []).map((it) => [
+        it.orderNumber || "-",
+        c.customer || "-",
+        new Date(it.saleDate).toLocaleDateString(),
+        it.daysPending,
+        it.orderId || it.orderNumber || `${c.customer}-${it.saleDate}`,
+      ])
+    );
+  } else if (type === "invoice") {
+    title = "Pending Invoices - Order Details";
+    headers = [
+      "Order No.",
+      "Customer",
+      "Sale Date",
+      "Amount",
+      "Days Pending",
+      "Key",
+    ];
+    rows = (metrics.pendingActions.pendingInvoices.byCustomer || []).flatMap(
+      (c) =>
+        (c.items || []).map((it) => [
+          it.orderNumber || "-",
+          c.customer || "-",
+          new Date(it.saleDate).toLocaleDateString(),
+          fmtINR(it.amount || 0),
+          it.daysPending,
+          it.orderId || it.orderNumber || `${c.customer}-${it.saleDate}`,
+        ])
+    );
+  } else if (type === "fleet") {
+    title = "Active Vehicles";
+    headers = ["Vehicle No.", "Key"];
+    rows = (metrics.fleetUtilization.activeVehicleList || []).map((v) => [
+      v.vehicleNumber || "-",
+      v.vehicleId || v.vehicleNumber,
+    ]);
+  } else if (type === "driver") {
+    title = "Active Drivers";
+    headers = ["Name", "Mobile", "Key"];
+    rows = (metrics.driverActivity.activeDriverList || []).map((d) => [
+      d.name || "-",
+      d.mobile || "-",
+      d.driverId || d.mobile || d.name,
+    ]);
+  }
+
+  return (
+    <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="md">
+      <DialogTitle>{title}</DialogTitle>
+      <DialogContent dividers>
+        {rows.length > 0 ? (
+          <Table size="small">
+            <TableHead>
+              <TableRow>
+                {headers.slice(0, -1).map((h) => (
+                  <TableCell key={h}>{h}</TableCell>
+                ))}
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {rows.map((r) => (
+                <TableRow key={r[r.length - 1] || Math.random()}>
+                  {r.slice(0, -1).map((col, cidx) => (
+                    <TableCell key={`${r[r.length - 1]}-${cidx}`}>
+                      {col}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        ) : (
+          <Typography variant="body2" color="textSecondary">
+            No data to display
+          </Typography>
+        )}
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={() => setOpen(false)}>Close</Button>
+      </DialogActions>
+    </Dialog>
+  );
+};
+
+DetailsDialog.propTypes = {
+  metrics: PropTypes.object.isRequired,
+};
+
 // Main Component
 export const OperationalHealthDashboard = ({ data, loading }) => {
   const formatCurrency = (value) => {
@@ -215,6 +369,122 @@ export const OperationalHealthDashboard = ({ data, loading }) => {
       return `₹${(value / 100000).toFixed(2)}L`;
     }
     return `₹${value.toLocaleString("en-IN")}`;
+  };
+
+  // Details Dialog component (opened via window event to keep props minimal)
+  const DetailsDialog = ({ metrics }) => {
+    const [open, setOpen] = useState(false);
+    const [type, setType] = useState(null);
+
+    const handleOpen = (e) => {
+      setType(e.detail?.type || null);
+      setOpen(true);
+    };
+
+    const handleClose = () => setOpen(false);
+
+    // subscribe to custom event
+    if (typeof window !== "undefined") {
+      window.removeEventListener("oh-open-details", handleOpen);
+      window.addEventListener("oh-open-details", handleOpen);
+    }
+
+    const formatCurrency = (value) => {
+      if (!value && value !== 0) return "₹0";
+      if (value >= 100000) {
+        return `₹${(value / 100000).toFixed(2)}L`;
+      }
+      return `₹${value.toLocaleString("en-IN")}`;
+    };
+
+    // Build rows depending on type
+    let title = "Details";
+    let headers = [];
+    let rows = [];
+
+    if (type === "lr") {
+      title = "Pending LRs - Order Details";
+      headers = ["Order No.", "Customer", "Sale Date", "Days Pending"];
+      rows = (metrics.pendingActions.pendingLRs.byCustomer || []).flatMap((c) =>
+        (c.items || []).map((it) => [
+          it.orderNumber || "-",
+          c.customer || "-",
+          new Date(it.saleDate).toLocaleDateString(),
+          it.daysPending,
+        ])
+      );
+    } else if (type === "invoice") {
+      title = "Pending Invoices - Order Details";
+      headers = [
+        "Order No.",
+        "Customer",
+        "Sale Date",
+        "Amount",
+        "Days Pending",
+      ];
+      rows = (metrics.pendingActions.pendingInvoices.byCustomer || []).flatMap(
+        (c) =>
+          (c.items || []).map((it) => [
+            it.orderNumber || "-",
+            c.customer || "-",
+            new Date(it.saleDate).toLocaleDateString(),
+            formatCurrency(it.amount || 0),
+            it.daysPending,
+          ])
+      );
+    } else if (type === "fleet") {
+      title = "Active Vehicles";
+      headers = ["Vehicle No."];
+      rows = (metrics.fleetUtilization.activeVehicleList || []).map((v) => [
+        v.vehicleNumber || "-",
+      ]);
+    } else if (type === "driver") {
+      title = "Active Drivers";
+      headers = ["Name", "Mobile"];
+      rows = (metrics.driverActivity.activeDriverList || []).map((d) => [
+        d.name || "-",
+        d.mobile || "-",
+      ]);
+    }
+
+    return (
+      <Dialog open={open} onClose={handleClose} fullWidth maxWidth="md">
+        <DialogTitle>{title}</DialogTitle>
+        <DialogContent dividers>
+          {rows.length > 0 ? (
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  {headers.map((h) => (
+                    <TableCell key={h}>{h}</TableCell>
+                  ))}
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {rows.map((r, idx) => (
+                  <TableRow key={idx}>
+                    {r.map((col, cidx) => (
+                      <TableCell key={cidx}>{col}</TableCell>
+                    ))}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          ) : (
+            <Typography variant="body2" color="textSecondary">
+              No data to display
+            </Typography>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleClose}>Close</Button>
+        </DialogActions>
+      </Dialog>
+    );
+  };
+
+  DetailsDialog.propTypes = {
+    metrics: PropTypes.object.isRequired,
   };
 
   const metrics = data || {
@@ -287,32 +557,73 @@ export const OperationalHealthDashboard = ({ data, loading }) => {
 
   return (
     <Box>
+      {/* Details Dialog */}
+      <DetailsDialog metrics={metrics} />
       {/* KPI Cards Row */}
       <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid item xs={12} md={4}>
+        <Grid item xs={12} md={3}>
           <KPICard
-            title="Document Completion"
-            value={metrics.documentCompletion.fullCompletionRate}
+            title="LR Completion"
+            value={metrics.documentCompletion.lrCompletionRate}
             subtitle={`${metrics.documentCompletion.ordersWithoutLR} pending LRs, ${metrics.documentCompletion.ordersWithoutInvoice} pending invoices`}
             threshold={metrics.documentCompletion.threshold}
             loading={loading}
+            onClick={() =>
+              globalThis.window &&
+              globalThis.window.dispatchEvent(
+                new CustomEvent("oh-open-details", { detail: { type: "lr" } })
+              )
+            }
           />
         </Grid>
-        <Grid item xs={12} md={4}>
+        <Grid item xs={12} md={3}>
+          <KPICard
+            title="Invoice Completion"
+            value={metrics.documentCompletion.invoiceCompletionRate}
+            subtitle={`${metrics.documentCompletion.ordersWithoutInvoice} orders missing invoices`}
+            threshold={metrics.documentCompletion.threshold}
+            loading={loading}
+            onClick={() =>
+              globalThis.window &&
+              globalThis.window.dispatchEvent(
+                new CustomEvent("oh-open-details", {
+                  detail: { type: "invoice" },
+                })
+              )
+            }
+          />
+        </Grid>
+        <Grid item xs={12} md={3}>
           <KPICard
             title="Fleet Utilization"
             value={metrics.fleetUtilization.utilizationRate}
             subtitle={`${metrics.fleetUtilization.activeVehicles}/${metrics.fleetUtilization.totalVehicles} vehicles active`}
             threshold={metrics.fleetUtilization.threshold}
             loading={loading}
+            onClick={() =>
+              globalThis.window &&
+              globalThis.window.dispatchEvent(
+                new CustomEvent("oh-open-details", {
+                  detail: { type: "fleet" },
+                })
+              )
+            }
           />
         </Grid>
-        <Grid item xs={12} md={4}>
+        <Grid item xs={12} md={3}>
           <KPICard
             title="Driver Utilization"
             value={metrics.driverActivity.utilizationRate}
             subtitle={`${metrics.driverActivity.activeDrivers}/${metrics.driverActivity.totalDrivers} drivers active`}
             loading={loading}
+            onClick={() =>
+              globalThis.window &&
+              globalThis.window.dispatchEvent(
+                new CustomEvent("oh-open-details", {
+                  detail: { type: "driver" },
+                })
+              )
+            }
           />
         </Grid>
       </Grid>
@@ -336,17 +647,25 @@ export const OperationalHealthDashboard = ({ data, loading }) => {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {metrics.pendingActions.pendingLRs.byCustomer.map((customer) => (
-                      <TableRow key={customer.customerId || "unknown"}>
-                        <TableCell>{customer.customer}</TableCell>
-                        <TableCell align="right">
-                          <Chip label={customer.count} size="small" color="warning" />
-                        </TableCell>
-                        <TableCell align="right">
-                          {Math.max(...customer.items.map((i) => i.daysPending))}
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    {metrics.pendingActions.pendingLRs.byCustomer.map(
+                      (customer) => (
+                        <TableRow key={customer.customerId || "unknown"}>
+                          <TableCell>{customer.customer}</TableCell>
+                          <TableCell align="right">
+                            <Chip
+                              label={customer.count}
+                              size="small"
+                              color="warning"
+                            />
+                          </TableCell>
+                          <TableCell align="right">
+                            {Math.max(
+                              ...customer.items.map((i) => i.daysPending)
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      )
+                    )}
                   </TableBody>
                 </Table>
               </TableContainer>
@@ -368,7 +687,10 @@ export const OperationalHealthDashboard = ({ data, loading }) => {
               <>
                 <Box sx={{ mb: 2 }}>
                   <Typography variant="body2" color="textSecondary">
-                    Total Amount: {formatCurrency(metrics.pendingActions.pendingInvoices.totalAmount)}
+                    Total Amount:{" "}
+                    {formatCurrency(
+                      metrics.pendingActions.pendingInvoices.totalAmount
+                    )}
                   </Typography>
                 </Box>
                 <TableContainer component={Paper} variant="outlined">
@@ -381,17 +703,23 @@ export const OperationalHealthDashboard = ({ data, loading }) => {
                       </TableRow>
                     </TableHead>
                     <TableBody>
-                      {metrics.pendingActions.pendingInvoices.byCustomer.map((customer) => (
-                        <TableRow key={customer.customerId || "unknown"}>
-                          <TableCell>{customer.customer}</TableCell>
-                          <TableCell align="right">
-                            <Chip label={customer.count} size="small" color="warning" />
-                          </TableCell>
-                          <TableCell align="right">
-                            {formatCurrency(customer.totalAmount)}
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                      {metrics.pendingActions.pendingInvoices.byCustomer.map(
+                        (customer) => (
+                          <TableRow key={customer.customerId || "unknown"}>
+                            <TableCell>{customer.customer}</TableCell>
+                            <TableCell align="right">
+                              <Chip
+                                label={customer.count}
+                                size="small"
+                                color="warning"
+                              />
+                            </TableCell>
+                            <TableCell align="right">
+                              {formatCurrency(customer.totalAmount)}
+                            </TableCell>
+                          </TableRow>
+                        )
+                      )}
                     </TableBody>
                   </Table>
                 </TableContainer>
@@ -409,17 +737,29 @@ export const OperationalHealthDashboard = ({ data, loading }) => {
       <Card>
         <CardHeader
           title={
-            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <Typography variant="h6">Outstanding Invoices (Aging Analysis)</Typography>
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+              }}
+            >
+              <Typography variant="h6">
+                Outstanding Invoices (Aging Analysis)
+              </Typography>
               <Box>
                 <Chip
                   label={`${metrics.outstandingInvoices.count} invoices`}
                   size="small"
-                  color={metrics.outstandingInvoices.count > 0 ? "error" : "default"}
+                  color={
+                    metrics.outstandingInvoices.count > 0 ? "error" : "default"
+                  }
                   sx={{ mr: 1 }}
                 />
                 <Chip
-                  label={formatCurrency(metrics.outstandingInvoices.totalOutstanding)}
+                  label={formatCurrency(
+                    metrics.outstandingInvoices.totalOutstanding
+                  )}
                   size="small"
                   color="error"
                   variant="outlined"

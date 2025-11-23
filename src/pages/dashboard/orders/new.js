@@ -32,13 +32,13 @@ const OrderCreate = () => {
               <NextLink href="/dashboard" passHref>
                 <Link variant="subtitle2">Dashboard</Link>
               </NextLink>
-              <NextLink href="/dashboard" passHref>
+              <NextLink href="/dashboard/orders" passHref>
                 <Link color="primary" variant="subtitle2">
-                  Management
+                  Orders
                 </Link>
               </NextLink>
               <Typography color="textSecondary" variant="subtitle2">
-                Orders
+                Create a new order
               </Typography>
             </Breadcrumbs>
           </Box>

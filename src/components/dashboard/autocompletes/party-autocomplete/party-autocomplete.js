@@ -13,7 +13,14 @@ const PartyAutocomplete = ({ sx, formik, type }) => {
   const isMounted = useMounted();
   const { account } = useAuth();
   const filter = createFilterOptions();
-  const { touched, errors, handleBlur, setFieldValue, values } = formik;
+  const {
+    touched,
+    errors,
+    handleBlur,
+    setFieldValue,
+    setFieldTouched,
+    values,
+  } = formik;
   const [open, toggleOpen] = React.useState(false);
   // const parties = useSelector((state) => state.parties.parties);
   const [dialogValue, setDialogValue] = React.useState({
@@ -24,6 +31,34 @@ const PartyAutocomplete = ({ sx, formik, type }) => {
   const [value, setValue] = React.useState(values && values[type]);
   const [inputValue, setInputValue] = React.useState("");
   const [options, setOptions] = React.useState([]);
+
+  const getDisplayValue = useCallback((option) => {
+    if (!option) {
+      return "";
+    }
+
+    if (typeof option === "string") {
+      return option;
+    }
+
+    if (option.inputValue) {
+      return option.inputValue;
+    }
+
+    if (option.name) {
+      return option.name.replace(/\w\S*/g, function (txt) {
+        return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+      });
+    }
+
+    return "";
+  }, []);
+
+  useEffect(() => {
+    const nextValue = values && type ? values[type] || null : null;
+    setValue(nextValue);
+    setInputValue(getDisplayValue(nextValue));
+  }, [type, values?.[type], getDisplayValue]);
 
   const getPartiesByUser = useCallback(async () => {
     try {
@@ -105,6 +140,8 @@ const PartyAutocomplete = ({ sx, formik, type }) => {
           } else {
             setFieldValue(type, newValue);
             setValue(newValue);
+            setFieldTouched && setFieldTouched(type, true, false);
+            setInputValue(getDisplayValue(newValue));
           }
 
           setOptions(newValue ? [newValue, ...options] : options);
@@ -163,6 +200,7 @@ const PartyAutocomplete = ({ sx, formik, type }) => {
             }}
             {...params}
             label={type.charAt(0).toUpperCase() + type.slice(1)}
+            name={type}
             error={Boolean(
               type === "customer"
                 ? touched.customer && errors.customer

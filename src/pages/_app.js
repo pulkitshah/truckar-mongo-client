@@ -10,7 +10,6 @@ import CssBaseline from "@mui/material/CssBaseline";
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import "@mui/lab";
 import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
-import { useJsApiLoader } from "@react-google-maps/api";
 import { RTL } from "../components/rtl";
 import { SplashScreen } from "../components/splash-screen";
 import {
@@ -19,7 +18,7 @@ import {
 } from "../contexts/settings-context";
 import { AuthConsumer, AuthProvider } from "../contexts/jwt-context";
 import { SocketConsumer, SocketProvider } from "../contexts/socket-context";
-import { gtmConfig } from "../config";
+import { gtmConfig, googleMapsConfig } from "../config";
 import { gtm } from "../lib/gtm";
 import { store } from "../store";
 import { createTheme } from "../theme";
@@ -30,10 +29,7 @@ import { io } from "socket.io-client";
 
 //Constants
 export const APP_ID = "truckar-estjt";
-export const REACT_APP_GOOGLE_MAPS_API_KEY =
-  "AIzaSyDxGCC86EWkjtOccLqVDZKcw-yii2YHcmU";
-const libraries = ["places"];
-let isGoogleLoaded = false;
+// Google Maps JS API is loaded by map-related components as needed.
 
 Router.events.on("routeChangeStart", nProgress.start);
 Router.events.on("routeChangeError", nProgress.done);
@@ -80,23 +76,6 @@ const App = (props) => {
     //   console.log(msg);
     // });
   };
-
-  // Loading Google Maps API
-  try {
-    const { isLoaded } = useJsApiLoader({
-      googleMapsApiKey: REACT_APP_GOOGLE_MAPS_API_KEY,
-      libraries: libraries,
-    });
-
-    if (!isLoaded) {
-      // console.log("Google Maps Loading");
-    } else {
-      isGoogleLoaded = true;
-    }
-    // Loading Google Maps API //
-  } catch (error) {
-    console.log(error);
-  }
 
   const getLayout = Component.getLayout ?? ((page) => page);
 

@@ -12,6 +12,7 @@ import {
   Button,
   Card,
   CardContent,
+  CircularProgress,
   Grid,
   InputAdornment,
   TextField,
@@ -32,6 +33,11 @@ export const LrCreateForm = ({ order, deliveryId, lr = {} }) => {
   const dispatch = useDispatch();
   const { account } = useAuth();
   const [addresses, setAddresses] = useState({ waypoints: [] });
+  const [isFetchingNextLr, setIsFetchingNextLr] = useState(false);
+  const lastAutoFilledCombination = useRef({
+    organisation: null,
+    fiscalKey: null,
+  });
 
   let validationShape = {
     organisation: Yup.object().nullable().required("Organisation is required"),
@@ -155,6 +161,80 @@ export const LrCreateForm = ({ order, deliveryId, lr = {} }) => {
   });
 
   React.useEffect(() => {
+    const organisationId = formik.values.organisation?._id;
+    const lrDate = formik.values.lrDate;
+
+    if (!organisationId || !lrDate || !account?._id) {
+      return;
+    }
+
+    const fiscalKey = `${organisationId}-${moment(lrDate)
+      .startOf("day")
+      .format("YYYY-MM-DD")}`;
+    const hasExistingNumber = Boolean(formik.values.lrNo);
+
+    if (hasExistingNumber && !lastAutoFilledCombination.current.organisation) {
+      lastAutoFilledCombination.current = {
+        organisation: organisationId,
+        fiscalKey,
+      };
+      return;
+    }
+
+    if (
+      lastAutoFilledCombination.current.organisation === organisationId &&
+      lastAutoFilledCombination.current.fiscalKey === fiscalKey &&
+      hasExistingNumber
+    ) {
+      return;
+    }
+
+    let isActive = true;
+    setIsFetchingNextLr(true);
+
+    (async () => {
+      try {
+        const { data, error } = await lrApi.getNextLrNumber({
+          account: account._id,
+          organisation: organisationId,
+          lrDate: lrDate.format(),
+        });
+
+        if (!isActive) {
+          return;
+        }
+
+        if (error) {
+          throw new Error(error);
+        }
+
+        const nextNumber = data?.nextLrNo;
+
+        if (Number.isFinite(nextNumber)) {
+          formik.setFieldValue("lrNo", nextNumber, false);
+          lastAutoFilledCombination.current = {
+            organisation: organisationId,
+            fiscalKey,
+          };
+        }
+      } catch (err) {
+        if (isActive) {
+          console.error(err);
+          toast.error(err.message || "Unable to fetch next LR number.");
+        }
+      } finally {
+        if (isActive) {
+          setIsFetchingNextLr(false);
+        }
+      }
+    })();
+
+    return () => {
+      isActive = false;
+    };
+  }, [account?._id, formik.values.organisation, formik.values.lrDate]);
+
+  React.useEffect(() => {
     setAddresses({ waypoints: [...addresses.waypoints] });
 
     // Setting Origin
@@ -221,6 +301,15 @@ export const LrCreateForm = ({ order, deliveryId, lr = {} }) => {
       waypoints: waypoints,
     });
   }, [formik.values.deliveries]);
+
+  const lrNoError = formik.touched.lrNo && formik.errors.lrNo;
+  let lrNoHelperText = "";
+
+  if (lrNoError) {
+    lrNoHelperText = formik.errors.lrNo;
+  } else if (isFetchingNextLr) {
+    lrNoHelperText = "Fetching next LR number...";
+  }
 
   return (
     <React.Fragment>
@@ -304,9 +393,9 @@ export const LrCreateForm = ({ order, deliveryId, lr = {} }) => {
                   </Grid>
                   <Grid item md={4} xs={12}>
                     <TextField
-                      error={Boolean(formik.touched.lrNo && formik.errors.lrNo)}
+                      error={Boolean(lrNoError)}
                       fullWidth
-                      helperText={formik.touched.lrNo && formik.errors.lrNo}
+                      helperText={lrNoHelperText}
                       label="LR No"
                       name="lrNo"
                       onBlur={formik.handleBlur}
@@ -314,6 +403,13 @@ export const LrCreateForm = ({ order, deliveryId, lr = {} }) => {
                         formik.setFieldValue(`lrNo`, event.target.value);
                       }}
                       value={formik.values.lrNo}
+                      InputProps={{
+                        endAdornment: isFetchingNextLr ? (
+                          <InputAdornment position="end">
+                            <CircularProgress size={16} />
+                          </InputAdornment>
+                        ) : undefined,
+                      }}
                     />
                   </Grid>
                 </Grid>

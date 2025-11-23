@@ -9,19 +9,19 @@
  * @returns {string} Formatted currency string
  */
 export const formatCurrency = (amount, inLakhs = true) => {
-  if (!amount || amount === 0) return '₹0';
-  
+  if (!amount || amount === 0) return "₹0";
+
   // Format in Lakhs for amounts >= 100,000
   if (inLakhs && Math.abs(amount) >= 100000) {
     const lakhs = amount / 100000;
     return `₹${lakhs.toFixed(2)}L`;
   }
-  
+
   // Format in standard Indian format with commas
-  return new Intl.NumberFormat('en-IN', {
-    style: 'currency',
-    currency: 'INR',
-    maximumFractionDigits: 0
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
   }).format(amount);
 };
 
@@ -33,11 +33,11 @@ export const formatCurrency = (amount, inLakhs = true) => {
  */
 export const calculateChange = (current, previous) => {
   if (!previous || previous === 0) {
-    return current > 0 ? '+100%' : '0%';
+    return current > 0 ? "+100%" : "0%";
   }
-  
+
   const change = ((current - previous) / previous) * 100;
-  const sign = change >= 0 ? '+' : '';
+  const sign = change >= 0 ? "+" : "";
   return `${sign}${change.toFixed(2)}%`;
 };
 
@@ -51,7 +51,7 @@ export const calculateChangeNumeric = (current, previous) => {
   if (!previous || previous === 0) {
     return current > 0 ? 100 : 0;
   }
-  
+
   return ((current - previous) / previous) * 100;
 };
 
@@ -62,13 +62,13 @@ export const calculateChangeNumeric = (current, previous) => {
  * @returns {string} 'up', 'down', or 'stable'
  */
 export const getTrend = (current, previous) => {
-  if (!previous || !current) return 'stable';
-  
+  if (!previous || !current) return "stable";
+
   const diff = current - previous;
   const threshold = previous * 0.01; // 1% threshold for "stable"
-  
-  if (Math.abs(diff) < threshold) return 'stable';
-  return current >= previous ? 'up' : 'down';
+
+  if (Math.abs(diff) < threshold) return "stable";
+  return current >= previous ? "up" : "down";
 };
 
 /**
@@ -78,11 +78,11 @@ export const getTrend = (current, previous) => {
  * @returns {string} Formatted number
  */
 export const formatNumber = (number, decimals = 0) => {
-  if (!number && number !== 0) return '0';
-  
-  return new Intl.NumberFormat('en-IN', {
+  if (!number && number !== 0) return "0";
+
+  return new Intl.NumberFormat("en-IN", {
     maximumFractionDigits: decimals,
-    minimumFractionDigits: decimals
+    minimumFractionDigits: decimals,
   }).format(number);
 };
 
@@ -93,7 +93,7 @@ export const formatNumber = (number, decimals = 0) => {
  * @returns {string} Formatted percentage
  */
 export const formatPercentage = (value, decimals = 1) => {
-  if (!value && value !== 0) return '0%';
+  if (!value && value !== 0) return "0%";
   return `${value.toFixed(decimals)}%`;
 };
 
@@ -104,15 +104,30 @@ export const formatPercentage = (value, decimals = 1) => {
  */
 export const calculateDateRange = (period) => {
   const now = new Date();
-  const endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+  const endDate = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate(),
+    23,
+    59,
+    59
+  );
   let startDate;
-  
+
   switch (period) {
-    case 'today':
-      startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+    case "today":
+      startDate = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate(),
+        0,
+        0,
+        0
+      );
       break;
-      
-    case 'wtd': { // Week to date (Monday to today)
+
+    case "wtd": {
+      // Week to date (Monday to today)
       const dayOfWeek = now.getDay();
       const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Sunday = 0
       startDate = new Date(now);
@@ -120,15 +135,16 @@ export const calculateDateRange = (period) => {
       startDate.setHours(0, 0, 0, 0);
       break;
     }
-      
-    case 'mtd': // Month to date
+
+    case "mtd": // Month to date
       startDate = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0);
       break;
-      
-    case 'qtd': { // Quarter to date (Indian fiscal year: Apr-Mar)
+
+    case "qtd": {
+      // Quarter to date (Indian fiscal year: Apr-Mar)
       const currentMonth = now.getMonth() + 1; // 1-12
       let quarterStartMonth;
-      
+
       if (currentMonth >= 4 && currentMonth <= 6) {
         quarterStartMonth = 3; // Apr-Jun (Q1)
       } else if (currentMonth >= 7 && currentMonth <= 9) {
@@ -138,26 +154,28 @@ export const calculateDateRange = (period) => {
       } else {
         quarterStartMonth = 0; // Jan-Mar (Q4)
       }
-      
+
       startDate = new Date(now.getFullYear(), quarterStartMonth, 1, 0, 0, 0);
       break;
     }
-      
-    case 'ytd': { // Year to date (Indian fiscal year: Apr-Mar)
-      const fiscalYearStart = now.getMonth() >= 3 
-        ? new Date(now.getFullYear(), 3, 1, 0, 0, 0) // Apr 1 of current year
-        : new Date(now.getFullYear() - 1, 3, 1, 0, 0, 0); // Apr 1 of previous year
+
+    case "ytd": {
+      // Year to date (Indian fiscal year: Apr-Mar)
+      const fiscalYearStart =
+        now.getMonth() >= 3
+          ? new Date(now.getFullYear(), 3, 1, 0, 0, 0) // Apr 1 of current year
+          : new Date(now.getFullYear() - 1, 3, 1, 0, 0, 0); // Apr 1 of previous year
       startDate = fiscalYearStart;
       break;
     }
-      
+
     default:
       startDate = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0);
   }
-  
+
   return {
     startDate,
-    endDate
+    endDate,
   };
 };
 
@@ -168,19 +186,20 @@ export const calculateDateRange = (period) => {
  * @returns {object} Object with previousStartDate and previousEndDate
  */
 export const getPreviousPeriod = (startDate, endDate) => {
-  const periodDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
-  
+  const periodDays =
+    Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+
   const previousEndDate = new Date(startDate);
   previousEndDate.setDate(previousEndDate.getDate() - 1);
   previousEndDate.setHours(23, 59, 59, 999);
-  
+
   const previousStartDate = new Date(previousEndDate);
   previousStartDate.setDate(previousStartDate.getDate() - periodDays + 1);
   previousStartDate.setHours(0, 0, 0, 0);
-  
+
   return {
     previousStartDate,
-    previousEndDate
+    previousEndDate,
   };
 };
 
@@ -191,20 +210,20 @@ export const getPreviousPeriod = (startDate, endDate) => {
  * @returns {string} Formatted date string
  */
 export const formatDate = (date, includeTime = false) => {
-  if (!date) return '-';
-  
+  if (!date) return "-";
+
   const options = {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
+    year: "numeric",
+    month: "short",
+    day: "numeric",
   };
-  
+
   if (includeTime) {
-    options.hour = '2-digit';
-    options.minute = '2-digit';
+    options.hour = "2-digit";
+    options.minute = "2-digit";
   }
-  
-  return new Date(date).toLocaleDateString('en-IN', options);
+
+  return new Date(date).toLocaleDateString("en-IN", options);
 };
 
 /**
@@ -225,13 +244,13 @@ export const daysBetween = (date1, date2 = new Date()) => {
  * @returns {string} Color code
  */
 export const getTrendColor = (trend, inverseGood = false) => {
-  if (trend === 'stable') return 'text.secondary';
-  
+  if (trend === "stable") return "text.secondary";
+
   if (inverseGood) {
-    return trend === 'down' ? 'success.main' : 'error.main';
+    return trend === "down" ? "success.main" : "error.main";
   }
-  
-  return trend === 'up' ? 'success.main' : 'error.main';
+
+  return trend === "up" ? "success.main" : "error.main";
 };
 
 /**
@@ -242,12 +261,12 @@ export const getTrendColor = (trend, inverseGood = false) => {
  */
 export const getStatusColor = (value, thresholds = {}) => {
   const { good, warning, critical } = thresholds;
-  
-  if (good !== undefined && value >= good) return 'success';
-  if (critical !== undefined && value <= critical) return 'error';
-  if (warning !== undefined && value <= warning) return 'warning';
-  
-  return 'default';
+
+  if (good !== undefined && value >= good) return "success";
+  if (critical !== undefined && value <= critical) return "error";
+  if (warning !== undefined && value <= warning) return "warning";
+
+  return "default";
 };
 
 /**
@@ -257,7 +276,7 @@ export const getStatusColor = (value, thresholds = {}) => {
  * @returns {string} Truncated text
  */
 export const truncateText = (text, maxLength = 30) => {
-  if (!text) return '';
+  if (!text) return "";
   if (text.length <= maxLength) return text;
-  return text.substring(0, maxLength) + '...';
+  return text.substring(0, maxLength) + "...";
 };

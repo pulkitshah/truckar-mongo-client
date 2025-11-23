@@ -26,6 +26,8 @@ import {
   TableHead,
   TableRow,
   TextField,
+  ToggleButton,
+  ToggleButtonGroup,
   Typography,
   useMediaQuery,
 } from "@mui/material";
@@ -108,6 +110,45 @@ const OrderPreview = (props) => {
     order.driverMobile || ""
   );
 
+  const buildExpense = (expense = {}) => ({
+    _id: expense._id || expense.id || uuidv4(),
+    orderExpenseName: expense.orderExpenseName || "",
+    orderExpenseAmount: Number(expense.orderExpenseAmount) || 0,
+    isActive: typeof expense.isActive === "boolean" ? expense.isActive : true,
+  });
+
+  const parseAccountExpenses = React.useCallback(() => {
+    const source = account?.orderExpensesSettings;
+
+    if (Array.isArray(source)) {
+      return source.map(buildExpense);
+    }
+
+    if (typeof source === "string" && source.trim().length) {
+      try {
+        const parsed = JSON.parse(source);
+        return Array.isArray(parsed) ? parsed.map(buildExpense) : [];
+      } catch (error) {
+        console.error("Failed to parse account order expenses", error);
+        return [];
+      }
+    }
+
+    return [];
+  }, [account]);
+
+  const initialOrderExpenses = React.useMemo(() => {
+    const existingExpenses = Array.isArray(order?.orderExpenses)
+      ? order.orderExpenses.map(buildExpense)
+      : [];
+
+    if (existingExpenses.length) {
+      return existingExpenses;
+    }
+
+    return parseAccountExpenses();
+  }, [order?.orderExpenses, parseAccountExpenses]);
+
   // const [position, setPosition] = useState({
   //   lat: order.driver.lat,
   //   lng: order.driver.long,
@@ -148,7 +189,7 @@ const OrderPreview = (props) => {
     enableReinitialize: true,
     initialValues: {
       _id: order._id,
-      orderExpenses: order.orderExpenses ? order.orderExpenses : [],
+      orderExpenses: initialOrderExpenses,
     },
     onSubmit: async (values, helpers) => {
       try {
@@ -515,28 +556,28 @@ const OrderPreview = (props) => {
                   <Grid container spacing={3}>
                     <Grid item xs={12}>
                       {formik.values.orderExpenses.length > 0 &&
-                        formik.values.orderExpenses.map((delivery, index) => {
-                          const orderExpenseName = `orderExpenses[${index}]`;
+                        formik.values.orderExpenses.map((expense, index) => {
+                          const orderExpenseNamePath = `orderExpenses[${index}].orderExpenseName`;
                           const touchedOrderExpenseName = getIn(
                             formik.touched,
-                            orderExpenseName
+                            orderExpenseNamePath
                           );
                           const errorOrderExpenseName = getIn(
                             formik.errors,
-                            orderExpenseName
+                            orderExpenseNamePath
                           );
 
-                          const orderExpenseAmount = `orderExpenses[${index}].orderExpenseAmount`;
+                          const orderExpenseAmountPath = `orderExpenses[${index}].orderExpenseAmount`;
                           const touchedOrderExpenseAmount = getIn(
                             formik.touched,
-                            orderExpenseAmount
+                            orderExpenseAmountPath
                           );
                           const errorOrderExpenseAmount = getIn(
                             formik.errors,
-                            orderExpenseAmount
+                            orderExpenseAmountPath
                           );
                           return (
-                            <React.Fragment>
+                            <React.Fragment key={expense._id || index}>
                               <Grid container spacing={3}>
                                 {index > 0 && <Divider sx={{ mb: 2 }} />}
                                 <Grid
@@ -544,7 +585,6 @@ const OrderPreview = (props) => {
                                   xs={6}
                                   sx={{ mt: 2 }}
                                   className="col"
-                                  key={index}
                                 >
                                   <TextField
                                     helperText={
@@ -558,21 +598,13 @@ const OrderPreview = (props) => {
                                         errorOrderExpenseName
                                     )}
                                     variant="outlined"
-                                    onChange={(event) => {
-                                      formik.setFieldValue(
-                                        `orderExpenses[${index}].orderExpenseName`,
-                                        event.target.value
-                                      );
-                                    }}
+                                    onChange={formik.handleChange}
                                     onBlur={formik.handleBlur}
-                                    _id="orderExpenseName"
-                                    name="orderExpenseName"
+                                    id={orderExpenseNamePath}
+                                    name={orderExpenseNamePath}
                                     label="Expense Name"
                                     fullWidth
-                                    value={
-                                      formik.values.orderExpenses[index]
-                                        .orderExpenseName
-                                    }
+                                    value={expense.orderExpenseName}
                                   />
                                 </Grid>
                                 <Grid
@@ -582,18 +614,13 @@ const OrderPreview = (props) => {
                                   className="col"
                                 >
                                   <TextField
-                                    value={
-                                      formik.values.orderExpenses[index]
-                                        .orderExpenseAmount
-                                        ? formik.values.orderExpenses[index]
-                                            .orderExpenseAmount
-                                        : null
-                                    }
+                                    type="number"
+                                    value={expense.orderExpenseAmount ?? 0}
                                     variant="outlined"
                                     onChange={formik.handleChange}
                                     onBlur={formik.handleBlur}
-                                    _id={orderExpenseAmount}
-                                    name={orderExpenseAmount}
+                                    id={orderExpenseAmountPath}
+                                    name={orderExpenseAmountPath}
                                     helperText={
                                       touchedOrderExpenseAmount &&
                                       errorOrderExpenseAmount
@@ -636,12 +663,7 @@ const OrderPreview = (props) => {
                           color="secondary"
                           startIcon={<PlusIcon fontSize="small" />}
                           onClick={() => {
-                            push({
-                              _id: uuidv4(),
-                              orderExpenseName: "",
-                              orderExpenseAmount: 0,
-                              isActive: true,
-                            });
+                            push(buildExpense());
                           }}
                         >
                           Add Expense
@@ -786,15 +808,16 @@ const OrderForm = (props) => {
   const { onOpen, onCancel, order, gridApi } = props;
   const dispatch = useDispatch();
   const { account } = useAuth();
+  const initialVehicleOwnership =
+    order?.transporter || order?.vehicle?.transporter ? "outsourced" : "owned";
+  const initialPurchaseType = order.purchaseType || "quantity";
   const [selectedVehicle, setSelectedVehicle] = useState(
     order.vehicle ? order.vehicle : order.vehicleNumber
   );
   const [driver, setDriver] = useState();
   const [addresses, setAddresses] = useState({ waypoints: [] });
 
-  const [purchaseType, setPurchaseType] = React.useState(
-    order.purchaseType ? order.purchaseType : order.saleType.value
-  );
+  const [purchaseType, setPurchaseType] = React.useState(initialPurchaseType);
 
   const purchaseTypes = [
     {
@@ -846,20 +869,50 @@ const OrderForm = (props) => {
     }),
     saleType: Yup.object().required("Sale is required"),
     saleRate: Yup.string().required("Sale Rate is required"),
-  };
+    vehicleOwnership: Yup.string()
+      .oneOf(["owned", "outsourced"])
+      .required("Vehicle sourcing is required"),
+    transporter: Yup.mixed()
+      .nullable()
+      .when("vehicleOwnership", {
+        is: "outsourced",
+        then: (schema) =>
+          schema.test(
+            "transporter-required",
+            "Transporter is required",
+            (value) => {
+              if (value === null || value === undefined) {
+                return false;
+              }
 
-  if (typeof selectedVehicle === "object" && selectedVehicle !== null) {
-  } else {
-    validationShape.transporter = Yup.object().required(
-      "Transporter is required"
-    );
-    validationShape.purchaseType = Yup.string().required(
-      "Purchase is required"
-    );
-    validationShape.purchaseRate = Yup.string().required(
-      "Purchase Rate is required"
-    );
-  }
+              if (typeof value === "string") {
+                return value.trim().length > 0;
+              }
+
+              if (typeof value === "object") {
+                return Object.keys(value).length > 0;
+              }
+
+              return false;
+            }
+          ),
+        otherwise: (schema) => schema.nullable(),
+      }),
+    purchaseType: Yup.string()
+      .nullable()
+      .when("vehicleOwnership", {
+        is: "outsourced",
+        then: (schema) => schema.required("Purchase is required"),
+        otherwise: (schema) => schema.nullable(),
+      }),
+    purchaseRate: Yup.string()
+      .nullable()
+      .when("vehicleOwnership", {
+        is: "outsourced",
+        then: (schema) => schema.required("Purchase Rate is required"),
+        otherwise: (schema) => schema.nullable(),
+      }),
+  };
 
   validationShape.deliveries = Yup.array().of(
     Yup.object().shape({
@@ -904,7 +957,8 @@ const OrderForm = (props) => {
       customer: order.customer || null,
       vehicle: order.vehicle ? order.vehicle : order.vehicleNumber,
       driver: order.driver || null,
-      transporter: order.transporter || "",
+      transporter: order.transporter || null,
+      vehicleOwnership: initialVehicleOwnership,
       saleType: order.saleType
         ? order.saleType
         : {
@@ -945,27 +999,64 @@ const OrderForm = (props) => {
           _version: values._version,
         };
 
-        if (typeof selectedVehicle === "object" && selectedVehicle !== null) {
-          // editedOrder.vehicle = values.vehicle;
-          editedOrder.vehicle = values.vehicle._id;
-          editedOrder.vehicleNumber =
-            values.vehicle.vehicleNumber.toUpperCase();
-          if (values.driver) {
-            // editedOrder.driver = values.driver;
-            editedOrder.driver = values.driver._id;
+        const selectedVehicleIsObject =
+          typeof values.vehicle === "object" && values.vehicle !== null;
+        const selectedVehicleHasTransporter =
+          selectedVehicleIsObject && Boolean(values.vehicle?.transporter);
+        const isOwnedVehicleSubmit = values.vehicleOwnership === "owned";
+
+        if (isOwnedVehicleSubmit) {
+          if (selectedVehicleIsObject) {
+            editedOrder.vehicle = values.vehicle._id;
+            editedOrder.vehicleNumber =
+              values.vehicle.vehicleNumber.toUpperCase();
+          } else {
+            editedOrder.vehicle = null;
+            editedOrder.vehicleNumber = (values.vehicle || "").toUpperCase();
           }
+
+          if (values.driver) {
+            editedOrder.driver = values.driver._id || values.driver;
+          } else {
+            editedOrder.driver = null;
+          }
+
+          editedOrder.transporter = null;
+          editedOrder.purchaseRate = null;
+          editedOrder.purchaseType = null;
+          editedOrder.purchaseAdvance = null;
+          editedOrder.minimumPurchaseGuarantee = null;
         } else {
-          editedOrder.vehicle = null;
           editedOrder.driver = null;
-          editedOrder.vehicleNumber = values.vehicle.toUpperCase();
-          // editedOrder.transporter = values.transporter;
-          editedOrder.transporter = values.transporter._id;
-          editedOrder.purchaseRate = parseFloat(values.purchaseRate);
-          editedOrder.purchaseType = values.purchaseType;
-          if (values.minimumPurchaseGuarantee)
+
+          if (selectedVehicleHasTransporter) {
+            editedOrder.vehicle = values.vehicle._id;
+            editedOrder.vehicleNumber =
+              values.vehicle.vehicleNumber.toUpperCase();
+            editedOrder.transporter =
+              values.vehicle.transporter?._id || values.vehicle.transporter;
+          } else {
+            editedOrder.vehicle = null;
+            editedOrder.vehicleNumber = (values.vehicle || "").toUpperCase();
+            editedOrder.transporter =
+              values.transporter?._id || values.transporter;
+          }
+
+          if (values.purchaseRate) {
+            editedOrder.purchaseRate = parseFloat(values.purchaseRate);
+          } else {
+            editedOrder.purchaseRate = null;
+          }
+
+          editedOrder.purchaseType = values.purchaseType || null;
+
+          if (values.minimumPurchaseGuarantee) {
             editedOrder.minimumPurchaseGuarantee = parseFloat(
               values.minimumPurchaseGuarantee
             );
+          } else {
+            editedOrder.minimumPurchaseGuarantee = null;
+          }
         }
 
         if (values.minimumSaleGuarantee)
@@ -975,8 +1066,9 @@ const OrderForm = (props) => {
 
         if (values.saleAdvance)
           editedOrder.saleAdvance = parseFloat(values.saleAdvance);
-        if (values.purchaseAdvance)
+        if (!isOwnedVehicleSubmit && values.purchaseAdvance) {
           editedOrder.purchaseAdvance = parseFloat(values.purchaseAdvance);
+        }
 
         console.log(editedOrder);
 
@@ -996,6 +1088,33 @@ const OrderForm = (props) => {
       }
     },
   });
+
+  const { setFieldTouched } = formik;
+  const isOwnedVehicle = formik.values.vehicleOwnership === "owned";
+  const isOutsourcedVehicle = formik.values.vehicleOwnership === "outsourced";
+
+  const handleVehicleOwnershipChange = (event, newOwnership) => {
+    if (!newOwnership) {
+      return;
+    }
+
+    formik.setFieldValue("vehicleOwnership", newOwnership);
+
+    if (newOwnership === "owned") {
+      formik.setFieldValue("transporter", null);
+      formik.setFieldValue("purchaseRate", "");
+      formik.setFieldValue("purchaseAdvance", "");
+      formik.setFieldValue("minimumPurchaseGuarantee", "");
+    } else {
+      const existingPurchaseType = formik.values.purchaseType || purchaseType;
+      const defaultPurchaseType = existingPurchaseType || "quantity";
+
+      setPurchaseType(defaultPurchaseType);
+      formik.setFieldValue("purchaseType", defaultPurchaseType);
+      formik.setFieldValue("driver", null);
+      setDriver(null);
+    }
+  };
 
   React.useEffect(() => {
     setAddresses({ waypoints: [...addresses.waypoints] });
@@ -1160,8 +1279,30 @@ const OrderForm = (props) => {
         <Typography sx={{ my: 3 }} variant="h6">
           Vehicle details
         </Typography>
+        <ToggleButtonGroup
+          exclusive
+          size="small"
+          value={formik.values.vehicleOwnership}
+          onChange={handleVehicleOwnershipChange}
+          sx={{ mb: 2 }}
+        >
+          <ToggleButton value="owned">Owned</ToggleButton>
+          <ToggleButton value="outsourced">Outsourced</ToggleButton>
+        </ToggleButtonGroup>
+        {!isOwnedVehicle && (
+          <PartyAutocomplete
+            sx={{ my: 2 }}
+            errors={formik.errors}
+            touched={formik.touched}
+            setFieldValue={formik.setFieldValue}
+            handleBlur={formik.handleBlur}
+            type="transporter"
+            account={account}
+            formik={formik}
+          />
+        )}
         <VehicleAutocomplete
-          currentValue={order.vehicle ? order.vehicle : order.vehicleNumber}
+          currentValue={formik.values.vehicle}
           sx={{ my: 2 }}
           errors={formik.errors}
           touched={formik.touched}
@@ -1171,7 +1312,7 @@ const OrderForm = (props) => {
           setDriver={setDriver}
           account={account}
         />
-        {typeof selectedVehicle === "object" && selectedVehicle !== null ? (
+        {isOwnedVehicle ? (
           <DriverAutocomplete
             errors={formik.errors}
             touched={formik.touched}
@@ -1184,19 +1325,7 @@ const OrderForm = (props) => {
             formik={formik}
             driver={formik.values.driver}
           />
-        ) : (
-          selectedVehicle !== null && (
-            <PartyAutocomplete
-              errors={formik.errors}
-              touched={formik.touched}
-              setFieldValue={formik.setFieldValue}
-              handleBlur={formik.handleBlur}
-              type="transporter"
-              account={account}
-              formik={formik}
-            />
-          )
-        )}
+        ) : null}
         <Divider sx={{ my: 3 }} />
         <Typography sx={{ my: 3 }} variant="h6">
           Sale details
@@ -1276,7 +1405,7 @@ const OrderForm = (props) => {
           value={formik.values.saleAdvance}
         />
 
-        {!(typeof selectedVehicle === "object") && selectedVehicle !== null && (
+        {isOutsourcedVehicle && (
           <>
             <Divider sx={{ my: 3 }} />
             <Typography sx={{ my: 3 }} variant="h6">

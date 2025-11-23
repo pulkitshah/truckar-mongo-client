@@ -1,0 +1,24 @@
+[
+  {
+    "_id": "602f9b9e1b3bce50fd687837",
+    "vehicleNumber": "GJ-25-U-4697",
+    "make": "Tata",
+    "model": "4018",
+    "yearOfPurchase": "2018",
+    "condition": "New",
+    "organisation": "600efe882a0ad35ed7058c52",
+    "account": "6916c8a427da1d1858bf0338",
+    "__v": 0
+  },
+  {
+    "_id": "60131d809a6b7bf11607bf3d",
+    "vehicleNumber": "GJ-16-W-4086",
+    "make": "Tata",
+    "model": "4018",
+    "yearOfPurchase": "2019",
+    "condition": "New",
+    "organisation": "600efe882a0ad35ed7058c52",
+    "account": "6916c8a427da1d1858bf0338",
+    "__v": 0
+  }
+]

@@ -19,7 +19,12 @@ export default async function handler(req, res) {
           // Create
           const vehicle = new Vehicle(vehicleFields);
           await vehicle.save();
-          res.send(vehicle);
+
+          const populatedVehicle = await Vehicle.findById(vehicle._id)
+            .populate("organisation")
+            .populate("transporter");
+
+          res.send(populatedVehicle);
         } catch (error) {
           console.log(error.message);
           res.status(500).send("Server Error");

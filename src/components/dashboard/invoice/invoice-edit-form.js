@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { v4 as uuidv4 } from "uuid";
 import toast from "react-hot-toast";
@@ -32,6 +32,7 @@ export const InvoiceEditForm = ({
   deliveries,
   invoice = {},
   onCancel,
+  onClose,
   gridApi,
 }) => {
   const router = useRouter();
@@ -41,6 +42,7 @@ export const InvoiceEditForm = ({
     invoice.invoiceFormat
   );
   const subtotal = useRef(0);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   console.log(invoice);
 
@@ -102,6 +104,55 @@ export const InvoiceEditForm = ({
   }, [formik.values.deliveries]);
 
   console.log(formik.values);
+
+  const handleDelete = async () => {
+    if (!invoice?._id) {
+      toast.error("Invoice id is missing. Please refresh and try again.");
+      return;
+    }
+
+    const confirmation = window.confirm(
+      "Are you sure you want to delete this invoice?"
+    );
+
+    if (!confirmation) {
+      return;
+    }
+
+    setIsDeleting(true);
+
+    try {
+      const { status, error } = await invoiceApi.deleteInvoice(invoice._id);
+
+      if (status !== 200 || error) {
+        throw new Error(error || "Unable to delete invoice.");
+      }
+
+      toast.success("Invoice deleted!");
+
+      if (typeof onCancel === "function") {
+        onCancel();
+      }
+
+      if (gridApi?.deselectAll) {
+        gridApi.deselectAll();
+      }
+
+      if (gridApi?.refreshInfiniteCache) {
+        gridApi.refreshInfiniteCache();
+      }
+
+      if (typeof onClose === "function") {
+        onClose();
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error(err.message || "Something went wrong while deleting.");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <>
       <form onSubmit={formik.handleSubmit}>
@@ -337,8 +388,10 @@ export const InvoiceEditForm = ({
               m: 1,
               mr: "auto",
             }}
+            onClick={handleDelete}
+            disabled={isDeleting || formik.isSubmitting}
           >
-            Delete
+            {isDeleting ? "Deleting..." : "Delete"}
           </Button>
           <Button sx={{ m: 1 }} variant="outlined" onClick={onCancel}>
             Cancel

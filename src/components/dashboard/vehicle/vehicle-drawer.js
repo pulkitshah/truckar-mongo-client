@@ -28,6 +28,13 @@ const VehiclePreview = (props) => {
   const { lgUp, onEdit, vehicle } = props;
   const align = lgUp ? "horizontal" : "vertical";
 
+  const vehicleNumber = vehicle?.vehicleNumber
+    ? vehicle.vehicleNumber.toUpperCase()
+    : "—";
+  const organisationName = vehicle?.organisation?.name ?? "—";
+  const make = vehicle?.make ?? "—";
+  const model = vehicle?.model ?? "—";
+
   return (
     <>
       <Box
@@ -71,25 +78,25 @@ const VehiclePreview = (props) => {
           align={align}
           disableGutters
           label="Vehicle Number"
-          value={vehicle.vehicleNumber.toUpperCase()}
+          value={vehicleNumber}
         />
         <PropertyListItem
           align={align}
           disableGutters
           label="Organisation"
-          value={vehicle.organisation.name}
+          value={organisationName}
         />
         <PropertyListItem
           align={align}
           disableGutters
           label="Make"
-          value={vehicle.make}
+          value={make}
         />
         <PropertyListItem
           align={align}
           disableGutters
           label="Model"
-          value={vehicle.model}
+          value={model}
         />
       </PropertyList>
     </>

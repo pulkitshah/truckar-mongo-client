@@ -28,7 +28,7 @@ export const VehicleCreateForm = (props) => {
       make: "",
       model: "",
       organisation: "",
-      account: account.id,
+      account: account._id || account.id,
     },
     validationSchema: Yup.object({
       vehicleNumber: Yup.string()
@@ -40,7 +40,7 @@ export const VehicleCreateForm = (props) => {
           async function (value) {
             try {
               const response = await vehicleApi.validateDuplicateVehicleNumber(
-                account,
+                account._id || account.id,
                 value
               );
               return response.data;

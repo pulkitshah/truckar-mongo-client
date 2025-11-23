@@ -5,8 +5,47 @@ import { Box, Grid, TextField, Typography } from "@mui/material";
 import Autocomplete from "@mui/material/Autocomplete";
 import parse from "autosuggest-highlight/parse";
 import throttle from "lodash/throttle";
+import { googleMapsConfig } from "../../../../config";
 
 const autocompleteService = { current: null };
+
+const GOOGLE_MAPS_API_URL = `https://maps.googleapis.com/maps/api/js?key=${googleMapsConfig.apiKey}&libraries=places`;
+
+function ensureGoogleMapsLoaded() {
+  if (typeof window === "undefined") {
+    return Promise.reject();
+  }
+
+  if (window.google && window.google.maps && window.google.maps.places) {
+    return Promise.resolve();
+  }
+
+  return new Promise((resolve, reject) => {
+    const existingScript = document.querySelector("#google-maps-places");
+
+    if (existingScript) {
+      existingScript.addEventListener("load", () => resolve());
+      existingScript.addEventListener("error", reject);
+
+      if (existingScript.getAttribute("data-loaded") === "true") {
+        resolve();
+      }
+
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.id = "google-maps-places";
+    script.async = true;
+    script.src = GOOGLE_MAPS_API_URL;
+    script.onload = () => {
+      script.setAttribute("data-loaded", "true");
+      resolve();
+    };
+    script.onerror = reject;
+    document.head.appendChild(script);
+  });
+}
 
 export default function GoogleMaps({
   name,
@@ -35,41 +74,55 @@ export default function GoogleMaps({
   React.useEffect(() => {
     let active = true;
 
-    if (!autocompleteService.current && window.google) {
-      autocompleteService.current =
-        new window.google.maps.places.AutocompleteService();
-    }
-    if (!autocompleteService.current) {
-      return undefined;
-    }
-
-    if (inputValue === "") {
-      setOptions(value ? [value] : []);
-      return undefined;
-    }
-
-    fetch(
-      {
-        input: inputValue,
-        types: ["(cities)"],
-        componentRestrictions: { country: "in" },
-        fields: ["address_components", "geometry", "icon", "name"],
-      },
-      (results) => {
-        if (active) {
-          let newOptions = [];
-
-          if (value) {
-            newOptions = [value];
-          }
-
-          if (results) {
-            newOptions = [...newOptions, ...results];
-          }
-          setOptions(newOptions);
+    ensureGoogleMapsLoaded()
+      .then(() => {
+        if (!active) {
+          return;
         }
-      }
-    );
+
+        if (!autocompleteService.current && window.google) {
+          autocompleteService.current =
+            new window.google.maps.places.AutocompleteService();
+        }
+
+        if (!autocompleteService.current) {
+          return;
+        }
+
+        if (inputValue === "") {
+          setOptions(value ? [value] : []);
+          return;
+        }
+
+        fetch(
+          {
+            input: inputValue,
+            types: ["(cities)"],
+            componentRestrictions: { country: "in" },
+          },
+          (results) => {
+            if (!active) {
+              return;
+            }
+
+            let newOptions = [];
+
+            if (value) {
+              newOptions = [value];
+            }
+
+            if (results) {
+              newOptions = [...newOptions, ...results];
+            }
+            setOptions(newOptions);
+          }
+        );
+      })
+      .catch(() => {
+        if (active) {
+          setOptions(value ? [value] : []);
+        }
+      });
 
     return () => {
       active = false;

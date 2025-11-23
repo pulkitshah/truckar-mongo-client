@@ -28,10 +28,11 @@ const MetricCard = ({
 }) => {
   const isPositive = change >= 0;
   const TrendIcon = isPositive ? TrendingUpIcon : TrendingDownIcon;
-  
-  const targetProgress = target && value 
-    ? (Number.parseFloat(value.replaceAll(/[^0-9.-]+/g, "")) / target) * 100 
-    : null;
+
+  const targetProgress =
+    target && value
+      ? (Number.parseFloat(value.replaceAll(/[^0-9.-]+/g, "")) / target) * 100
+      : null;
 
   const getSparklineColor = (colorName) => {
     if (colorName === "primary") return "#5048E5";
@@ -131,7 +132,7 @@ const MetricCard = ({
               )}
             </Box>
           </Box>
-          
+
           {sparklineData.length > 0 && (
             <Box sx={{ width: 100, height: 50, ml: 2 }}>
               <Chart
@@ -154,14 +155,24 @@ const MetricCard = ({
               {previousValue} {changeLabel}
             </Typography>
           )}
-          
+
           {target && targetProgress !== null && (
             <Box>
-              <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  mb: 0.5,
+                }}
+              >
                 <Typography variant="caption" color="textSecondary">
                   {targetLabel || "Target Progress"}
                 </Typography>
-                <Typography variant="caption" color="textSecondary" fontWeight={600}>
+                <Typography
+                  variant="caption"
+                  color="textSecondary"
+                  fontWeight={600}
+                >
                   {targetProgress.toFixed(0)}%
                 </Typography>
               </Box>
@@ -343,7 +354,9 @@ export const FinancialMetricsCardsEnhanced = ({ data, loading }) => {
           value={formatPercent(metrics.expenseRatio)}
           change={-metrics.expenseRatioChange} // Negative because lower is better
           changeLabel="vs last period"
-          previousValue={`${formatPercent(metrics.previousPeriod.expenseRatio)}`}
+          previousValue={`${formatPercent(
+            metrics.previousPeriod.expenseRatio
+          )}`}
           loading={loading}
           color="error"
           sparklineData={metrics.trends.expenseRatio || []}

@@ -1,6 +1,5 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { useRouter } from "next/router";
-import { v4 as uuidv4 } from "uuid";
 import toast from "react-hot-toast";
 import * as Yup from "yup";
 import { useFormik } from "formik";
@@ -14,6 +13,8 @@ import {
   Grid,
   TextField,
   Typography,
+  CircularProgress,
+  InputAdornment,
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { useAuth } from "../../../hooks/use-auth";
@@ -24,8 +25,6 @@ import OrderDetailsGrid from "./order-details-ag-grid";
 import DeliveryDetails from "./delivery-details";
 import { useDispatch } from "../../../store";
 import { invoiceApi } from "../../../api/invoice-api";
-import { deliveryApi } from "../../../api/delivery-api";
-import { useEffect } from "react";
 import { calculateAmountForDeliveryNew } from "../../../utils/amount-calculation";
 
 export const InvoiceCreateForm = ({ invoice = {} }) => {
@@ -34,6 +33,14 @@ export const InvoiceCreateForm = ({ invoice = {} }) => {
   const dispatch = useDispatch();
 
   const subtotal = useRef(0);
+  const [isFetchingInvoiceNo, setIsFetchingInvoiceNo] = useState(false);
+  const [invoiceNoManuallyEdited, setInvoiceNoManuallyEdited] = useState(false);
+  const lastAutoFilledInvoiceRef = useRef({
+    organisation: null,
+    fiscalKey: null,
+  });
+  const previousCombinationRef = useRef(null);
+  const isEditMode = Boolean(invoice?._id);
 
   let validationShape = {
     invoiceNo: Yup.number()
@@ -121,6 +128,102 @@ export const InvoiceCreateForm = ({ invoice = {} }) => {
 
   console.log(subtotal.current);
 
+  useEffect(() => {
+    if (!account?._id || isEditMode) {
+      return;
+    }
+
+    const organisationId = formik.values.organisation?._id;
+    const invoiceDate = formik.values.invoiceDate;
+
+    if (!organisationId || !invoiceDate) {
+      return;
+    }
+
+    const fiscalKey = `${organisationId}-${moment(invoiceDate)
+      .startOf("day")
+      .format("YYYY-MM-DD")}`;
+    const combinationKey = fiscalKey;
+
+    if (previousCombinationRef.current !== combinationKey) {
+      previousCombinationRef.current = combinationKey;
+      setInvoiceNoManuallyEdited(false);
+    }
+
+    const currentValue = formik.values.invoiceNo;
+    const lastAuto = lastAutoFilledInvoiceRef.current;
+
+    if (
+      lastAuto.organisation === organisationId &&
+      lastAuto.fiscalKey === fiscalKey &&
+      currentValue
+    ) {
+      return;
+    }
+
+    if (invoiceNoManuallyEdited && currentValue) {
+      return;
+    }
+
+    let isActive = true;
+    setIsFetchingInvoiceNo(true);
+
+    (async () => {
+      try {
+        const { data, error } = await invoiceApi.getNextInvoiceNumber({
+          account: account._id,
+          organisation: organisationId,
+          invoiceDate: invoiceDate.format(),
+        });
+
+        if (!isActive) {
+          return;
+        }
+
+        if (error) {
+          throw new Error(error);
+        }
+
+        if (typeof data === "number") {
+          formik.setFieldValue("invoiceNo", String(data), false);
+          lastAutoFilledInvoiceRef.current = {
+            organisation: organisationId,
+            fiscalKey,
+          };
+        }
+      } catch (err) {
+        if (isActive) {
+          console.error(err);
+          toast.error(err.message || "Unable to fetch next invoice number.");
+        }
+      } finally {
+        if (isActive) {
+          setIsFetchingInvoiceNo(false);
+        }
+      }
+    })();
+
+    return () => {
+      isActive = false;
+    };
+  }, [
+    account?._id,
+    formik.values.organisation,
+    formik.values.invoiceDate,
+    formik.values.invoiceNo,
+    invoiceNoManuallyEdited,
+    isEditMode,
+  ]);
+
+  const invoiceNoError = formik.touched.invoiceNo && formik.errors.invoiceNo;
+  let invoiceNoHelperText = "";
+
+  if (invoiceNoError) {
+    invoiceNoHelperText = formik.errors.invoiceNo;
+  } else if (isFetchingInvoiceNo) {
+    invoiceNoHelperText = "Fetching next invoice number...";
+  }
+
   return (
     <form onSubmit={formik.handleSubmit}>
       <Card>
@@ -164,20 +267,24 @@ export const InvoiceCreateForm = ({ invoice = {} }) => {
                 </Grid>
                 <Grid item md={4} xs={12}>
                   <TextField
-                    error={Boolean(
-                      formik.touched.invoiceNo && formik.errors.invoiceNo
-                    )}
+                    error={Boolean(invoiceNoError)}
                     fullWidth
-                    helperText={
-                      formik.touched.invoiceNo && formik.errors.invoiceNo
-                    }
+                    helperText={invoiceNoHelperText}
                     label="Invoice No"
                     name="invoiceNo"
                     onBlur={formik.handleBlur}
                     onChange={(event) => {
+                      setInvoiceNoManuallyEdited(true);
                       formik.setFieldValue(`invoiceNo`, event.target.value);
                     }}
                     value={formik.values.invoiceNo}
+                    InputProps={{
+                      endAdornment: isFetchingInvoiceNo ? (
+                        <InputAdornment position="end">
+                          <CircularProgress size={16} />
+                        </InputAdornment>
+                      ) : undefined,
+                    }}
                   />
                 </Grid>
               </Grid>
