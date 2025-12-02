@@ -720,11 +720,11 @@ const LrPDF = ({ delivery, printRates = false }) => {
                     >
                       <Text style={[styles.body1]}>
                         {delivery.minimumSaleGuarantee &&
-                          `${delivery.minimumSaleGuarantee} MT`}
+                          `${delivery.minimumSaleGuarantee} ${delivery.saleType?.unit || 'units'}`}
                       </Text>
 
                       <Text style={[styles.body1]}>
-                        {lr.chargedWeight && `${lr.chargedWeight}`}
+                        {lr.chargedWeight && `${lr.chargedWeight} ${delivery.saleType?.unit || 'units'}`}
                       </Text>
                     </View>
                   </View>
