@@ -35,7 +35,7 @@ export default async function handler(req, res) {
           if (!sortObj.orderNo) sortObj.orderNo = -1;
           return sortObj;
         };
-        const sortObj = buildSort(sort);
+        const sortStage = { $sort: buildSort(sort) };
 
         let matches = { account: new mongoose.Types.ObjectId(account) };
 
@@ -48,8 +48,7 @@ export default async function handler(req, res) {
               transporter: { $exists: true },
             },
           },
-          // Initial sort so subsequent unwinds operate on consistent order
-          { $sort: sortObj },
+          sortStage,
         ];
 
         // filter according to filterModel object
@@ -62,241 +61,39 @@ export default async function handler(req, res) {
 
         if (filter.customer) {
           const customerQuery = createFilterAggPipeline({
-            query.push(
-              {
-                $facet: {
-                  rows: [
-                    { $skip: startRow },
-                    { $limit: endRow - startRow },
-                    { $unwind: "$deliveries" },
-                    {
-                      $lookup: {
-                        from: "organisations",
-                        let: {
-                          id: { $toObjectId: "$deliveries.lr.organisation" },
-                          deliveries: "$deliveries",
-                        },
-                        pipeline: [
-                          { $match: { $expr: { $eq: ["$_id", "$$id"] } } },
-                        ],
-                        as: "deliveries.lr.organisation",
-                      },
-                    },
-                    {
-                      $unwind: {
-                        path: "$deliveries.lr.organisation",
-                        preserveNullAndEmptyArrays: true,
-                      },
-                    },
-                    {
-                      $group: {
-                        _id: "$_id",
-                        orderNo: { $first: "$orderNo" },
-                        saleDate: { $first: "$saleDate" },
-                        customer: { $first: "$customer" },
-                        vehicleNumber: { $first: "$vehicleNumber" },
-                        vehicle: { $first: "$vehicle" },
-                        driver: { $first: "$driver" },
-                        driverName: { $first: "$driverName" },
-                        driverMobile: { $first: "$driverMobile" },
-                        driverArrivalTime: { $first: "$driverArrivalTime" },
-                        orderExpenses: { $first: "$orderExpenses" },
-                        saleType: { $first: "$saleType" },
-                        saleRate: { $first: "$saleRate" },
-                        minimumSaleGuarantee: { $first: "$minimumSaleGuarantee" },
-                        saleAdvance: { $first: "$saleAdvance" },
-                        purchaseType: { $first: "$purchaseType" },
-                        purchaseRate: { $first: "$purchaseRate" },
-                        minimumPurchaseGuarantee: { $first: "$minimumPurchaseGuarantee" },
-                        purchaseAdvance: { $first: "$purchaseAdvance" },
-                        purchaseRemarks: { $first: "$purchaseRemarks" },
-                        transporter: { $first: "$transporter" },
-                        createdDate: { $first: "$createdDate" },
-                        account: { $first: "$account" },
-                        status: { $first: "$status" },
-                        deliveries: { $push: "$deliveries" },
-                      },
-                    },
-                    // Final sort after grouping
-                    { $sort: sortObj },
-                      $first: "$minimumPurchaseGuarantee",
-                    },
-                    purchaseAdvance: { $first: "$purchaseAdvance" },
-                    purchaseRemarks: { $first: "$purchaseRemarks" },
-                    transporter: { $first: "$transporter" },
-                    createdDate: { $first: "$createdDate" },
-                    account: { $first: "$account" },
-                    status: { $first: "$status" },
-                    deliveries: { $push: "$deliveries" },
-                  },
-                },
-                { $sort: { saleDate: -1, orderNo: -1 } },
+            customer: filter.customer,
+          });
+          query.push(customerQuery[0]);
+        }
 
-                {
-                  $lookup: {
-                    from: "parties",
-                    let: {
-                      id: "$customer",
-                    },
-                    pipeline: [
-                      {
-                        $match: {
-                          $expr: {
-                            $eq: ["$_id", "$$id"],
-                          },
-                        },
-                      },
-                      {
-                        $project: {
-                          name: 1,
-                          city: 1,
-                          mobile: 1,
-                          isTransporter: 1,
-                          _id: 1,
-                        },
-                      },
-                    ],
-                    as: "customer",
-                  },
-                },
-                { $unwind: "$customer" },
-                {
-                  $lookup: {
-                    from: "parties",
-                    let: {
-                      id: "$transporter",
-                    },
-                    pipeline: [
-                      {
-                        $match: {
-                          $expr: { $eq: ["$_id", "$$id"] },
-                        },
-                      },
-                      {
-                        $project: {
-                          name: 1,
-                          city: 1,
-                          mobile: 1,
-                          isTransporter: 1,
-                          _id: 1,
-                        },
-                      },
-                    ],
-                    as: "transporter",
-                  },
-                },
-                {
-                  $unwind: {
-                    path: "$transporter",
-                    preserveNullAndEmptyArrays: true,
-                  },
-                },
-                {
-                  $lookup: {
-                    from: "drivers",
-                    let: {
-                      id: "$driver",
-                    },
-                    pipeline: [
-                      {
-                        $match: {
-                          $expr: {
-                            $eq: ["$_id", "$$id"],
-                          },
-                        },
-                      },
-                      {
-                        $project: {
-                          name: 1,
-                          mobile: 1,
-                          _id: 1,
-                          lat: 1,
-                          long: 1,
-                          locationUpdatedDate: 1,
-                          currentOrder: 1,
-                        },
-                      },
-                    ],
-                    as: "driver",
-                  },
-                },
-                {
-                  $unwind: {
-                    path: "$driver",
-                    preserveNullAndEmptyArrays: true,
-                  },
-                },
-                {
-                  $lookup: {
-                    from: "vehicles",
-                    let: {
-                      id: "$vehicle",
-                    },
-                    pipeline: [
-                      {
-                        $match: {
-                          $expr: {
-                            $eq: ["$_id", "$$id"],
-                          },
-                        },
-                      },
-                      {
-                        $lookup: {
-                          from: "organisations",
-                          let: {
-                            id: "$organisation",
-                          },
-                          pipeline: [
-                            {
-                              $match: {
-                                $expr: {
-                                  $eq: ["$_id", "$$id"],
-                                },
-                              },
-                            },
-                          ],
-                          as: "organisation",
-                        },
-                      },
-                      {
-                        $unwind: {
-                          path: "$organisation",
-                          preserveNullAndEmptyArrays: true,
-                        },
-                      },
-                    ],
-                    as: "vehicle",
-                  },
-                },
-                {
-                  { $unwind: { path: "$vehicle", preserveNullAndEmptyArrays: true } },
-              ],
-              count: [
-                {
-                  $group: {
-                    _id: null,
-                    Total: { $sum: 1 },
-                  },
-                },
-              ],
-            },
-          },
-          {
-            $unwind: "$rows",
-          },
-          {
-            $addFields: {
-              "rows.count": { $arrayElemAt: ["$count.Total", 0] },
-            },
-          },
-          {
-            $replaceRoot: {
-              newRoot: "$rows",
-            },
+        if (filter.vehicleNumber) {
+          const vehicleNumberQuery = createFilterAggPipeline({
+            vehicleNumber: filter.vehicleNumber,
+          });
+          query.push(vehicleNumberQuery[0]);
+        }
+
+        query.push({
+          $facet: {
+            totalCount: [
+              { $count: "count" }
+            ],
+            paginatedResults: [
+              { $skip: startRow },
+              { $limit: endRow - startRow },
+              ...lookups
+            ]
           }
-        );
+        });
 
-        const orders = await Order.aggregate(query);
+        query.push({
+          $project: {
+            count: { $arrayElemAt: ["$totalCount.count", 0] },
+            rows: "$paginatedResults"
+          }
+        });
+
+        const orders = await Order.aggregate(query, { allowDiskUse: true });
         res.json(orders);
       });
       break;
