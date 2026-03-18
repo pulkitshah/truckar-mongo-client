@@ -567,7 +567,7 @@ const InvoicePDF = ({ invoice, logo }) => {
                         )}
                       </Text>
                       {delivery.invoiceCharges.map((invoiceCharge, i) => {
-                        subtotalAmount = subtotalAmount + invoiceCharge.amount;
+                        subtotalAmount = subtotalAmount + parseFloat(invoiceCharge.amount || 0);
 
                         return (
                           <Text key={i} style={[styles.tableCellText]}>
