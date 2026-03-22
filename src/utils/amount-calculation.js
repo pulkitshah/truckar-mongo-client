@@ -111,7 +111,11 @@ export var getSumOfInvoiceCharges = (invoiceCharges) => {
 export var calculateAmountForOrder = (order, type, advance = false) => {
   let sumOfBillQuantity = 0;
 
-  order.deliveries.map((delivery) => {
+  if (!order.deliveries) {
+    console.warn("Order missing deliveries:", order._id || order);
+  }
+
+  (order.deliveries || []).map((delivery) => {
     if (Boolean(delivery.billQuantity)) {
       return (sumOfBillQuantity =
         sumOfBillQuantity + parseFloat(delivery.billQuantity));

@@ -160,6 +160,8 @@ export const orderTable = (account) => {
       field: "orderNo",
       headerName: "Order No",
       width: 100,
+      sort: "desc",
+      sortIndex: 1,
       filter: "agNumberColumnFilter",
       filterParams: {
         buttons: ["reset"],
@@ -172,6 +174,8 @@ export const orderTable = (account) => {
       field: "saleDate",
       headerName: "Date",
       width: 120,
+      sort: "desc",
+      sortIndex: 0,
       valueGetter: (params) => {
         if (params.data) {
           return moment(params.data.saleDate).format("DD-MM-YY");
@@ -649,9 +653,9 @@ export const lorryRegisterTable = (account) => {
       valueGetter: (params) => {
         if (params.data) {
           if (params.data.vehicle) {
-            return params.data.vehicle.organisation.name;
+            return params.data.vehicle.organisation?.name;
           } else {
-            return params.data.transporter.name;
+            return params.data.transporter?.name;
           }
         }
       },
