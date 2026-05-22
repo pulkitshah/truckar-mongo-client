@@ -31,7 +31,7 @@ import { io } from "socket.io-client";
 //Constants
 export const APP_ID = "truckar-estjt";
 export const REACT_APP_GOOGLE_MAPS_API_KEY =
-  "AIzaSyDxGCC86EWkjtOccLqVDZKcw-yii2YHcmU";
+  "AIzaSyDRDemItyOnaQv0F38CDtnBrYSQD00uaYI";
 const libraries = ["places"];
 let isGoogleLoaded = false;
 
