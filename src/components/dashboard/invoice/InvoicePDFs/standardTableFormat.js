@@ -19,6 +19,7 @@ import {
   getSumOfInvoiceCharges,
   calculateAmountForDeliveryNew,
 } from "../../../../utils/amount-calculation";
+import { generateStampDataUrl } from "../../../../utils/generate-stamp";
 
 Font.register({
   family: "Roboto",
@@ -226,6 +227,9 @@ const styles = StyleSheet.create({
 const InvoicePDF = ({ invoice, logo }) => {
   let subtotalAmount = 0;
   let advance = 0;
+  const stampDataUrl = generateStampDataUrl(
+    invoice.organisation && invoice.organisation.name
+  );
   console.log(invoice);
   let totalTaxPercentage =
     invoice.taxes && invoice.taxes
@@ -801,6 +805,17 @@ const InvoicePDF = ({ invoice, logo }) => {
                   <Text style={[styles.signatureCellText, styles.bold]}>
                     Authorized Signatory
                   </Text>
+                  {stampDataUrl && (
+                    <Image
+                      src={stampDataUrl}
+                      style={{
+                        width: 80,
+                        height: 80,
+                        alignSelf: "center",
+                        marginBottom: 4,
+                      }}
+                    />
+                  )}
                 </View>
               </View>
             </View>

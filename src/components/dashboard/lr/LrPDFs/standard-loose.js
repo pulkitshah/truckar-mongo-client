@@ -15,6 +15,7 @@ import {
   calculateAmountForDeliveryNew,
   formatNumber,
 } from "../../../../utils/amount-calculation";
+import { generateStampDataUrl } from "../../../../utils/generate-stamp";
 
 Font.register({
   family: "Roboto",
@@ -129,6 +130,13 @@ const styles = StyleSheet.create({
     lineHeight: 1.5,
     maxWidth: 300,
   },
+  body1Emphasis: {
+    fontSize: 12,
+    lineHeight: 1.5,
+    maxWidth: 300,
+    fontWeight: 700,
+    fontFamily: "Roboto",
+  },
   chargesText: {
     fontSize: 9,
     lineHeight: 1,
@@ -160,6 +168,7 @@ const LrPDF = ({ delivery, printRates = false }) => {
 
   let lrChargeAmount = 0;
   let lr = delivery.delivery.lr;
+  const stampDataUrl = generateStampDataUrl(lr.organisation && lr.organisation.name);
 
   console.log(lr);
 
@@ -493,10 +502,10 @@ const LrPDF = ({ delivery, printRates = false }) => {
                   <Text style={[styles.body1, styles.bottomBorder]}>
                     {lr.organisation.pan}
                   </Text>
-                  <Text style={[styles.body1, styles.bold, styles.underlined]}>
+                  <Text style={[styles.body1Emphasis, styles.underlined]}>
                     Consignment No
                   </Text>
-                  <Text style={[styles.body1, styles.bottomBorder]}>
+                  <Text style={[styles.body1Emphasis, styles.bottomBorder]}>
                     {lr.lrNo}
                   </Text>
                   <Text style={[styles.body1, styles.bold, styles.underlined]}>
@@ -513,10 +522,12 @@ const LrPDF = ({ delivery, printRates = false }) => {
                       ? lr.branch
                       : Boolean(lr.organisation.city) && lr.organisation.city}
                   </Text>
-                  <Text style={[styles.body1, styles.bold, styles.underlined]}>
+                  <Text style={[styles.body1Emphasis, styles.underlined]}>
                     Vehicle No.
                   </Text>
-                  <Text style={[styles.body1]}>{delivery.vehicleNumber}</Text>
+                  <Text style={[styles.body1Emphasis]}>
+                    {delivery.vehicleNumber}
+                  </Text>
                 </View>
               </View>
             </View>
@@ -537,12 +548,12 @@ const LrPDF = ({ delivery, printRates = false }) => {
                 ]}
               >
                 <View style={[styles.tableHeader]}>
-                  <Text style={[styles.body1, styles.bold]}>Packages</Text>
+                  <Text style={[styles.body1Emphasis]}>Packages</Text>
                 </View>
                 <View style={[styles.tableCell]}>
                   {lr.descriptionOfGoods.map((descriptionOfGood, index) => {
                     return (
-                      <Text key={index} style={[styles.body1]}>
+                      <Text key={index} style={[styles.body1Emphasis]}>
                         {descriptionOfGood.packages}
                       </Text>
                     );
@@ -993,12 +1004,19 @@ const LrPDF = ({ delivery, printRates = false }) => {
                         display: "flex",
                         flexDirection: "row",
                         justifyContent: "space-between",
+                        alignItems: "center",
                       },
                     ]}
                   >
                     <Text style={[styles.body1]}>
                       {`For ${lr.organisation.name}`}:
                     </Text>
+                    {stampDataUrl && (
+                      <Image
+                        src={stampDataUrl}
+                        style={{ width: 70, height: 70 }}
+                      />
+                    )}
                   </View>
                 </View>
               </View>
